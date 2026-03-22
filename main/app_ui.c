@@ -978,8 +978,17 @@ static void update_main_ui_from_cam_card(void)
         return;
     }
 
-    // 获取相机名称输入框（第1个子对象）
-    lv_obj_t *cam_ta_name = lv_obj_get_child(card_content, 0);
+    // 获取第一行容器（第1个子对象）
+    lv_obj_t *row1 = lv_obj_get_child(card_content, 0);
+    // 获取第二行容器（第2个子对象）
+    lv_obj_t *row2 = lv_obj_get_child(card_content, 1);
+
+    if (!row1 || !row2) {
+        return;
+    }
+
+    // 获取相机名称输入框（row1的第1个子对象）
+    lv_obj_t *cam_ta_name = lv_obj_get_child(row1, 0);
     if (cam_ta_name) {
         const char *name = lv_textarea_get_text(cam_ta_name);
         if (name && strlen(name) > 0) {
@@ -989,12 +998,12 @@ static void update_main_ui_from_cam_card(void)
         }
     }
 
-    // 获取快门挡位下拉框（第2个子对象）
-    lv_obj_t *dropdown_shutter_step = lv_obj_get_child(card_content, 1);
-    // 获取最小快门下拉框（第3个子对象）
-    lv_obj_t *dropdown_min_shutter = lv_obj_get_child(card_content, 2);
-    // 获取最大快门下拉框（第4个子对象）
-    lv_obj_t *dropdown_max_shutter = lv_obj_get_child(card_content, 3);
+    // 获取快门挡位下拉框（row1的第2个子对象）
+    lv_obj_t *dropdown_shutter_step = lv_obj_get_child(row1, 1);
+    // 获取最小快门下拉框（row2的第1个子对象）
+    lv_obj_t *dropdown_min_shutter = lv_obj_get_child(row2, 0);
+    // 获取最大快门下拉框（row2的第2个子对象）
+    lv_obj_t *dropdown_max_shutter = lv_obj_get_child(row2, 1);
 
     if (dropdown_shutter_step && dropdown_min_shutter && dropdown_max_shutter) {
         // 获取当前选中的挡位类型
@@ -1087,10 +1096,19 @@ static CAM extract_cam_from_card(lv_obj_t* card)
         return cam;
     }
 
-    lv_obj_t *dropdown_shutter_step = lv_obj_get_child(card_content, 1);
-    lv_obj_t *dropdown_min_shutter = lv_obj_get_child(card_content, 2);
-    lv_obj_t *dropdown_max_shutter = lv_obj_get_child(card_content, 3);
-    lv_obj_t *textarea_flash_sync = lv_obj_get_child(card_content, 4);
+    // 获取第一行容器（第1个子对象）
+    lv_obj_t *row1 = lv_obj_get_child(card_content, 0);
+    // 获取第二行容器（第2个子对象）
+    lv_obj_t *row2 = lv_obj_get_child(card_content, 1);
+
+    if (!row1 || !row2) {
+        return cam;
+    }
+
+    lv_obj_t *dropdown_shutter_step = lv_obj_get_child(row1, 1);
+    lv_obj_t *dropdown_min_shutter = lv_obj_get_child(row2, 0);
+    lv_obj_t *dropdown_max_shutter = lv_obj_get_child(row2, 1);
+    lv_obj_t *textarea_flash_sync = lv_obj_get_child(row2, 2);
 
     if (dropdown_shutter_step && dropdown_min_shutter && dropdown_max_shutter) {
         uint32_t step_type = lv_dropdown_get_selected(dropdown_shutter_step);
@@ -1568,7 +1586,7 @@ static void btn_add_len_event_cb(lv_event_t * e)
     if (!len_card_win_container) return;
 
     lv_obj_t *card = lv_obj_create(len_card_win_container);
-    lv_obj_set_size(card, LV_PCT(100), 72);
+    lv_obj_set_size(card, LV_PCT(100), 120);
     lv_obj_set_style_radius(card, 8, 0);
     lv_obj_set_style_bg_color(card, lv_color_hex(0x1e1e2e), 0);
     lv_obj_set_style_border_color(card, lv_color_hex(0x444466), 0);
@@ -1582,19 +1600,41 @@ static void btn_add_len_event_cb(lv_event_t * e)
     lv_obj_set_style_bg_opa(card_content, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(card_content, 0, 0);
     lv_obj_set_style_pad_all(card_content, 0, 0);
-    lv_obj_set_flex_flow(card_content, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(card_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(card_content, 6, 0);
+    lv_obj_set_flex_flow(card_content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(card_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(card_content, 8, 0);
     lv_obj_add_flag(card_content, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_clear_flag(card_content, LV_OBJ_FLAG_CLICKABLE);
 
+    // 第一行：镜头名字和光圈挡位
+    lv_obj_t *row1 = lv_obj_create(card_content);
+    lv_obj_set_size(row1, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row1, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row1, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row1, 8, 0);
+    lv_obj_set_style_bg_opa(row1, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row1, 0, 0);
+    lv_obj_set_style_pad_all(row1, 0, 0);
+    lv_obj_clear_flag(row1, LV_OBJ_FLAG_CLICKABLE);
+
+    // 第二行：最小光圈、最大光圈和焦距
+    lv_obj_t *row2 = lv_obj_create(card_content);
+    lv_obj_set_size(row2, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row2, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row2, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row2, 8, 0);
+    lv_obj_set_style_bg_opa(row2, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row2, 0, 0);
+    lv_obj_set_style_pad_all(row2, 0, 0);
+    lv_obj_clear_flag(row2, LV_OBJ_FLAG_CLICKABLE);
+
     // 镜头参数卡片
-    // 1. 镜头名字输入框
-    lv_obj_t* len_ta_name = lv_textarea_create(card_content);
-    lv_obj_set_size(len_ta_name, 90, 32);
+    // 1. 镜头名字输入框（第一行）
+    lv_obj_t* len_ta_name = lv_textarea_create(row1);
+    lv_obj_set_size(len_ta_name, 100, 40);
     lv_textarea_set_placeholder_text(len_ta_name, "Len Name");
     lv_textarea_set_one_line(len_ta_name, true);
-    lv_obj_set_style_text_font(len_ta_name, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(len_ta_name, &lv_font_montserrat_12, 0);
 
     // 关联键盘
     lv_keyboard_set_textarea(cam_keyboard, len_ta_name);
@@ -1606,52 +1646,40 @@ static void btn_add_len_event_cb(lv_event_t * e)
     // 添加事件回调，点击时弹出键盘
     lv_obj_add_event_cb(len_ta_name, len_ta_name_event_cb, LV_EVENT_ALL, NULL);
 
-    // 2. 光圈挡位 dropdown
-    lv_obj_t* dropdown_aperture_step = lv_dropdown_create(card_content);
-    lv_obj_set_size(dropdown_aperture_step, 60, 32);
+    // 2. 光圈挡位 dropdown（第一行）
+    lv_obj_t* dropdown_aperture_step = lv_dropdown_create(row1);
+    lv_obj_set_size(dropdown_aperture_step, 70, 40);
     lv_dropdown_set_options(dropdown_aperture_step, "1\n1/2\n1/3\nCustom");
-    lv_obj_set_style_text_font(dropdown_aperture_step, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(dropdown_aperture_step, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(dropdown_aperture_step, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(dropdown_aperture_step, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(dropdown_aperture_step, 1, 0);
     lv_obj_set_style_radius(dropdown_aperture_step, 4, 0);
 
-    // 3. 最小光圈 dropdown
-    lv_obj_t* dropdown_min_aperture = lv_dropdown_create(card_content);
-    lv_obj_set_size(dropdown_min_aperture, 70, 32);
-    lv_obj_set_style_text_font(dropdown_min_aperture, &lv_font_montserrat_10, 0);
+    // 3. 最小光圈 dropdown（第二行）
+    lv_obj_t* dropdown_min_aperture = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_min_aperture, 80, 40);
+    lv_obj_set_style_text_font(dropdown_min_aperture, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(dropdown_min_aperture, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(dropdown_min_aperture, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(dropdown_min_aperture, 1, 0);
     lv_obj_set_style_radius(dropdown_min_aperture, 4, 0);
 
-    // 4. 最大光圈 dropdown
-    lv_obj_t* dropdown_max_aperture = lv_dropdown_create(card_content);
-    lv_obj_set_size(dropdown_max_aperture, 70, 32);
-    lv_obj_set_style_text_font(dropdown_max_aperture, &lv_font_montserrat_10, 0);
+    // 4. 最大光圈 dropdown（第二行）
+    lv_obj_t* dropdown_max_aperture = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_max_aperture, 80, 40);
+    lv_obj_set_style_text_font(dropdown_max_aperture, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(dropdown_max_aperture, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(dropdown_max_aperture, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(dropdown_max_aperture, 1, 0);
     lv_obj_set_style_radius(dropdown_max_aperture, 4, 0);
 
-    // 5. 自定义光圈输入框（默认隐藏）
-    lv_obj_t* textarea_custom_aperture = lv_textarea_create(card_content);
-    lv_obj_set_size(textarea_custom_aperture, 150, 32);
-    lv_textarea_set_placeholder_text(textarea_custom_aperture, "1.4,2,2.8,4");
-    lv_textarea_set_one_line(textarea_custom_aperture, true);
-    lv_obj_set_style_text_font(textarea_custom_aperture, &lv_font_montserrat_10, 0);
-    lv_obj_set_style_bg_color(textarea_custom_aperture, lv_color_hex(0x2a2a3e), 0);
-    lv_obj_set_style_border_color(textarea_custom_aperture, lv_color_hex(0x4a90e2), 0);
-    lv_obj_set_style_border_width(textarea_custom_aperture, 1, 0);
-    lv_obj_set_style_radius(textarea_custom_aperture, 4, 0);
-    lv_obj_add_flag(textarea_custom_aperture, LV_OBJ_FLAG_HIDDEN);  // 默认隐藏
-
-    // 6. 焦距输入框
-    lv_obj_t* textarea_focal_length = lv_textarea_create(card_content);
-    lv_obj_set_size(textarea_focal_length, 70, 32);
+    // 5. 焦距输入框（第二行）
+    lv_obj_t* textarea_focal_length = lv_textarea_create(row2);
+    lv_obj_set_size(textarea_focal_length, 80, 40);
     lv_textarea_set_placeholder_text(textarea_focal_length, "50mm");
     lv_textarea_set_one_line(textarea_focal_length, true);
-    lv_obj_set_style_text_font(textarea_focal_length, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(textarea_focal_length, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(textarea_focal_length, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(textarea_focal_length, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(textarea_focal_length, 1, 0);
@@ -1659,6 +1687,18 @@ static void btn_add_len_event_cb(lv_event_t * e)
 
     // 添加事件回调，点击时弹出键盘
     lv_obj_add_event_cb(textarea_focal_length, len_ta_name_event_cb, LV_EVENT_ALL, NULL);
+
+    // 6. 自定义光圈输入框（默认隐藏，放在第二行末尾）
+    lv_obj_t* textarea_custom_aperture = lv_textarea_create(row2);
+    lv_obj_set_size(textarea_custom_aperture, 200, 40);
+    lv_textarea_set_placeholder_text(textarea_custom_aperture, "1.4,2,2.8,4");
+    lv_textarea_set_one_line(textarea_custom_aperture, true);
+    lv_obj_set_style_text_font(textarea_custom_aperture, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_bg_color(textarea_custom_aperture, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(textarea_custom_aperture, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(textarea_custom_aperture, 1, 0);
+    lv_obj_set_style_radius(textarea_custom_aperture, 4, 0);
+    lv_obj_add_flag(textarea_custom_aperture, LV_OBJ_FLAG_HIDDEN);  // 默认隐藏
 
     // 创建参数数据结构并绑定事件
     len_card_params_t *params = (len_card_params_t *)malloc(sizeof(len_card_params_t));
@@ -1729,8 +1769,17 @@ static void update_main_ui_from_len_card(void)
         return;
     }
 
-    // 获取镜头名称输入框（第1个子对象）
-    lv_obj_t *len_ta_name = lv_obj_get_child(card_content, 0);
+    // 获取第一行容器（第1个子对象）
+    lv_obj_t *row1 = lv_obj_get_child(card_content, 0);
+    // 获取第二行容器（第2个子对象）
+    lv_obj_t *row2 = lv_obj_get_child(card_content, 1);
+
+    if (!row1 || !row2) {
+        return;
+    }
+
+    // 获取镜头名称输入框（row1的第1个子对象）
+    lv_obj_t *len_ta_name = lv_obj_get_child(row1, 0);
     if (len_ta_name) {
         const char *name = lv_textarea_get_text(len_ta_name);
         if (name && strlen(name) > 0) {
@@ -1740,14 +1789,14 @@ static void update_main_ui_from_len_card(void)
         }
     }
 
-    // 获取光圈挡位下拉框（第2个子对象）
-    lv_obj_t *dropdown_aperture_step = lv_obj_get_child(card_content, 1);
-    // 获取最小光圈下拉框（第3个子对象）
-    lv_obj_t *dropdown_min_aperture = lv_obj_get_child(card_content, 2);
-    // 获取最大光圈下拉框（第4个子对象）
-    lv_obj_t *dropdown_max_aperture = lv_obj_get_child(card_content, 3);
-    // 获取自定义光圈输入框（第5个子对象）
-    lv_obj_t *textarea_custom_aperture = lv_obj_get_child(card_content, 4);
+    // 获取光圈挡位下拉框（row1的第2个子对象）
+    lv_obj_t *dropdown_aperture_step = lv_obj_get_child(row1, 1);
+    // 获取最小光圈下拉框（row2的第1个子对象）
+    lv_obj_t *dropdown_min_aperture = lv_obj_get_child(row2, 0);
+    // 获取最大光圈下拉框（row2的第2个子对象）
+    lv_obj_t *dropdown_max_aperture = lv_obj_get_child(row2, 1);
+    // 获取自定义光圈输入框（row2的第4个子对象，默认隐藏）
+    lv_obj_t *textarea_custom_aperture = lv_obj_get_child(row2, 3);
 
     // 从card的user_data中获取params
     len_card_params_t *params = (len_card_params_t *)lv_obj_get_user_data(len_selected_card);
@@ -1863,11 +1912,20 @@ static LEN extract_len_from_card(lv_obj_t* card)
         return len;
     }
 
+    // 获取第一行容器（第1个子对象）
+    lv_obj_t *row1 = lv_obj_get_child(card_content, 0);
+    // 获取第二行容器（第2个子对象）
+    lv_obj_t *row2 = lv_obj_get_child(card_content, 1);
+
+    if (!row1 || !row2) {
+        return len;
+    }
+
     len_card_params_t *params = (len_card_params_t *)lv_obj_get_user_data(card);
-    lv_obj_t *dropdown_aperture_step = lv_obj_get_child(card_content, 1);
-    lv_obj_t *dropdown_min_aperture = lv_obj_get_child(card_content, 2);
-    lv_obj_t *dropdown_max_aperture = lv_obj_get_child(card_content, 3);
-    lv_obj_t *textarea_focal_length = lv_obj_get_child(card_content, 5);
+    lv_obj_t *dropdown_aperture_step = lv_obj_get_child(row1, 1);
+    lv_obj_t *dropdown_min_aperture = lv_obj_get_child(row2, 0);
+    lv_obj_t *dropdown_max_aperture = lv_obj_get_child(row2, 1);
+    lv_obj_t *textarea_focal_length = lv_obj_get_child(row2, 2);
 
     if (dropdown_aperture_step) {
         uint32_t step_type = lv_dropdown_get_selected(dropdown_aperture_step);
@@ -1943,7 +2001,7 @@ static void btn_add_cam_event_cb(lv_event_t * e)
     if (!cam_card_win_container) return;
 
     lv_obj_t *card = lv_obj_create(cam_card_win_container);
-    lv_obj_set_size(card, LV_PCT(100), 72);
+    lv_obj_set_size(card, LV_PCT(100), 120);
     lv_obj_set_style_radius(card, 8, 0);
     lv_obj_set_style_bg_color(card, lv_color_hex(0x1e1e2e), 0);
     lv_obj_set_style_border_color(card, lv_color_hex(0x444466), 0);
@@ -1957,32 +2015,41 @@ static void btn_add_cam_event_cb(lv_event_t * e)
     lv_obj_set_style_bg_opa(card_content, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(card_content, 0, 0);
     lv_obj_set_style_pad_all(card_content, 0, 0);
-    lv_obj_set_flex_flow(card_content, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(card_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_column(card_content, 6, 0);  // 添加列间距
+    lv_obj_set_flex_flow(card_content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(card_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(card_content, 8, 0);
     lv_obj_add_flag(card_content, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_clear_flag(card_content, LV_OBJ_FLAG_CLICKABLE);
-    // 放标题（以后可以轻松在左边加图标、右边加状态等）
 
-    // lv_obj_t *lbl = lv_label_create(card_content);
-    // cam_count++;
-    // lv_label_set_text_fmt(lbl, "Cam %d", cam_count);
-    // lv_obj_set_style_text_font(lbl, &some_bigger_font, 0);  // 可选
+    // 第一行：相机名字和快门挡位
+    lv_obj_t *row1 = lv_obj_create(card_content);
+    lv_obj_set_size(row1, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row1, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row1, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row1, 8, 0);
+    lv_obj_set_style_bg_opa(row1, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row1, 0, 0);
+    lv_obj_set_style_pad_all(row1, 0, 0);
+    lv_obj_clear_flag(row1, LV_OBJ_FLAG_CLICKABLE);
 
-    // 示例：以后你可以这样继续加东西
-    // lv_obj_t *icon = lv_img_create(card_content);
-    // lv_img_set_src(icon, &img_cam_icon);
-    // lv_obj_t *status = lv_label_create(card_content);
-    // lv_label_set_text(status, "Online");
-    // lv_obj_align(status, LV_ALIGN_RIGHT_MID, 0, 0);
+    // 第二行：最小快门、最大快门和闪光同步
+    lv_obj_t *row2 = lv_obj_create(card_content);
+    lv_obj_set_size(row2, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row2, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row2, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row2, 8, 0);
+    lv_obj_set_style_bg_opa(row2, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row2, 0, 0);
+    lv_obj_set_style_pad_all(row2, 0, 0);
+    lv_obj_clear_flag(row2, LV_OBJ_FLAG_CLICKABLE);
 
     // 相机参数卡片
-    // 1. 相机名字输入框
-    lv_obj_t* cam_ta_name = lv_textarea_create(card_content);
-    lv_obj_set_size(cam_ta_name, 90, 32);
+    // 1. 相机名字输入框（第一行）
+    lv_obj_t* cam_ta_name = lv_textarea_create(row1);
+    lv_obj_set_size(cam_ta_name, 100, 40);
     lv_textarea_set_placeholder_text(cam_ta_name, "Cam Name");
     lv_textarea_set_one_line(cam_ta_name, true);
-    lv_obj_set_style_text_font(cam_ta_name, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(cam_ta_name, &lv_font_montserrat_12, 0);
 
     // 关联键盘
     lv_keyboard_set_textarea(cam_keyboard, cam_ta_name);
@@ -1995,40 +2062,40 @@ static void btn_add_cam_event_cb(lv_event_t * e)
     // 添加事件回调，点击时弹出键盘
     lv_obj_add_event_cb(cam_ta_name, cam_ta_name_event_cb, LV_EVENT_ALL, NULL);
 
-    // 2. 快门挡位 dropdown
-    lv_obj_t* dropdown_shutter_step = lv_dropdown_create(card_content);
-    lv_obj_set_size(dropdown_shutter_step, 60, 32);
+    // 2. 快门挡位 dropdown（第一行）
+    lv_obj_t* dropdown_shutter_step = lv_dropdown_create(row1);
+    lv_obj_set_size(dropdown_shutter_step, 70, 40);
     lv_dropdown_set_options(dropdown_shutter_step, "1\n1/2\n1/3");
-    lv_obj_set_style_text_font(dropdown_shutter_step, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(dropdown_shutter_step, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(dropdown_shutter_step, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(dropdown_shutter_step, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(dropdown_shutter_step, 1, 0);
     lv_obj_set_style_radius(dropdown_shutter_step, 4, 0);
 
-    // 3. 最小快门 dropdown
-    lv_obj_t* dropdown_min_shutter = lv_dropdown_create(card_content);
-    lv_obj_set_size(dropdown_min_shutter, 70, 32);
-    lv_obj_set_style_text_font(dropdown_min_shutter, &lv_font_montserrat_10, 0);
+    // 3. 最小快门 dropdown（第二行）
+    lv_obj_t* dropdown_min_shutter = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_min_shutter, 80, 40);
+    lv_obj_set_style_text_font(dropdown_min_shutter, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(dropdown_min_shutter, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(dropdown_min_shutter, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(dropdown_min_shutter, 1, 0);
     lv_obj_set_style_radius(dropdown_min_shutter, 4, 0);
 
-    // 4. 最大快门 dropdown
-    lv_obj_t* dropdown_max_shutter = lv_dropdown_create(card_content);
-    lv_obj_set_size(dropdown_max_shutter, 70, 32);
-    lv_obj_set_style_text_font(dropdown_max_shutter, &lv_font_montserrat_10, 0);
+    // 4. 最大快门 dropdown（第二行）
+    lv_obj_t* dropdown_max_shutter = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_max_shutter, 80, 40);
+    lv_obj_set_style_text_font(dropdown_max_shutter, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(dropdown_max_shutter, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(dropdown_max_shutter, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(dropdown_max_shutter, 1, 0);
     lv_obj_set_style_radius(dropdown_max_shutter, 4, 0);
 
-    // 5. 闪光同步值输入框
-    lv_obj_t* textarea_flash_sync = lv_textarea_create(card_content);
-    lv_obj_set_size(textarea_flash_sync, 70, 32);
+    // 5. 闪光同步值输入框（第二行）
+    lv_obj_t* textarea_flash_sync = lv_textarea_create(row2);
+    lv_obj_set_size(textarea_flash_sync, 80, 40);
     lv_textarea_set_placeholder_text(textarea_flash_sync, "1/250");
     lv_textarea_set_one_line(textarea_flash_sync, true);
-    lv_obj_set_style_text_font(textarea_flash_sync, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_font(textarea_flash_sync, &lv_font_montserrat_12, 0);
     lv_obj_set_style_bg_color(textarea_flash_sync, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(textarea_flash_sync, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(textarea_flash_sync, 1, 0);
