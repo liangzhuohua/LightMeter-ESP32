@@ -2147,6 +2147,10 @@ void ui_exposure_init(void) {
     lv_obj_set_style_pad_all(main_obj_cam, 2, 0);
     lv_obj_set_style_pad_column(main_obj_cam, 4, 0);  // 子对象之间的水平间距
 
+    // 长按弹出窗口
+    lv_obj_add_flag(main_obj_cam, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK);
+    lv_obj_add_event_cb(main_obj_cam, cam_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
+
     // 装图片的容器对象
     lv_obj_t* main_obj_cam_img = lv_obj_create(main_obj_cam);
     lv_obj_set_width(main_obj_cam_img, lv_pct(50));
@@ -2156,7 +2160,7 @@ void ui_exposure_init(void) {
     lv_obj_set_style_bg_opa(main_obj_cam_img, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(main_obj_cam_img, 0, 0);
     lv_obj_set_scrollbar_mode(main_obj_cam_img, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_clear_flag(main_obj_cam_img, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(main_obj_cam_img, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
     // 装名字的容器对象
     lv_obj_t* main_obj_cam_name = lv_obj_create(main_obj_cam);
@@ -2168,7 +2172,7 @@ void ui_exposure_init(void) {
     lv_obj_set_style_border_width(main_obj_cam_name, 0, 0);
     lv_obj_set_style_pad_all(main_obj_cam_name, 0, 0);         // 去掉所有内边距
     lv_obj_set_scrollbar_mode(main_obj_cam_name, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_clear_flag(main_obj_cam_name, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(main_obj_cam_name, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
     // cam图片
     lv_obj_t* main_img_cam = lv_img_create(main_obj_cam_img);
@@ -2187,10 +2191,6 @@ void ui_exposure_init(void) {
     lv_label_set_text(main_label_cam, cam_name);
     lv_obj_center(main_label_cam);
 
-    // 长按弹出
-    lv_obj_add_flag(main_label_cam, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK);
-    lv_obj_add_event_cb(main_label_cam, cam_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
-
 
     /* 镜头参数容器 */
     lv_obj_t* main_obj_len = lv_obj_create(main_grid_layout);
@@ -2202,6 +2202,10 @@ void ui_exposure_init(void) {
     lv_obj_set_style_pad_all(main_obj_len, 2, 0);
     lv_obj_set_style_pad_column(main_obj_len, 4, 0);  // 子对象之间的水平间距
 
+    // 长按弹出窗口
+    lv_obj_add_flag(main_obj_len, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK);
+    lv_obj_add_event_cb(main_obj_len, len_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
+
     // 装镜头的容器对象
     lv_obj_t* main_obj_len_img = lv_obj_create(main_obj_len);
     lv_obj_set_width(main_obj_len_img, lv_pct(50));
@@ -2211,7 +2215,7 @@ void ui_exposure_init(void) {
     lv_obj_set_style_bg_opa(main_obj_len_img, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(main_obj_len_img, 0, 0);
     lv_obj_set_scrollbar_mode(main_obj_len_img, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_clear_flag(main_obj_len_img, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(main_obj_len_img, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
     // 装名字的容器对象
     lv_obj_t* main_obj_len_name = lv_obj_create(main_obj_len);
@@ -2223,7 +2227,7 @@ void ui_exposure_init(void) {
     lv_obj_set_style_border_width(main_obj_len_name, 0, 0);
     lv_obj_set_style_pad_all(main_obj_len_name, 0, 0);         // 去掉所有内边距
     lv_obj_set_scrollbar_mode(main_obj_len_name, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_clear_flag(main_obj_len_name, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_clear_flag(main_obj_len_name, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
 
     // len图片
     lv_obj_t* main_img_len = lv_img_create(main_obj_len_img);
@@ -2241,10 +2245,6 @@ void ui_exposure_init(void) {
     lv_label_set_long_mode(main_label_len, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_label_set_text(main_label_len, len_name);
     lv_obj_center(main_label_len);
-
-    // 长按弹出
-    lv_obj_add_flag(main_label_len, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK);
-    lv_obj_add_event_cb(main_label_len, len_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
 
     /* 快门速度 */
     lv_obj_t* main_obj_shutter = lv_obj_create(main_grid_layout);
@@ -2452,11 +2452,16 @@ void ui_exposure_init(void) {
     lv_obj_t *cam_title_win = lv_win_add_title(cam_win_select, "Cam select");
     lv_obj_set_style_text_font(cam_title_win, &lv_font_montserrat_14, LV_STATE_DEFAULT);
 
-    lv_obj_t *cam_btn_win_close = lv_win_add_btn(cam_win_select, LV_SYMBOL_CLOSE, 30);
-    lv_obj_set_style_bg_opa(cam_btn_win_close, LV_OPA_TRANSP, LV_STATE_DEFAULT);
+    lv_obj_t *cam_btn_win_close = lv_win_add_btn(cam_win_select, LV_SYMBOL_CLOSE, 100);
+    lv_obj_set_style_bg_opa(cam_btn_win_close, LV_OPA_30, LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(cam_btn_win_close, lv_color_hex(0x666666), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(cam_btn_win_close, LV_OPA_50, LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(cam_btn_win_close, lv_color_hex(0xff0000), LV_STATE_PRESSED);
     lv_obj_set_style_shadow_width(cam_btn_win_close, 0, LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(cam_btn_win_close, 15, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(cam_btn_win_close, &lv_font_montserrat_24, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(cam_btn_win_close, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(cam_btn_win_close, lv_color_hex(0xff0000), LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(cam_btn_win_close, lv_color_hex(0xffffff), LV_STATE_PRESSED);
     lv_obj_add_event_cb(cam_btn_win_close, cam_close_win_cb, LV_EVENT_CLICKED, NULL);                       /* 添加事件 */
     lv_obj_add_flag(cam_win_select, LV_OBJ_FLAG_HIDDEN);
 
@@ -2522,11 +2527,16 @@ void ui_exposure_init(void) {
     lv_obj_t *len_title_win = lv_win_add_title(len_win_select, "Len select");
     lv_obj_set_style_text_font(len_title_win, &lv_font_montserrat_14, LV_STATE_DEFAULT);
 
-    lv_obj_t *len_btn_win_close = lv_win_add_btn(len_win_select, LV_SYMBOL_CLOSE, 30);
-    lv_obj_set_style_bg_opa(len_btn_win_close, LV_OPA_TRANSP, LV_STATE_DEFAULT);
+    lv_obj_t *len_btn_win_close = lv_win_add_btn(len_win_select, LV_SYMBOL_CLOSE, 100);
+    lv_obj_set_style_bg_opa(len_btn_win_close, LV_OPA_30, LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(len_btn_win_close, lv_color_hex(0x666666), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(len_btn_win_close, LV_OPA_50, LV_STATE_PRESSED);
+    lv_obj_set_style_bg_color(len_btn_win_close, lv_color_hex(0xff0000), LV_STATE_PRESSED);
     lv_obj_set_style_shadow_width(len_btn_win_close, 0, LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(len_btn_win_close, 15, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(len_btn_win_close, &lv_font_montserrat_24, LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(len_btn_win_close, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(len_btn_win_close, lv_color_hex(0xff0000), LV_STATE_PRESSED);
+    lv_obj_set_style_text_color(len_btn_win_close, lv_color_hex(0xffffff), LV_STATE_PRESSED);
     lv_obj_add_event_cb(len_btn_win_close, len_close_win_cb, LV_EVENT_CLICKED, NULL);
     lv_obj_add_flag(len_win_select, LV_OBJ_FLAG_HIDDEN);
 

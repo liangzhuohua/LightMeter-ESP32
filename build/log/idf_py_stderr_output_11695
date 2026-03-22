@@ -1,4 +1,0 @@
-Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=/home/ziyue/.espressif/python_env/idf5.5_py3.12_env/bin/python -DESP_PLATFORM=1 -DCCACHE_ENABLE=0 /home/ziyue/esp/esp32_my/esp32s3_project
-CMake Error: Error: generator : Ninja
-Does not match the generator used previously: Unix Makefiles
-Either remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.
