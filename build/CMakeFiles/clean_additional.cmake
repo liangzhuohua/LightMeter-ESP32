@@ -1,7 +1,7 @@
 # Additional clean files
 cmake_minimum_required(VERSION 3.16)
 
-if("${CONFIG}" STREQUAL "" OR "${CONFIG}" STREQUAL "Debug")
+if("${CONFIG}" STREQUAL "" OR "${CONFIG}" STREQUAL "")
   file(REMOVE_RECURSE
   "ESP32S3-IDF_AMOLED_LVGL-V8.bin"
   "ESP32S3-IDF_AMOLED_LVGL-V8.map"

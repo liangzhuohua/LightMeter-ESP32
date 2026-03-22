@@ -8,7 +8,9 @@ d7a5b618d61486a21d1dd88c2fb16a14 bootloader-prefix/src/bootloader-stamp/bootload
 767c3d23b5104aa1a7aaf36562380cdc bootloader-prefix/src/bootloader-stamp/bootloader-patch
 646c6449ed75c37a835c8ce15db45134 bootloader-prefix/src/bootloader-stamp/bootloader-update
 d0727ee89077172ac589aaf63ebb8fbd esp-idf/esp_system/ld/memory.ld
+111eabe3f334defa755dbafc1b87a1c1 esp-idf/esp_system/ld/sections.ld
 97a49a03a386b8c8e30e12f211aa0b4b esp-idf/esp_system/ld/sections.ld.in
 1fc305b34e1a85995bf8f5975837d7c5 esp-idf/mbedtls/x509_crt_bundle
+016b3b87062c05e72ee632fb41fd05c2 partition_table/partition-table.bin
 6aa2d1b7eec733f9fa3f4c4267c34a70 project_elf_src_esp32s3.c
 be1c08c8384ac94ccfafb3e52e677943 x509_crt_bundle.S

@@ -153,6 +153,132 @@ esp-idf/main/CMakeFiles/__idf_main.dir/app_exposure_calc.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/app_exposure_calc.c.s"
 	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/app_exposure_calc.c -o CMakeFiles/__idf_main.dir/app_exposure_calc.c.s
 
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj: ../main/app_ui.c
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj -MF CMakeFiles/__idf_main.dir/app_ui.c.obj.d -o CMakeFiles/__idf_main.dir/app_ui.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/app_ui.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui.c > CMakeFiles/__idf_main.dir/app_ui.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/app_ui.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui.c -o CMakeFiles/__idf_main.dir/app_ui.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj: ../main/img_cam.c
+esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj -MF CMakeFiles/__idf_main.dir/img_cam.c.obj.d -o CMakeFiles/__idf_main.dir/img_cam.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/img_cam.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/img_cam.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/img_cam.c > CMakeFiles/__idf_main.dir/img_cam.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/img_cam.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/img_cam.c -o CMakeFiles/__idf_main.dir/img_cam.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj: ../main/img_len.c
+esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj -MF CMakeFiles/__idf_main.dir/img_len.c.obj.d -o CMakeFiles/__idf_main.dir/img_len.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/img_len.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/img_len.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/img_len.c > CMakeFiles/__idf_main.dir/img_len.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/img_len.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/img_len.c -o CMakeFiles/__idf_main.dir/img_len.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj: ../main/app_contrller.c
+esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj -MF CMakeFiles/__idf_main.dir/app_contrller.c.obj.d -o CMakeFiles/__idf_main.dir/app_contrller.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/app_contrller.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/app_contrller.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/app_contrller.c > CMakeFiles/__idf_main.dir/app_contrller.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/app_contrller.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/app_contrller.c -o CMakeFiles/__idf_main.dir/app_contrller.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj: ../main/app_ui_calc_port.c
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj -MF CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj.d -o CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui_calc_port.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/app_ui_calc_port.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui_calc_port.c > CMakeFiles/__idf_main.dir/app_ui_calc_port.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/app_ui_calc_port.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui_calc_port.c -o CMakeFiles/__idf_main.dir/app_ui_calc_port.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj: ../main/img_auto_mode.c
+esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj -MF CMakeFiles/__idf_main.dir/img_auto_mode.c.obj.d -o CMakeFiles/__idf_main.dir/img_auto_mode.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/img_auto_mode.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/img_auto_mode.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/img_auto_mode.c > CMakeFiles/__idf_main.dir/img_auto_mode.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/img_auto_mode.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/img_auto_mode.c -o CMakeFiles/__idf_main.dir/img_auto_mode.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj: ../main/img_landscape_mode.c
+esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj -MF CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj.d -o CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/img_landscape_mode.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/img_landscape_mode.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/img_landscape_mode.c > CMakeFiles/__idf_main.dir/img_landscape_mode.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/img_landscape_mode.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/img_landscape_mode.c -o CMakeFiles/__idf_main.dir/img_landscape_mode.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj: ../main/img_manual_mode.c
+esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj -MF CMakeFiles/__idf_main.dir/img_manual_mode.c.obj.d -o CMakeFiles/__idf_main.dir/img_manual_mode.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/img_manual_mode.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/img_manual_mode.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/img_manual_mode.c > CMakeFiles/__idf_main.dir/img_manual_mode.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/img_manual_mode.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/img_manual_mode.c -o CMakeFiles/__idf_main.dir/img_manual_mode.c.s
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/flags.make
+esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj: ../main/img_portrait_mode.c
+esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj: esp-idf/main/CMakeFiles/__idf_main.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj -MF CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj.d -o CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj -c /home/ziyue/esp/esp32_my/esp32s3_project/main/img_portrait_mode.c
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/__idf_main.dir/img_portrait_mode.c.i"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/ziyue/esp/esp32_my/esp32s3_project/main/img_portrait_mode.c > CMakeFiles/__idf_main.dir/img_portrait_mode.c.i
+
+esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/__idf_main.dir/img_portrait_mode.c.s"
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/ziyue/esp/esp32_my/esp32s3_project/main/img_portrait_mode.c -o CMakeFiles/__idf_main.dir/img_portrait_mode.c.s
+
 # Object files for target __idf_main
 __idf_main_OBJECTS = \
 "CMakeFiles/__idf_main.dir/main.c.obj" \
@@ -160,7 +286,16 @@ __idf_main_OBJECTS = \
 "CMakeFiles/__idf_main.dir/hw_oled.c.obj" \
 "CMakeFiles/__idf_main.dir/hw_sdcard.c.obj" \
 "CMakeFiles/__idf_main.dir/hw_veml7700.c.obj" \
-"CMakeFiles/__idf_main.dir/app_exposure_calc.c.obj"
+"CMakeFiles/__idf_main.dir/app_exposure_calc.c.obj" \
+"CMakeFiles/__idf_main.dir/app_ui.c.obj" \
+"CMakeFiles/__idf_main.dir/img_cam.c.obj" \
+"CMakeFiles/__idf_main.dir/img_len.c.obj" \
+"CMakeFiles/__idf_main.dir/app_contrller.c.obj" \
+"CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj" \
+"CMakeFiles/__idf_main.dir/img_auto_mode.c.obj" \
+"CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj" \
+"CMakeFiles/__idf_main.dir/img_manual_mode.c.obj" \
+"CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj"
 
 # External object files for target __idf_main
 __idf_main_EXTERNAL_OBJECTS =
@@ -171,9 +306,18 @@ esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/hw_oled.c.obj
 esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/hw_sdcard.c.obj
 esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/hw_veml7700.c.obj
 esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/app_exposure_calc.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj
+esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj
 esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/build.make
 esp-idf/main/libmain.a: esp-idf/main/CMakeFiles/__idf_main.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking C static library libmain.a"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/ziyue/esp/esp32_my/esp32s3_project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Linking C static library libmain.a"
 	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && $(CMAKE_COMMAND) -P CMakeFiles/__idf_main.dir/cmake_clean_target.cmake
 	cd /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/__idf_main.dir/link.txt --verbose=$(VERBOSE)
 

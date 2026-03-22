@@ -8,11 +8,20 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_contrller.c" "esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj.d"
   "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_exposure_calc.c" "esp-idf/main/CMakeFiles/__idf_main.dir/app_exposure_calc.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/app_exposure_calc.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui.c" "esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui_calc_port.c" "esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj.d"
   "/home/ziyue/esp/esp32_my/esp32s3_project/main/bsp_i2c_init.c" "esp-idf/main/CMakeFiles/__idf_main.dir/bsp_i2c_init.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/bsp_i2c_init.c.obj.d"
   "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_oled.c" "esp-idf/main/CMakeFiles/__idf_main.dir/hw_oled.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/hw_oled.c.obj.d"
   "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_sdcard.c" "esp-idf/main/CMakeFiles/__idf_main.dir/hw_sdcard.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/hw_sdcard.c.obj.d"
   "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_veml7700.c" "esp-idf/main/CMakeFiles/__idf_main.dir/hw_veml7700.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/hw_veml7700.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_auto_mode.c" "esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_cam.c" "esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_landscape_mode.c" "esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_len.c" "esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_manual_mode.c" "esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj.d"
+  "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_portrait_mode.c" "esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj.d"
   "/home/ziyue/esp/esp32_my/esp32s3_project/main/main.c" "esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj" "gcc" "esp-idf/main/CMakeFiles/__idf_main.dir/main.c.obj.d"
   )
 

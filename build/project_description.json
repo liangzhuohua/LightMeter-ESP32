@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "ESP32S3-IDF_AMOLED_LVGL-V8",
-    "project_version":    "1",
+    "project_version":    "2a0e425-dirty",
     "project_path":       "/home/ziyue/esp/esp32_my/esp32s3_project",
     "idf_path":           "/home/ziyue/esp/esp-idf",
     "build_dir":          "/home/ziyue/esp/esp32_my/esp32s3_project/build",
@@ -1345,7 +1345,7 @@
             "managed_reqs": [ "lvgl__lvgl" ],
             "managed_priv_reqs": [ "esp-idf-lib__veml7700", "espressif__esp_lcd_touch" ],
             "file": "/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/main/libmain.a",
-            "sources": [ "/home/ziyue/esp/esp32_my/esp32s3_project/main/main.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/bsp_i2c_init.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_oled.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_sdcard.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_veml7700.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_exposure_calc.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_cam.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_len.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_auto_mode.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_landscape_mode.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_manual_mode.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_portrait_mode" ],
+            "sources": [ "/home/ziyue/esp/esp32_my/esp32s3_project/main/main.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/bsp_i2c_init.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_oled.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_sdcard.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/hw_veml7700.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_exposure_calc.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_cam.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_len.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_contrller.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/app_ui_calc_port.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_auto_mode.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_landscape_mode.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_manual_mode.c", "/home/ziyue/esp/esp32_my/esp32s3_project/main/img_portrait_mode.c" ],
             "include_dirs": [ "." ]
         },
         "mbedtls": {

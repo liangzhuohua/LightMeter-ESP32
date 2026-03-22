@@ -175,6 +175,30 @@ __idf_main/fast:
 	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/build
 .PHONY : __idf_main/fast
 
+app_contrller.obj: app_contrller.c.obj
+.PHONY : app_contrller.obj
+
+# target to build an object file
+app_contrller.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.obj
+.PHONY : app_contrller.c.obj
+
+app_contrller.i: app_contrller.c.i
+.PHONY : app_contrller.i
+
+# target to preprocess a source file
+app_contrller.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.i
+.PHONY : app_contrller.c.i
+
+app_contrller.s: app_contrller.c.s
+.PHONY : app_contrller.s
+
+# target to generate assembly for a file
+app_contrller.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_contrller.c.s
+.PHONY : app_contrller.c.s
+
 app_exposure_calc.obj: app_exposure_calc.c.obj
 .PHONY : app_exposure_calc.obj
 
@@ -198,6 +222,54 @@ app_exposure_calc.s: app_exposure_calc.c.s
 app_exposure_calc.c.s:
 	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_exposure_calc.c.s
 .PHONY : app_exposure_calc.c.s
+
+app_ui.obj: app_ui.c.obj
+.PHONY : app_ui.obj
+
+# target to build an object file
+app_ui.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.obj
+.PHONY : app_ui.c.obj
+
+app_ui.i: app_ui.c.i
+.PHONY : app_ui.i
+
+# target to preprocess a source file
+app_ui.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.i
+.PHONY : app_ui.c.i
+
+app_ui.s: app_ui.c.s
+.PHONY : app_ui.s
+
+# target to generate assembly for a file
+app_ui.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_ui.c.s
+.PHONY : app_ui.c.s
+
+app_ui_calc_port.obj: app_ui_calc_port.c.obj
+.PHONY : app_ui_calc_port.obj
+
+# target to build an object file
+app_ui_calc_port.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.obj
+.PHONY : app_ui_calc_port.c.obj
+
+app_ui_calc_port.i: app_ui_calc_port.c.i
+.PHONY : app_ui_calc_port.i
+
+# target to preprocess a source file
+app_ui_calc_port.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.i
+.PHONY : app_ui_calc_port.c.i
+
+app_ui_calc_port.s: app_ui_calc_port.c.s
+.PHONY : app_ui_calc_port.s
+
+# target to generate assembly for a file
+app_ui_calc_port.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/app_ui_calc_port.c.s
+.PHONY : app_ui_calc_port.c.s
 
 bsp_i2c_init.obj: bsp_i2c_init.c.obj
 .PHONY : bsp_i2c_init.obj
@@ -295,6 +367,150 @@ hw_veml7700.c.s:
 	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/hw_veml7700.c.s
 .PHONY : hw_veml7700.c.s
 
+img_auto_mode.obj: img_auto_mode.c.obj
+.PHONY : img_auto_mode.obj
+
+# target to build an object file
+img_auto_mode.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.obj
+.PHONY : img_auto_mode.c.obj
+
+img_auto_mode.i: img_auto_mode.c.i
+.PHONY : img_auto_mode.i
+
+# target to preprocess a source file
+img_auto_mode.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.i
+.PHONY : img_auto_mode.c.i
+
+img_auto_mode.s: img_auto_mode.c.s
+.PHONY : img_auto_mode.s
+
+# target to generate assembly for a file
+img_auto_mode.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_auto_mode.c.s
+.PHONY : img_auto_mode.c.s
+
+img_cam.obj: img_cam.c.obj
+.PHONY : img_cam.obj
+
+# target to build an object file
+img_cam.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.obj
+.PHONY : img_cam.c.obj
+
+img_cam.i: img_cam.c.i
+.PHONY : img_cam.i
+
+# target to preprocess a source file
+img_cam.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.i
+.PHONY : img_cam.c.i
+
+img_cam.s: img_cam.c.s
+.PHONY : img_cam.s
+
+# target to generate assembly for a file
+img_cam.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_cam.c.s
+.PHONY : img_cam.c.s
+
+img_landscape_mode.obj: img_landscape_mode.c.obj
+.PHONY : img_landscape_mode.obj
+
+# target to build an object file
+img_landscape_mode.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.obj
+.PHONY : img_landscape_mode.c.obj
+
+img_landscape_mode.i: img_landscape_mode.c.i
+.PHONY : img_landscape_mode.i
+
+# target to preprocess a source file
+img_landscape_mode.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.i
+.PHONY : img_landscape_mode.c.i
+
+img_landscape_mode.s: img_landscape_mode.c.s
+.PHONY : img_landscape_mode.s
+
+# target to generate assembly for a file
+img_landscape_mode.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_landscape_mode.c.s
+.PHONY : img_landscape_mode.c.s
+
+img_len.obj: img_len.c.obj
+.PHONY : img_len.obj
+
+# target to build an object file
+img_len.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.obj
+.PHONY : img_len.c.obj
+
+img_len.i: img_len.c.i
+.PHONY : img_len.i
+
+# target to preprocess a source file
+img_len.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.i
+.PHONY : img_len.c.i
+
+img_len.s: img_len.c.s
+.PHONY : img_len.s
+
+# target to generate assembly for a file
+img_len.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_len.c.s
+.PHONY : img_len.c.s
+
+img_manual_mode.obj: img_manual_mode.c.obj
+.PHONY : img_manual_mode.obj
+
+# target to build an object file
+img_manual_mode.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.obj
+.PHONY : img_manual_mode.c.obj
+
+img_manual_mode.i: img_manual_mode.c.i
+.PHONY : img_manual_mode.i
+
+# target to preprocess a source file
+img_manual_mode.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.i
+.PHONY : img_manual_mode.c.i
+
+img_manual_mode.s: img_manual_mode.c.s
+.PHONY : img_manual_mode.s
+
+# target to generate assembly for a file
+img_manual_mode.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_manual_mode.c.s
+.PHONY : img_manual_mode.c.s
+
+img_portrait_mode.obj: img_portrait_mode.c.obj
+.PHONY : img_portrait_mode.obj
+
+# target to build an object file
+img_portrait_mode.c.obj:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.obj
+.PHONY : img_portrait_mode.c.obj
+
+img_portrait_mode.i: img_portrait_mode.c.i
+.PHONY : img_portrait_mode.i
+
+# target to preprocess a source file
+img_portrait_mode.c.i:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.i
+.PHONY : img_portrait_mode.c.i
+
+img_portrait_mode.s: img_portrait_mode.c.s
+.PHONY : img_portrait_mode.s
+
+# target to generate assembly for a file
+img_portrait_mode.c.s:
+	cd /home/ziyue/esp/esp32_my/esp32s3_project/build && $(MAKE) $(MAKESILENT) -f esp-idf/main/CMakeFiles/__idf_main.dir/build.make esp-idf/main/CMakeFiles/__idf_main.dir/img_portrait_mode.c.s
+.PHONY : img_portrait_mode.c.s
+
 main.obj: main.c.obj
 .PHONY : main.obj
 
@@ -332,9 +548,18 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... __idf_main"
+	@echo "... app_contrller.obj"
+	@echo "... app_contrller.i"
+	@echo "... app_contrller.s"
 	@echo "... app_exposure_calc.obj"
 	@echo "... app_exposure_calc.i"
 	@echo "... app_exposure_calc.s"
+	@echo "... app_ui.obj"
+	@echo "... app_ui.i"
+	@echo "... app_ui.s"
+	@echo "... app_ui_calc_port.obj"
+	@echo "... app_ui_calc_port.i"
+	@echo "... app_ui_calc_port.s"
 	@echo "... bsp_i2c_init.obj"
 	@echo "... bsp_i2c_init.i"
 	@echo "... bsp_i2c_init.s"
@@ -347,6 +572,24 @@ help:
 	@echo "... hw_veml7700.obj"
 	@echo "... hw_veml7700.i"
 	@echo "... hw_veml7700.s"
+	@echo "... img_auto_mode.obj"
+	@echo "... img_auto_mode.i"
+	@echo "... img_auto_mode.s"
+	@echo "... img_cam.obj"
+	@echo "... img_cam.i"
+	@echo "... img_cam.s"
+	@echo "... img_landscape_mode.obj"
+	@echo "... img_landscape_mode.i"
+	@echo "... img_landscape_mode.s"
+	@echo "... img_len.obj"
+	@echo "... img_len.i"
+	@echo "... img_len.s"
+	@echo "... img_manual_mode.obj"
+	@echo "... img_manual_mode.i"
+	@echo "... img_manual_mode.s"
+	@echo "... img_portrait_mode.obj"
+	@echo "... img_portrait_mode.i"
+	@echo "... img_portrait_mode.s"
 	@echo "... main.obj"
 	@echo "... main.i"
 	@echo "... main.s"

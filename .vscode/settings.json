@@ -12,6 +12,10 @@
         "hw_veml7700.h": "c",
         "bsp_i2c_init.h": "c",
         "gpio.h": "c",
-        "esp_log.h": "c"
+        "esp_log.h": "c",
+        "app_exposure_calc.h": "c",
+        "app_ui.h": "c",
+        "lvgl.h": "c",
+        "cstdio": "c"
     }
 }
