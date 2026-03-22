@@ -1,0 +1,2 @@
+/home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-ar qc libmain.a CMakeFiles/__idf_main.dir/main.c.obj CMakeFiles/__idf_main.dir/bsp_i2c_init.c.obj CMakeFiles/__idf_main.dir/hw_oled.c.obj CMakeFiles/__idf_main.dir/hw_sdcard.c.obj CMakeFiles/__idf_main.dir/hw_veml7700.c.obj CMakeFiles/__idf_main.dir/app_exposure_calc.c.obj
+/home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-ranlib libmain.a

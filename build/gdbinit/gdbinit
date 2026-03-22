@@ -1,0 +1,2 @@
+source /home/ziyue/esp/esp32_my/esp32s3_project/build/gdbinit/symbols
+source /home/ziyue/esp/esp32_my/esp32s3_project/build/gdbinit/connect

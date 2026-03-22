@@ -1,0 +1,153 @@
+Command: /home/ziyue/.espressif/python_env/idf5.5_py3.12_env/bin/python /home/ziyue/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyACM0 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /home/ziyue/esp/esp32_my/esp32s3_project/build/ESP32S3-IDF_AMOLED_LVGL-V8.elf /home/ziyue/esp/esp32_my/esp32s3_project/build/bootloader/bootloader.elf -m '/home/ziyue/.espressif/python_env/idf5.5_py3.12_env/bin/python' '/home/ziyue/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyACM0'
+[0;32mI (158) esp_image: segment 4: paddr=0007881c vaddr=4037d614 sizeESP-ROM:esp32s3-20210327[0m
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x420098d3
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x1710
+load:0x403c8700,len:0xec0
+load:0x403cb700,len:0x31d4
+entry 0x403c894c
+[0;32mI (24) boot: ESP-IDF v5.5 2nd stage bootloader[0m
+[0;32mI (24) boot: compile time Mar 14 2026 10:46:55[0m
+[0;32mI (25) boot: Multicore bootloader[0m
+[0;32mI (25) boot: chip revision: v0.2[0m
+[0;32mI (27) boot: efuse block revision: v1.3[0m
+[0;32mI (31) qio_mode: Enabling default flash chip QIO[0m
+[0;32mI (35) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (39) boot.esp32s3: SPI Mode       : QIO[0m
+[0;32mI (43) boot.esp32s3: SPI Flash Size : 16MB[0m
+[0;32mI (47) boot: Enabling RNG early entropy source...[0m
+[0;32mI (51) boot: Partition Table:[0m
+[0;32mI (54) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (60) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (67) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (73) boot:  2 factory          factory app      00 00 00010000 00600000[0m
+[0;32mI (80) boot: End of partition table[0m
+[0;32mI (83) esp_image: segment 0: paddr=00010020 vaddr=3c050020 size=1380ch ( 79884) map[0m
+[0;32mI (102) esp_image: segment 1: paddr=00023834 vaddr=3fc9c100 size=031c8h ( 12744) load[0m
+[0;32mI (105) esp_image: segment 2: paddr=00026a04 vaddr=40374000 size=09614h ( 38420) load[0m
+[0;32mI (114) esp_image: segment 3: paddr=00030020 vaddr=42000020 size=487f4h (296948) map[0m
+[0;32mI (158) esp_image: segment 4: paddr=0007881c vaddr=4037d614 size=0ea48h ( 59976) load[0m
+[0;32mI (170) esp_image: segment 5: paddr=0008726c vaddr=600fe000 size=00020h (    32) load[0m
+[0;32mI (179) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (179) boot: Disabling RNG early entropy source...[0m
+[0;32mI (189) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (190) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (190) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (192) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (196) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (200) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (204) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (209) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (214) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (219) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (224) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (229) MSPI Timing: PSRAM timing tuning index: 5[0m
+[0;32mI (233) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (236) esp_psram: Speed: 80MHz[0m
+[0;32mI (247) mmu_psram: Read only data copied and mapped to SPIRAM[0m
+[0;32mI (268) mmu_psram: Instructions copied and mapped to SPIRAM[0m
+[0;32mI (268) cpu_start: Multicore app[0m
+[0;32mI (538) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (546) cpu_start: Pro cpu start user code[0m
+[0;32mI (546) cpu_start: cpu freq: 240000000 Hz[0m
+[0;32mI (547) app_init: Application information:[0m
+[0;32mI (547) app_init: Project name:     ESP32S3-IDF_AMOLED_LVGL-V8[0m
+[0;32mI (552) app_init: App version:      1[0m
+[0;32mI (555) app_init: Compile time:     Mar 14 2026 10:46:48[0m
+[0;32mI (560) app_init: ELF file SHA256:  2b3bb7bc6...[0m
+[0;32mI (565) app_init: ESP-IDF:          v5.5[0m
+[0;32mI (568) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (572) efuse_init: Max chip rev:     v0.99 [0m
+[0;32mI (576) efuse_init: Chip rev:         v0.2[0m
+[0;32mI (580) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (586) heap_init: At 3FCA01E8 len 00049528 (293 KiB): RAM[0m
+[0;32mI (592) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (597) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (602) heap_init: At 600FE020 len 00001FC8 (7 KiB): RTCRAM[0m
+[0;32mI (607) esp_psram: Adding pool of 7744K of PSRAM memory to heap allocator[0m
+[0;32mI (614) esp_psram: Adding pool of 49K of PSRAM memory gap generated due to end address alignment of drom to the heap allocator[0m
+[0;32mI (625) spi_flash: detected chip: generic[0m
+[0;32mI (629) spi_flash: flash io: qio[0m
+[0;33mW (632) i2c: This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`[0m
+[0;32mI (641) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (648) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (654) main_task: Started on CPU0[0m
+[0;32mI (657) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (665) main_task: Calling app_main()[0m
+[0;32mI (668) I2C_INIT: Initialize I2C bus[0m
+[0;32mI (672) I2C_INIT: I2C init OK[0m
+[0;32mI (674) hw_veml7700: initializing hardware[0m
+[0;32mI (678) VEML7700: Device descriptor initialized (bus assumed ready)[0m
+[0;32mI (684) VEML7700: Probe OK[0m
+[0;32mI (689) hw_veml7700: Configuration read back matches[0m
+[0;32mI (691) example: Initialize SPI bus[0m
+[0;32mI (694) example: Install panel IO[0m
+[0;32mI (697) example: Install QSPI_AMOLED panel driver[0m
+[0;32mI (702) qspi_amoled: LCD panel create success, version: 1.0.0[0m
+[0;33mW (987) qspi_amoled: The 3Ah command has been used and will be overwritten by external initialization sequence[0m
+[0;32mI (1057) example: Initialize touch controller[0m
+[0;32mI (1457) CST820: IC id: 183[0m
+[0;32mI (1457) CST820: LCD touch panel create success, version: 1.0.3[0m
+[0;32mI (1457) example: Initialize LVGL library[0m
+[0;32mI (1458) example: Register display driver to LVGL[0m
+[0;32mI (1464) example: Install LVGL tick timer[0m
+[0;32mI (1466) example: Starting LVGL task[0m
+[0;32mI (1492) main: ALS: 6 lx[0m
+[0;32mI (1492) main: WHITE: 18 lx[0m
+[0;32mI (2492) main: ALS: 12 lx[0m
+[0;32mI (2492) main: WHITE: 33 lx[0m
+[0;32mI (3492) main: ALS: 12 lx[0m
+[0;32mI (3492) main: WHITE: 33 lx[0m
+[0;32mI (4492) main: ALS: 11 lx[0m
+[0;32mI (4492) main: WHITE: 31 lx[0m
+[0;32mI (5493) main: ALS: 11 lx[0m
+[0;32mI (5493) main: WHITE: 30 lx[0m
+[0;32mI (6493) main: ALS: 6 lx[0m
+[0;32mI (6493) main: WHITE: 19 lx[0m
+[0;32mI (7493) main: ALS: 7 lx[0m
+[0;32mI (7493) main: WHITE: 21 lx[0m
+[0;32mI (8493) main: ALS: 6 lx[0m
+[0;32mI (8493) main: WHITE: 18 lx[0m
+[0;32mI (9493) main: ALS: 5 lx[0m
+[0;32mI (9493) main: WHITE: 16 lx[0m
+[0;32mI (10493) main: ALS: 5 lx[0m
+[0;32mI (10493) main: WHITE: 16 lx[0m
+[0;32mI (11493) main: ALS: 12 lx[0m
+[0;32mI (11493) main: WHITE: 33 lx[0m
+[0;32mI (12493) main: ALS: 12 lx[0m
+[0;32mI (12493) main: WHITE: 33 lx[0m
+[0;32mI (13493) main: ALS: 4 lx[0m
+[0;32mI (13493) main: WHITE: 13 lx[0m
+[0;32mI (14493) main: ALS: 4 lx[0m
+[0;32mI (14493) main: WHITE: 14 lx[0m
+[0;32mI (15493) main: ALS: 6 lx[0m
+[0;32mI (15493) main: WHITE: 18 lx[0m
+[0;32mI (16493) main: ALS: 12 lx[0m
+[0;32mI (16493) main: WHITE: 32 lx[0m
+[0;32mI (17494) main: ALS: 12 lx[0m
+[0;32mI (17494) main: WHITE: 32 lx[0m
+[0;32mI (18494) main: ALS: 12 lx[0m
+[0;32mI (18494) main: WHITE: 32 lx[0m
+[0;32mI (19495) main: ALS: 11 lx[0m
+[0;32mI (19495) main: WHITE: 31 lx[0m
+[0;32mI (20495) main: ALS: 11 lx[0m
+[0;32mI (20495) main: WHITE: 31 lx[0m
+[0;32mI (21495) main: ALS: 12 lx[0m
+[0;32mI (21495) main: WHITE: 32 lx[0m
+[0;32mI (22495) main: ALS: 12 lx[0m
+[0;32mI (22495) main: WHITE: 32 lx[0m
+[0;32mI (23495) main: ALS: 12 lx[0m
+[0;32mI (23495) main: WHITE: 32 lx[0m
+[0;32mI (24495) main: ALS: 12 lx[0m
+[0;32mI (24495) main: WHITE: 33 lx[0m
+[0;32mI (25495) main: ALS: 12 lx[0m
+[0;32mI (25495) main: WHITE: 33 lx[0m
+[0;32mI (26495) main: ALS: 12 lx[0m
+[0;32mI (26495) main: WHITE: 34 lx[0m
+[0;32mI (27495) main: ALS: 12 lx[0m
+[0;32mI (27495) main: WHITE: 33 lx[0m
+[0;32mI (28495) main: ALS: 12 lx[0m
+[0;32mI (28495) main: WHITE: 33 lx[0m

@@ -1,0 +1,293 @@
+Command: /home/ziyue/.espressif/python_env/idf5.5_py3.12_env/bin/python /home/ziyue/esp/esp-idf/tools/idf_monitor.py -p /dev/ttyACM0 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /home/ziyue/esp/esp32_my/esp32s3_project/build/ESP32S3-IDF_AMOLED_LVGL-V8.elf /home/ziyue/esp/esp32_my/esp32s3_project/build/bootloader/bootloader.elf -m '/home/ziyue/.espressif/python_env/idf5.5_py3.12_env/bin/python' '/home/ziyue/esp/esp-idf/tools/idf.py' '-p' '/dev/ttyACM0'
+[0;32mI (262) octal_psram: VCC    ESP-ROM:esp32s3-20210327[0m
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40048839
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x1710
+load:0x403c8700,len:0xec0
+load:0x403cb700,len:0x31d4
+entry 0x403c894c
+[0;32mI (24) boot: ESP-IDF v5.5 2nd stage bootloader[0m
+[0;32mI (24) boot: compile time Mar 14 2026 10:46:55[0m
+[0;32mI (25) boot: Multicore bootloader[0m
+[0;32mI (25) boot: chip revision: v0.2[0m
+[0;32mI (27) boot: efuse block revision: v1.3[0m
+[0;32mI (31) qio_mode: Enabling default flash chip QIO[0m
+[0;32mI (35) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (39) boot.esp32s3: SPI Mode       : QIO[0m
+[0;32mI (43) boot.esp32s3: SPI Flash Size : 16MB[0m
+[0;32mI (47) boot: Enabling RNG early entropy source...[0m
+[0;32mI (51) boot: Partition Table:[0m
+[0;32mI (54) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (60) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (67) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (73) boot:  2 factory          factory app      00 00 00010000 00600000[0m
+[0;32mI (80) boot: End of partition table[0m
+[0;32mI (83) esp_image: segment 0: paddr=00010020 vaddr=3c050020 size=6e21ch (451100) map[0m
+[0;32mI (157) esp_image: segment 1: paddr=0007e244 vaddr=3fc9c100 size=01dd4h (  7636) load[0m
+[0;32mI (159) esp_image: segment 2: paddr=00080020 vaddr=42000020 size=49c50h (302160) map[0m
+[0;32mI (206) esp_image: segment 3: paddr=000c9c78 vaddr=3fc9ded4 size=013f4h (  5108) load[0m
+[0;32mI (208) esp_image: segment 4: paddr=000cb074 vaddr=40374000 size=1805ch ( 98396) load[0m
+[0;32mI (229) esp_image: segment 5: paddr=000e30d8 vaddr=600fe000 size=00020h (    32) load[0m
+[0;32mI (238) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (238) boot: Disabling RNG early entropy source...[0m
+[0;32mI (248) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (248) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (249) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (250) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (255) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (259) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (263) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (268) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (273) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (277) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (283) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (287) MSPI Timing: PSRAM timing tuning index: 5[0m
+[0;32mI (291) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (295) esp_psram: Speed: 80MHz[0m
+[0;32mI (323) mmu_psram: Read only data copied and mapped to SPIRAM[0m
+[0;32mI (345) mmu_psram: Instructions copied and mapped to SPIRAM[0m
+[0;32mI (345) cpu_start: Multicore app[0m
+[0;32mI (604) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (612) cpu_start: Pro cpu start user code[0m
+[0;32mI (612) cpu_start: cpu freq: 240000000 Hz[0m
+[0;32mI (612) app_init: Application information:[0m
+[0;32mI (612) app_init: Project name:     ESP32S3-IDF_AMOLED_LVGL-V8[0m
+[0;32mI (618) app_init: App version:      1[0m
+[0;32mI (621) app_init: Compile time:     Mar 14 2026 17:06:40[0m
+[0;32mI (626) app_init: ELF file SHA256:  08fe5d95c...[0m
+[0;32mI (631) app_init: ESP-IDF:          v5.5[0m
+[0;32mI (634) efuse_init: Min chip rev:     v0.0[0m
+[0;32mI (638) efuse_init: Max chip rev:     v0.99 [0m
+[0;32mI (642) efuse_init: Chip rev:         v0.2[0m
+[0;32mI (646) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (652) heap_init: At 3FCA0208 len 00049508 (293 KiB): RAM[0m
+[0;32mI (657) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (662) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (668) heap_init: At 600FE020 len 00001FC8 (7 KiB): RTCRAM[0m
+[0;32mI (673) esp_psram: Adding pool of 7424K of PSRAM memory to heap allocator[0m
+[0;32mI (679) esp_psram: Adding pool of 7K of PSRAM memory gap generated due to end address alignment of drom to the heap allocator[0m
+[0;32mI (691) spi_flash: detected chip: generic[0m
+[0;32mI (694) spi_flash: flash io: qio[0m
+[0;33mW (697) i2c: This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`[0m
+[0;32mI (707) sleep_gpio: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (713) sleep_gpio: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (720) main_task: Started on CPU0[0m
+[0;32mI (723) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (731) main_task: Calling app_main()[0m
+[0;32mI (734) I2C_INIT: Initialize I2C bus[0m
+[0;32mI (738) I2C_INIT: I2C init OK[0m
+[0;32mI (740) hw_veml7700: initializing hardware[0m
+[0;32mI (744) VEML7700: Device descriptor initialized (bus assumed ready)[0m
+[0;32mI (750) VEML7700: Probe OK[0m
+[0;32mI (755) hw_veml7700: Configuration read back matches[0m
+[0;32mI (757) example: Initialize SPI bus[0m
+[0;32mI (760) example: Install panel IO[0m
+[0;32mI (763) example: Install QSPI_AMOLED panel driver[0m
+[0;32mI (768) qspi_amoled: LCD panel create success, version: 1.0.0[0m
+[0;33mW (1053) qspi_amoled: The 3Ah command has been used and will be overwritten by external initialization sequence[0m
+[0;32mI (1123) example: Initialize touch controller[0m
+[0;32mI (1523) CST820: IC id: 183[0m
+[0;32mI (1523) CST820: LCD touch panel create success, version: 1.0.3[0m
+[0;32mI (1523) example: Initialize LVGL library[0m
+[0;32mI (1524) example: Register display driver to LVGL[0m
+[0;32mI (1530) example: Install LVGL tick timer[0m
+[0;32mI (1532) example: Starting LVGL task[0m
+[0;32mI (1688) main: ALS: 6 lx[0m
+[0;32mI (1688) main: WHITE: 17 lx[0m
+[0;32mI (2688) main: ALS: 6 lx[0m
+[0;32mI (2688) main: WHITE: 17 lx[0m
+[0;32mI (3689) main: ALS: 6 lx[0m
+[0;32mI (3689) main: WHITE: 17 lx[0m
+[0;32mI (4690) main: ALS: 5 lx[0m
+[0;32mI (4690) main: WHITE: 15 lx[0m
+[0;32mI (5691) main: ALS: 5 lx[0m
+[0;32mI (5691) main: WHITE: 15 lx[0m
+[0;32mI (6454) example: Touch position: 1,394,261[0m
+[0;32mI (6483) example: Touch position: 1,394,261[0m
+[0;32mI (6513) example: Touch position: 1,394,261[0m
+[0;32mI (6543) example: Touch position: 1,394,261[0m
+[0;32mI (6573) example: Touch position: 1,394,257[0m
+[0;32mI (6604) example: Touch position: 1,394,251[0m
+[0;32mI (6633) example: Touch position: 1,394,242[0m
+[0;32mI (6664) example: Touch position: 1,394,218[0m
+[0;32mI (6692) main: ALS: 3 lx[0m
+[0;32mI (6692) main: WHITE: 11 lx[0m
+[0;32mI (6694) example: Touch position: 1,394,204[0m
+[0;32mI (6723) example: Touch position: 1,396,178[0m
+[0;32mI (6753) example: Touch position: 1,397,168[0m
+[0;32mI (6783) example: Touch position: 1,398,155[0m
+[0;32mI (6813) example: Touch position: 1,398,149[0m
+[0;32mI (6843) example: Touch position: 1,398,138[0m
+[0;32mI (6873) example: Touch position: 1,398,131[0m
+[0;32mI (6903) example: Touch position: 1,398,119[0m
+[0;32mI (6933) example: Touch position: 1,399,97[0m
+[0;32mI (7594) example: Touch position: 1,139,261[0m
+[0;32mI (7623) example: Touch position: 1,139,260[0m
+[0;32mI (7654) example: Touch position: 1,139,256[0m
+[0;32mI (7683) example: Touch position: 1,139,238[0m
+[0;32mI (7693) main: ALS: 3 lx[0m
+[0;32mI (7693) main: WHITE: 11 lx[0m
+[0;32mI (7714) example: Touch position: 1,139,220[0m
+[0;32mI (7743) example: Touch position: 1,140,184[0m
+[0;32mI (7773) example: Touch position: 1,141,169[0m
+[0;32mI (7803) example: Touch position: 1,141,143[0m
+[0;32mI (7833) example: Touch position: 1,141,126[0m
+[0;32mI (7863) example: Touch position: 1,141,111[0m
+[0;32mI (7893) example: Touch position: 1,142,87[0m
+[0;32mI (8254) example: Touch position: 1,119,249[0m
+[0;32mI (8284) example: Touch position: 1,119,249[0m
+[0;32mI (8314) example: Touch position: 1,119,248[0m
+[0;32mI (8344) example: Touch position: 1,119,241[0m
+[0;32mI (8373) example: Touch position: 1,119,235[0m
+[0;32mI (8404) example: Touch position: 1,119,221[0m
+[0;32mI (8433) example: Touch position: 1,119,215[0m
+[0;32mI (8463) example: Touch position: 1,119,204[0m
+[0;32mI (8493) example: Touch position: 1,119,198[0m
+[0;32mI (8523) example: Touch position: 1,119,193[0m
+[0;32mI (8554) example: Touch position: 1,119,183[0m
+[0;32mI (8584) example: Touch position: 1,119,177[0m
+[0;32mI (8614) example: Touch position: 1,119,172[0m
+[0;32mI (8644) example: Touch position: 1,119,171[0m
+[0;32mI (8674) example: Touch position: 1,119,171[0m
+[0;32mI (8694) main: ALS: 3 lx[0m
+[0;32mI (8694) main: WHITE: 11 lx[0m
+[0;32mI (8704) example: Touch position: 1,119,173[0m
+[0;32mI (8734) example: Touch position: 1,120,178[0m
+[0;32mI (8764) example: Touch position: 1,122,197[0m
+[0;32mI (8794) example: Touch position: 1,123,207[0m
+[0;32mI (8824) example: Touch position: 1,125,222[0m
+[0;32mI (8854) example: Touch position: 1,126,230[0m
+[0;32mI (8883) example: Touch position: 1,131,251[0m
+[0;32mI (9214) example: Touch position: 1,155,376[0m
+[0;32mI (9243) example: Touch position: 1,155,376[0m
+[0;32mI (9273) example: Touch position: 1,155,376[0m
+[0;32mI (9303) example: Touch position: 1,155,377[0m
+[0;32mI (9334) example: Touch position: 1,155,381[0m
+[0;32mI (9363) example: Touch position: 1,155,385[0m
+[0;32mI (9394) example: Touch position: 1,157,396[0m
+[0;32mI (9699) main: ALS: 3 lx[0m
+[0;32mI (9699) main: WHITE: 11 lx[0m
+[0;32mI (9994) example: Touch position: 1,334,135[0m
+[0;32mI (10023) example: Touch position: 1,334,138[0m
+[0;32mI (10054) example: Touch position: 1,334,144[0m
+[0;32mI (10083) example: Touch position: 1,334,156[0m
+[0;32mI (10135) example: Touch position: 1,333,226[0m
+[0;32mI (10179) example: Touch position: 1,333,292[0m
+[0;32mI (10220) example: Touch position: 1,334,385[0m
+[0;32mI (10702) main: ALS: 3 lx[0m
+[0;32mI (10702) main: WHITE: 11 lx[0m
+[0;32mI (11009) example: Touch position: 1,367,324[0m
+[0;32mI (11040) example: Touch position: 1,368,317[0m
+[0;32mI (11069) example: Touch position: 1,373,270[0m
+[0;32mI (11100) example: Touch position: 1,376,229[0m
+[0;32mI (11134) example: Touch position: 1,385,138[0m
+[0;32mI (11172) example: Touch position: 1,392,59[0m
+[0;32mI (11704) main: ALS: 3 lx[0m
+[0;32mI (11704) main: WHITE: 11 lx[0m
+[0;32mI (12250) example: Touch position: 1,384,164[0m
+[0;32mI (12279) example: Touch position: 1,384,165[0m
+[0;32mI (12310) example: Touch position: 1,384,181[0m
+[0;32mI (12362) example: Touch position: 1,385,231[0m
+[0;32mI (12405) example: Touch position: 1,387,290[0m
+[0;32mI (12705) main: ALS: 3 lx[0m
+[0;32mI (12705) main: WHITE: 11 lx[0m
+[0;32mI (12970) example: Touch position: 1,352,285[0m
+[0;32mI (12999) example: Touch position: 1,352,284[0m
+[0;32mI (13030) example: Touch position: 1,352,277[0m
+[0;32mI (13059) example: Touch position: 1,351,227[0m
+[0;32mI (13090) example: Touch position: 1,350,173[0m
+[0;32mI (13127) example: Touch position: 1,345,66[0m
+[0;32mI (13705) main: ALS: 3 lx[0m
+[0;32mI (13705) main: WHITE: 11 lx[0m
+[0;32mI (14020) example: Touch position: 1,397,211[0m
+[0;32mI (14049) example: Touch position: 1,397,211[0m
+[0;32mI (14079) example: Touch position: 1,397,211[0m
+[0;32mI (14109) example: Touch position: 1,397,212[0m
+[0;32mI (14139) example: Touch position: 1,397,215[0m
+[0;32mI (14169) example: Touch position: 1,397,218[0m
+[0;32mI (14199) example: Touch position: 1,397,221[0m
+[0;32mI (14229) example: Touch position: 1,397,230[0m
+[0;32mI (14259) example: Touch position: 1,397,235[0m
+[0;32mI (14290) example: Touch position: 1,397,242[0m
+[0;32mI (14320) example: Touch position: 1,397,245[0m
+[0;32mI (14350) example: Touch position: 1,397,251[0m
+[0;32mI (14380) example: Touch position: 1,398,254[0m
+[0;32mI (14410) example: Touch position: 1,398,258[0m
+[0;32mI (14440) example: Touch position: 1,398,260[0m
+[0;32mI (14470) example: Touch position: 1,398,261[0m
+[0;32mI (14500) example: Touch position: 1,398,263[0m
+[0;32mI (14530) example: Touch position: 1,398,265[0m
+[0;32mI (14560) example: Touch position: 1,400,278[0m
+[0;32mI (14589) example: Touch position: 1,401,289[0m
+[0;32mI (14619) example: Touch position: 1,405,313[0m
+[0;32mI (14649) example: Touch position: 1,407,320[0m
+[0;32mI (14706) main: ALS: 3 lx[0m
+[0;32mI (14706) main: WHITE: 11 lx[0m
+[0;32mI (15310) example: Touch position: 1,143,236[0m
+[0;32mI (15339) example: Touch position: 1,143,235[0m
+[0;32mI (15369) example: Touch position: 1,143,229[0m
+[0;32mI (15399) example: Touch position: 1,143,224[0m
+[0;32mI (15429) example: Touch position: 1,143,218[0m
+[0;32mI (15459) example: Touch position: 1,143,200[0m
+[0;32mI (15490) example: Touch position: 1,143,190[0m
+[0;32mI (15520) example: Touch position: 1,143,173[0m
+[0;32mI (15549) example: Touch position: 1,143,167[0m
+[0;32mI (15579) example: Touch position: 1,143,159[0m
+[0;32mI (15610) example: Touch position: 1,143,157[0m
+[0;32mI (15639) example: Touch position: 1,143,156[0m
+[0;32mI (15670) example: Touch position: 1,143,159[0m
+[0;32mI (15699) example: Touch position: 1,143,167[0m
+[0;32mI (15708) main: ALS: 3 lx[0m
+[0;32mI (15708) main: WHITE: 11 lx[0m
+[0;32mI (15729) example: Touch position: 1,145,206[0m
+[0;32mI (15759) example: Touch position: 1,146,231[0m
+[0;32mI (15789) example: Touch position: 1,150,271[0m
+[0;32mI (15820) example: Touch position: 1,153,284[0m
+[0;32mI (15850) example: Touch position: 1,162,307[0m
+[0;32mI (16240) example: Touch position: 1,413,366[0m
+[0;32mI (16270) example: Touch position: 1,413,366[0m
+[0;32mI (16300) example: Touch position: 1,413,363[0m
+[0;32mI (16329) example: Touch position: 1,413,361[0m
+[0;32mI (16360) example: Touch position: 1,413,351[0m
+[0;32mI (16389) example: Touch position: 1,413,341[0m
+[0;32mI (16419) example: Touch position: 1,413,330[0m
+[0;32mI (16450) example: Touch position: 1,415,307[0m
+[0;32mI (16479) example: Touch position: 1,415,297[0m
+[0;32mI (16510) example: Touch position: 1,415,283[0m
+[0;32mI (16539) example: Touch position: 1,415,279[0m
+[0;32mI (16570) example: Touch position: 1,415,274[0m
+[0;32mI (16599) example: Touch position: 1,415,272[0m
+[0;32mI (16630) example: Touch position: 1,415,270[0m
+[0;32mI (16659) example: Touch position: 1,415,266[0m
+[0;32mI (16690) example: Touch position: 1,415,264[0m
+[0;32mI (16709) main: ALS: 3 lx[0m
+[0;32mI (16709) main: WHITE: 11 lx[0m
+[0;32mI (16720) example: Touch position: 1,415,258[0m
+[0;32mI (16749) example: Touch position: 1,415,253[0m
+[0;32mI (16780) example: Touch position: 1,415,244[0m
+[0;32mI (16809) example: Touch position: 1,415,241[0m
+[0;32mI (16840) example: Touch position: 1,415,237[0m
+[0;32mI (16869) example: Touch position: 1,415,237[0m
+[0;32mI (16899) example: Touch position: 1,415,238[0m
+[0;32mI (16930) example: Touch position: 1,415,249[0m
+[0;32mI (16959) example: Touch position: 1,415,259[0m
+[0;32mI (16990) example: Touch position: 1,415,276[0m
+[0;32mI (17020) example: Touch position: 1,415,278[0m
+[0;32mI (17350) example: Touch position: 1,405,423[0m
+[0;32mI (17380) example: Touch position: 1,405,423[0m
+[0;32mI (17410) example: Touch position: 1,405,423[0m
+[0;32mI (17440) example: Touch position: 1,405,424[0m
+[0;32mI (17469) example: Touch position: 1,405,425[0m
+[0;32mI (17499) example: Touch position: 1,405,427[0m
+[0;32mI (17529) example: Touch position: 1,405,428[0m
+[0;32mI (17559) example: Touch position: 1,405,430[0m
+[0;32mI (17589) example: Touch position: 1,405,431[0m
+[0;32mI (17619) example: Touch position: 1,405,432[0m
+[0;32mI (17649) example: Touch position: 1,405,432[0m
+[0;32mI (17679) example: Touch position: 1,405,433[0m
+[0;32mI (17734) main: ALS: 3 lx[0m
+[0;32mI (17734) main: WHITE: 11 lx[0m
+[0;32mI (17735) example: Touch position: 1,405,436[0m

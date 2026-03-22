@@ -1,0 +1,32 @@
+dependencies:
+  esp-idf-lib/esp_idf_lib_helpers:
+    version: '*'
+  esp-idf-lib/i2cdev:
+    version: '*'
+description: Driver for VEML7700 ambient light sensor
+discussion: https://github.com/esp-idf-lib/core/discussions
+documentation: https://esp-idf-lib.github.io/veml7700/
+files:
+  exclude:
+  - docs/**/*
+issues: https://github.com/esp-idf-lib/veml7700/issues
+license: ISC
+maintainers:
+- Marc Luehr (@th3link) <marcluehr@gmail.com>
+repository: git://github.com/esp-idf-lib/veml7700.git
+repository_info:
+  commit_sha: 78c39579d6d5b1a0cc06e3af6da78fe41e181792
+  path: .
+targets:
+- esp32
+- esp32c2
+- esp32c3
+- esp32c5
+- esp32c6
+- esp32c61
+- esp32h2
+- esp32p4
+- esp32s2
+- esp32s3
+url: https://github.com/esp-idf-lib/core
+version: 1.0.7

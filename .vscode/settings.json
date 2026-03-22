@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.c": "c",
+        "task.h": "c",
+        "esp_lcd_touch_cst820.h": "c",
+        "bsp_sd.h": "c",
+        "i2c.h": "c",
+        "sd_card.h": "c",
+        "veml7700.h": "c",
+        "exposure_calc.h": "c",
+        "cstring": "c",
+        "hw_veml7700.h": "c",
+        "bsp_i2c_init.h": "c",
+        "gpio.h": "c",
+        "esp_log.h": "c"
+    }
+}

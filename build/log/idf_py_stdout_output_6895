@@ -1,0 +1,59 @@
+-- IDF_TARGET is not set, guessed 'esp32s3' from sdkconfig '/home/ziyue/esp/esp32_my/esp32s3_project/sdkconfig'
+-- Found Git: /usr/bin/git (found version "2.34.1") 
+-- The C compiler identification is GNU 14.2.0
+-- The CXX compiler identification is GNU 14.2.0
+-- The ASM compiler identification is GNU
+-- Found assembler: /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- git rev-parse returned 'fatal: not a git repository (or any of the parent directories): .git'
+-- Could not use 'git describe' to determine PROJECT_VER.
+-- Building ESP-IDF components for target esp32s3
+NOTICE: Processing 7 dependencies:
+NOTICE: [1/7] esp-idf-lib/esp_idf_lib_helpers (1.3.10)
+NOTICE: [2/7] esp-idf-lib/i2cdev (2.0.8)
+NOTICE: [3/7] esp-idf-lib/veml7700 (1.0.7)
+NOTICE: [4/7] espressif/cmake_utilities (0.5.3)
+NOTICE: [5/7] espressif/esp_lcd_touch (1.1.2)
+NOTICE: [6/7] lvgl/lvgl (8.4.0)
+NOTICE: [7/7] idf (5.4.0)
+-- i2cdev: ESP-IDF v5.4 detected, using new i2c_master driver
+-- i2cdev: Compiling with new I2C master driver (i2cdev.c)
+-- Project sdkconfig file /home/ziyue/esp/esp32_my/esp32s3_project/sdkconfig
+Loading defaults file /home/ziyue/esp/esp32_my/esp32s3_project/sdkconfig.defaults...
+-- Compiler supported targets: xtensa-esp-elf
+-- Found Python3: /home/ziyue/.espressif/python_env/idf5.4_py3.12_env/bin/python (found version "3.12.7") found components: Interpreter 
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS
+-- Performing Test C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS - Success
+-- App "ESP32S3-IDF_AMOLED_LVGL-V8" version: 1
+-- Adding linker script /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_system/ld/memory.ld
+-- Adding linker script /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_system/ld/sections.ld.in
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.bt_funcs.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.wdt.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/esp_rom/esp32s3/ld/esp32s3.rom.newlib.ld
+-- Adding linker script /home/ziyue/esp/esp-idf/components/soc/esp32s3/ld/esp32s3.peripherals.ld
+-- i2cdev: ESP-IDF v5.4 detected, using new i2c_master driver
+-- i2cdev: Compiling with new I2C master driver (i2cdev.c)
+-- ESP_LCD_QSPI_AMOLED: 1.0.0
+-- Components: app_trace app_update bootloader bootloader_support bt cmock console cxx driver efuse esp-idf-lib__esp_idf_lib_helpers esp-idf-lib__i2cdev esp-idf-lib__veml7700 esp-tls esp_adc esp_app_format esp_bootloader_format esp_coex esp_common esp_driver_ana_cmpr esp_driver_cam esp_driver_dac esp_driver_gpio esp_driver_gptimer esp_driver_i2c esp_driver_i2s esp_driver_isp esp_driver_jpeg esp_driver_ledc esp_driver_mcpwm esp_driver_parlio esp_driver_pcnt esp_driver_ppa esp_driver_rmt esp_driver_sdio esp_driver_sdm esp_driver_sdmmc esp_driver_sdspi esp_driver_spi esp_driver_touch_sens esp_driver_tsens esp_driver_uart esp_driver_usb_serial_jtag esp_eth esp_event esp_gdbstub esp_hid esp_http_client esp_http_server esp_https_ota esp_https_server esp_hw_support esp_lcd esp_lcd_qspi_amoled esp_lcd_touch_cst820 esp_local_ctrl esp_mm esp_netif esp_netif_stack esp_partition esp_phy esp_pm esp_psram esp_ringbuf esp_rom esp_security esp_system esp_timer esp_vfs_console esp_wifi espcoredump espressif__cmake_utilities espressif__esp_lcd_touch esptool_py fatfs freertos hal heap http_parser idf_test ieee802154 json log lvgl__lvgl lwip main mbedtls mqtt newlib nvs_flash nvs_sec_provider openthread partition_table perfmon protobuf-c protocomm pthread rt sdmmc soc spi_flash spiffs tcp_transport touch_element ulp unity usb vfs wear_levelling wifi_provisioning wpa_supplicant xtensa
+-- Component paths: /home/ziyue/esp/esp-idf/components/app_trace /home/ziyue/esp/esp-idf/components/app_update /home/ziyue/esp/esp-idf/components/bootloader /home/ziyue/esp/esp-idf/components/bootloader_support /home/ziyue/esp/esp-idf/components/bt /home/ziyue/esp/esp-idf/components/cmock /home/ziyue/esp/esp-idf/components/console /home/ziyue/esp/esp-idf/components/cxx /home/ziyue/esp/esp-idf/components/driver /home/ziyue/esp/esp-idf/components/efuse /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/esp-idf-lib__esp_idf_lib_helpers /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/esp-idf-lib__i2cdev /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/esp-idf-lib__veml7700 /home/ziyue/esp/esp-idf/components/esp-tls /home/ziyue/esp/esp-idf/components/esp_adc /home/ziyue/esp/esp-idf/components/esp_app_format /home/ziyue/esp/esp-idf/components/esp_bootloader_format /home/ziyue/esp/esp-idf/components/esp_coex /home/ziyue/esp/esp-idf/components/esp_common /home/ziyue/esp/esp-idf/components/esp_driver_ana_cmpr /home/ziyue/esp/esp-idf/components/esp_driver_cam /home/ziyue/esp/esp-idf/components/esp_driver_dac /home/ziyue/esp/esp-idf/components/esp_driver_gpio /home/ziyue/esp/esp-idf/components/esp_driver_gptimer /home/ziyue/esp/esp-idf/components/esp_driver_i2c /home/ziyue/esp/esp-idf/components/esp_driver_i2s /home/ziyue/esp/esp-idf/components/esp_driver_isp /home/ziyue/esp/esp-idf/components/esp_driver_jpeg /home/ziyue/esp/esp-idf/components/esp_driver_ledc /home/ziyue/esp/esp-idf/components/esp_driver_mcpwm /home/ziyue/esp/esp-idf/components/esp_driver_parlio /home/ziyue/esp/esp-idf/components/esp_driver_pcnt /home/ziyue/esp/esp-idf/components/esp_driver_ppa /home/ziyue/esp/esp-idf/components/esp_driver_rmt /home/ziyue/esp/esp-idf/components/esp_driver_sdio /home/ziyue/esp/esp-idf/components/esp_driver_sdm /home/ziyue/esp/esp-idf/components/esp_driver_sdmmc /home/ziyue/esp/esp-idf/components/esp_driver_sdspi /home/ziyue/esp/esp-idf/components/esp_driver_spi /home/ziyue/esp/esp-idf/components/esp_driver_touch_sens /home/ziyue/esp/esp-idf/components/esp_driver_tsens /home/ziyue/esp/esp-idf/components/esp_driver_uart /home/ziyue/esp/esp-idf/components/esp_driver_usb_serial_jtag /home/ziyue/esp/esp-idf/components/esp_eth /home/ziyue/esp/esp-idf/components/esp_event /home/ziyue/esp/esp-idf/components/esp_gdbstub /home/ziyue/esp/esp-idf/components/esp_hid /home/ziyue/esp/esp-idf/components/esp_http_client /home/ziyue/esp/esp-idf/components/esp_http_server /home/ziyue/esp/esp-idf/components/esp_https_ota /home/ziyue/esp/esp-idf/components/esp_https_server /home/ziyue/esp/esp-idf/components/esp_hw_support /home/ziyue/esp/esp-idf/components/esp_lcd /home/ziyue/esp/esp32_my/esp32s3_project/components/esp_lcd_qspi_amoled /home/ziyue/esp/esp32_my/esp32s3_project/components/esp_lcd_touch_cst820 /home/ziyue/esp/esp-idf/components/esp_local_ctrl /home/ziyue/esp/esp-idf/components/esp_mm /home/ziyue/esp/esp-idf/components/esp_netif /home/ziyue/esp/esp-idf/components/esp_netif_stack /home/ziyue/esp/esp-idf/components/esp_partition /home/ziyue/esp/esp-idf/components/esp_phy /home/ziyue/esp/esp-idf/components/esp_pm /home/ziyue/esp/esp-idf/components/esp_psram /home/ziyue/esp/esp-idf/components/esp_ringbuf /home/ziyue/esp/esp-idf/components/esp_rom /home/ziyue/esp/esp-idf/components/esp_security /home/ziyue/esp/esp-idf/components/esp_system /home/ziyue/esp/esp-idf/components/esp_timer /home/ziyue/esp/esp-idf/components/esp_vfs_console /home/ziyue/esp/esp-idf/components/esp_wifi /home/ziyue/esp/esp-idf/components/espcoredump /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/espressif__cmake_utilities /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/espressif__esp_lcd_touch /home/ziyue/esp/esp-idf/components/esptool_py /home/ziyue/esp/esp-idf/components/fatfs /home/ziyue/esp/esp-idf/components/freertos /home/ziyue/esp/esp-idf/components/hal /home/ziyue/esp/esp-idf/components/heap /home/ziyue/esp/esp-idf/components/http_parser /home/ziyue/esp/esp-idf/components/idf_test /home/ziyue/esp/esp-idf/components/ieee802154 /home/ziyue/esp/esp-idf/components/json /home/ziyue/esp/esp-idf/components/log /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/lvgl__lvgl /home/ziyue/esp/esp-idf/components/lwip /home/ziyue/esp/esp32_my/esp32s3_project/main /home/ziyue/esp/esp-idf/components/mbedtls /home/ziyue/esp/esp-idf/components/mqtt /home/ziyue/esp/esp-idf/components/newlib /home/ziyue/esp/esp-idf/components/nvs_flash /home/ziyue/esp/esp-idf/components/nvs_sec_provider /home/ziyue/esp/esp-idf/components/openthread /home/ziyue/esp/esp-idf/components/partition_table /home/ziyue/esp/esp-idf/components/perfmon /home/ziyue/esp/esp-idf/components/protobuf-c /home/ziyue/esp/esp-idf/components/protocomm /home/ziyue/esp/esp-idf/components/pthread /home/ziyue/esp/esp-idf/components/rt /home/ziyue/esp/esp-idf/components/sdmmc /home/ziyue/esp/esp-idf/components/soc /home/ziyue/esp/esp-idf/components/spi_flash /home/ziyue/esp/esp-idf/components/spiffs /home/ziyue/esp/esp-idf/components/tcp_transport /home/ziyue/esp/esp-idf/components/touch_element /home/ziyue/esp/esp-idf/components/ulp /home/ziyue/esp/esp-idf/components/unity /home/ziyue/esp/esp-idf/components/usb /home/ziyue/esp/esp-idf/components/vfs /home/ziyue/esp/esp-idf/components/wear_levelling /home/ziyue/esp/esp-idf/components/wifi_provisioning /home/ziyue/esp/esp-idf/components/wpa_supplicant /home/ziyue/esp/esp-idf/components/xtensa
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/ziyue/esp/esp32_my/esp32s3_project/build
