@@ -16,6 +16,7 @@
         "app_exposure_calc.h": "c",
         "app_ui.h": "c",
         "lvgl.h": "c",
-        "cstdio": "c"
+        "cstdio": "c",
+        "app_contrller.h": "c"
     }
 }

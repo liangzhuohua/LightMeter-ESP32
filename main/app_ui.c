@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "app_exposure_calc.h"
+#include "app_ui_calc_port.h"
 
 // ──────────────────────────────────────────────
 // 自定义键盘映射（数字 + 逗号，用于自定义光圈输入）
@@ -56,6 +57,7 @@ lv_obj_t* main_roller_aperture;         // 光圈滚轮
 lv_obj_t* main_roller_iso;              // iso值
 lv_obj_t* main_roller_ev;               // ev值
 lv_obj_t* main_label_lux_value;         // 光照强度
+lv_obj_t* main_obj_mode_select;         // 模式选择容器
 
 
 lv_obj_t* cam_win_select;               // cam选择
@@ -398,6 +400,53 @@ static void imgbtn_event_cb(lv_event_t * e) {
 
     selected_idx = idx;
     LV_LOG_USER("Selected mode: %d", idx);
+}
+
+// ──────────────────────────────────────────────
+// Tv/Av滚轮事件回调 - 滑动时自动切换到手动模式
+// ──────────────────────────────────────────────
+#define UI_IDX_MANUAL_MODE 2  // mode_icons数组中手动模式的索引
+
+static void roller_manual_mode_event_cb(lv_event_t * e) {
+    lv_obj_t * roller = lv_event_get_target(e);
+    lv_event_code_t code = lv_event_get_code(e);
+
+    LV_LOG_USER("Roller changed: selected_idx=%d, roller=%p, shutter=%p, aperture=%p",
+                selected_idx, (void*)roller, (void*)main_roller_shutter, (void*)main_roller_aperture);
+
+    if (code == LV_EVENT_VALUE_CHANGED) {
+        if (selected_idx != UI_IDX_MANUAL_MODE) {
+            lv_obj_t * btn = lv_obj_get_child(main_obj_mode_select, UI_IDX_MANUAL_MODE);
+
+            if (btn) {
+                if (selected_idx >= 0 && selected_idx < 4) {
+                    lv_obj_t * prev = lv_obj_get_child(main_obj_mode_select, selected_idx);
+                    if (prev) {
+                        lv_obj_set_style_bg_opa(prev, LV_OPA_TRANSP, 0);
+                        lv_obj_set_style_border_width(prev, 1, 0);
+                        lv_obj_set_style_border_color(prev, lv_color_hex(0x404040), 0);
+                        lv_obj_set_style_border_opa(prev, LV_OPA_60, 0);
+                    }
+                }
+
+                lv_obj_set_style_bg_color(btn, lv_color_hex(0x4C5C6E), 0);
+                lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+                lv_obj_set_style_border_width(btn, 2, 0);
+                lv_obj_set_style_border_color(btn, lv_color_hex(0x6A8ABF), 0);
+
+                selected_idx = UI_IDX_MANUAL_MODE;
+                LV_LOG_USER("Auto switch to manual mode (UI idx %d) due to roller change", UI_IDX_MANUAL_MODE);
+            }
+        }
+
+        if (roller == main_roller_shutter) {
+            ui_calc_port_set_manual_wheel_type(MANUAL_WHEEL_TV);
+            LV_LOG_USER("Manual wheel: TV");
+        } else if (roller == main_roller_aperture) {
+            ui_calc_port_set_manual_wheel_type(MANUAL_WHEEL_AV);
+            LV_LOG_USER("Manual wheel: AV");
+        }
+    }
 }
 
 // ──────────────────────────────────────────────
@@ -2432,6 +2481,7 @@ void ui_exposure_init(void) {
     style_roller_clean_style(main_roller_shutter, true);
     lv_obj_set_width(main_roller_shutter, lv_pct(95));     // 推荐 80%~95%
     lv_obj_set_style_text_align(main_roller_shutter, LV_TEXT_ALIGN_CENTER, 0);  // 文字居中
+    lv_obj_add_event_cb(main_roller_shutter, roller_manual_mode_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* 镜头光圈 */
     lv_obj_t* main_obj_aperture = lv_obj_create(main_grid_layout);
@@ -2455,6 +2505,7 @@ void ui_exposure_init(void) {
     style_roller_clean_style(main_roller_aperture, true);
     lv_obj_set_width(main_roller_aperture, lv_pct(95));     // 推荐 80%~95%
     lv_obj_set_style_text_align(main_roller_aperture, LV_TEXT_ALIGN_CENTER, 0);  // 文字居中
+    lv_obj_add_event_cb(main_roller_aperture, roller_manual_mode_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* ISO选择 */
     lv_obj_t* main_obj_iso = lv_obj_create(main_grid_layout);
@@ -2560,7 +2611,7 @@ void ui_exposure_init(void) {
     lv_obj_set_style_align(main_label_mode, LV_ALIGN_CENTER, 0); // 或 lv_obj_center(main_label_mode); 但优先用 style
 
     // 选择
-    lv_obj_t* main_obj_mode_select = lv_obj_create(main_obj_mode);
+    main_obj_mode_select = lv_obj_create(main_obj_mode);
     lv_obj_set_width(main_obj_mode_select, lv_pct(70));          // 调整到合适比例，50~65%
     lv_obj_set_height(main_obj_mode_select, lv_pct(100));        // 保持占满
 

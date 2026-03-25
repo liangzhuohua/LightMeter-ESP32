@@ -752,3 +752,47 @@ ExposureFlags ui_calc_port_auto_exposure(float lux, int iso, uint8_t mode,
     
     return flags;
 }
+
+
+// ──────────────────────────────────────────────
+// 手动模式滚轮标志位实现
+// ──────────────────────────────────────────────
+// 手动模式滚轮标志位
+// ──────────────────────────────────────────────
+static ManualWheelType manual_wheel_type = MANUAL_WHEEL_NONE;
+
+/**
+ * @brief 获取手动模式滚轮标志位
+ * @return 当前滚轮操作类型
+ *     - MANUAL_WHEEL_NONE: 无滚轮操作
+ *     - MANUAL_WHEEL_TV: Tv(快门)滚轮被滑动
+ *     - MANUAL_WHEEL_AV: Av(光圈)滚轮被滑动
+ * @note 此标志位用于在手动模式下区分用户操作的是哪个滚轮
+ *       只有当 mode == EXPOSURE_MANUAL 时此值才有意义
+ *       在曝光计算完成后应调用 ui_calc_port_reset_manual_wheel_type() 重置
+ */
+ManualWheelType ui_calc_port_get_manual_wheel_type(void)
+{
+    return manual_wheel_type;
+}
+
+/**
+ * @brief 设置手动模式滚轮标志位
+ * @param type 滚轮操作类型 (MANUAL_WHEEL_TV / MANUAL_WHEEL_AV)
+ * @note 由UI层调用，当用户滑动 Tv 或 Av 滚轮时设置此标志位
+ *       该函数内部被 roller_manual_mode_event_cb 回调调用
+ */
+void ui_calc_port_set_manual_wheel_type(ManualWheelType type)
+{
+    manual_wheel_type = type;
+}
+
+/**
+ * @brief 重置手动模式滚轮标志位为 NONE
+ * @note 在每次曝光计算完成后调用，以清除之前的滚轮操作记录
+ *       防止标志位残留影响后续判断
+ */
+void ui_calc_port_reset_manual_wheel_type(void)
+{
+    manual_wheel_type = MANUAL_WHEEL_NONE;
+}

@@ -201,4 +201,34 @@ ExposureFlags ui_calc_port_auto_exposure(float lux, int iso, uint8_t mode,
                                          CAM cam, LEN len,
                                          lv_obj_t* roller_shutter, lv_obj_t* roller_aperture);
 
+// ──────────────────────────────────────────────
+// 手动模式滚轮标志位
+// ──────────────────────────────────────────────
+
+typedef enum {
+    MANUAL_WHEEL_NONE = 0,   // 无滚轮操作
+    MANUAL_WHEEL_TV = 1,     // Tv(快门)滚轮
+    MANUAL_WHEEL_AV = 2      // Av(光圈)滚轮
+} ManualWheelType;
+
+/**
+ * @brief 获取手动模式滚轮标志位
+ * @return 当前滚轮操作类型：MANUAL_WHEEL_NONE/MANUAL_WHEEL_TV/MANUAL_WHEEL_AV
+ * @note 此标志位只有在mode为手动模式(EXPOSURE_MANUAL)时才有意义
+ */
+ManualWheelType ui_calc_port_get_manual_wheel_type(void);
+
+/**
+ * @brief 设置手动模式滚轮标志位
+ * @param type 滚轮操作类型：MANUAL_WHEEL_NONE/MANUAL_WHEEL_TV/MANUAL_WHEEL_AV
+ * @note 由UI层调用，当用户滑动Tv或Av滚轮时设置此标志位
+ */
+void ui_calc_port_set_manual_wheel_type(ManualWheelType type);
+
+/**
+ * @brief 重置手动模式滚轮标志位
+ * @note 在每次曝光计算完成后调用，以清除之前的滚轮操作记录
+ */
+void ui_calc_port_reset_manual_wheel_type(void);
+
 #endif // __APP_UI_CALC_PORT_H__
