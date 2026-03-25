@@ -8,11 +8,13 @@
 // 数据结构：UI与算法之间的数据传输
 // ──────────────────────────────────────────────
 
+typedef enum {
+    MANUAL_WHEEL_NONE = 0,   // 无滚轮操作
+    MANUAL_WHEEL_TV = 1,     // Tv(快门)滚轮
+    MANUAL_WHEEL_AV = 2      // Av(光圈)滚轮
+} ManualWheelType;
+
 typedef struct {
-    float lux;              // 环境照度
-    float iso;              // ISO值
-    float ev;               // 曝光补偿
-    uint8_t mode;           // 模式：EXPOSURE_AUTO/EXPOSURE_LANDSCAPE/EXPOSURE_PORTRAIT
     float shutter;          // 快门速度
     float aperture;         // 光圈值
     ExposureFlags flags;     // 曝光状态标志
@@ -83,24 +85,20 @@ int ui_calc_port_get_lux_from_label(lv_obj_t* label);
 // ──────────────────────────────────────────────
 
 /**
- * @brief 将快门值设置到UI滚轮
+ * @brief 将快门值设置到 UI 滚轮
  * @param roller 快门滚轮对象
- * @param shutter 快门速度(秒)
- * @param shutter_array 可选的快门数组，用于查找最接近的档位
- * @param count 快门数组数量
+ * @param shutter 快门速度 (秒)
+ * @param cam 相机参数结构体，包含快门档位数组
  */
-void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter, 
-                                         const float* shutter_array, int count);
+void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter, CAM cam);
 
 /**
- * @brief 将光圈值设置到UI滚轮
+ * @brief 将光圈值设置到 UI 滚轮
  * @param roller 光圈滚轮对象
  * @param aperture 光圈值
- * @param aperture_array 可选的光圈数组，用于查找最接近的档位
- * @param count 光圈数组数量
+ * @param len 镜头参数结构体，包含光圈档位数组
  */
-void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture,
-                                          const float* aperture_array, int count);
+void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture, LEN len);
 
 /**
  * @brief 更新Lux显示
@@ -145,71 +143,6 @@ char* ui_calc_port_get_shutter_options(void);
  */
 char* ui_calc_port_get_aperture_options(void);
 
-// ──────────────────────────────────────────────
-// 曝光计算（整合UI和算法）
-// ──────────────────────────────────────────────
-
-/**
- * @brief 执行曝光计算并更新UI
- * @param lux 环境照度
- * @param iso ISO值
- * @param ev 曝光补偿
- * @param mode 拍摄模式
- * @param cam 相机参数
- * @param len 镜头参数
- * @param roller_shutter 快门滚轮（用于更新）
- * @param roller_aperture 光圈滚轮（用于更新）
- * @return 计算结果数据
- */
-ui_calc_data_t ui_calc_port_calculate_exposure(float lux, int iso, float ev, uint8_t mode,
-                                                CAM cam, LEN len,
-                                                lv_obj_t* roller_shutter, lv_obj_t* roller_aperture);
-
-/**
- * @brief 根据当前UI参数执行曝光计算
- * @param roller_shutter 快门滚轮
- * @param roller_aperture 光圈滚轮
- * @param roller_iso ISO滚轮
- * @param roller_ev EV滚轮
- * @param label_lux Lux标签
- * @param mode 拍摄模式
- * @param cam 相机参数
- * @param len 镜头参数
- * @return 计算结果数据
- */
-ui_calc_data_t ui_calc_port_calculate_from_ui(lv_obj_t* roller_shutter, lv_obj_t* roller_aperture,
-                                               lv_obj_t* roller_iso, lv_obj_t* roller_ev,
-                                               lv_obj_t* label_lux, uint8_t mode,
-                                               CAM cam, LEN len);
-
-// ──────────────────────────────────────────────
-// 自动模式支持
-// ──────────────────────────────────────────────
-
-/**
- * @brief 自动曝光计算（全自动、风光、人像模式）
- * @param lux 环境照度
- * @param iso ISO值
- * @param mode 模式：EXPOSURE_AUTO/EXPOSURE_LANDSCAPE/EXPOSURE_PORTRAIT
- * @param cam 相机参数
- * @param len 镜头参数
- * @param roller_shutter 快门滚轮（用于更新）
- * @param roller_aperture 光圈滚轮（用于更新）
- * @return 曝光标志
- */
-ExposureFlags ui_calc_port_auto_exposure(float lux, int iso, uint8_t mode,
-                                         CAM cam, LEN len,
-                                         lv_obj_t* roller_shutter, lv_obj_t* roller_aperture);
-
-// ──────────────────────────────────────────────
-// 手动模式滚轮标志位
-// ──────────────────────────────────────────────
-
-typedef enum {
-    MANUAL_WHEEL_NONE = 0,   // 无滚轮操作
-    MANUAL_WHEEL_TV = 1,     // Tv(快门)滚轮
-    MANUAL_WHEEL_AV = 2      // Av(光圈)滚轮
-} ManualWheelType;
 
 /**
  * @brief 获取手动模式滚轮标志位
@@ -217,6 +150,34 @@ typedef enum {
  * @note 此标志位只有在mode为手动模式(EXPOSURE_MANUAL)时才有意义
  */
 ManualWheelType ui_calc_port_get_manual_wheel_type(void);
+
+/**
+ * @brief 获取当前曝光模式
+ * @return 当前曝光模式：EXPOSURE_MANUAL/EXPOSURE_AUTO/EXPOSURE_LANDSCAPE/EXPOSURE_PORTRAIT
+ * @note 从UI层获取当前选择的拍摄模式
+ */
+uint8_t ui_calc_port_get_exposure_mode(void);
+
+/**
+ * @brief 执行曝光计算（整合UI和算法）
+ * @param lux 环境照度
+ * @param iso ISO值
+ * @param ev 曝光补偿
+ * @param mode 拍摄模式
+ * @param cam 相机参数
+ * @param len 镜头参数
+ * @param roller_shutter 快门滚轮（用于读取值）
+ * @param roller_aperture 光圈滚轮（用于读取值）
+ * @return 计算结果数据
+ * @note 根据模式自动选择计算方式：
+ *       - 自动模式：调用exposure_auto计算光圈和快门
+ *       - 手动模式：根据滚轮类型调用优先计算
+ *         * 滑动Tv滚轮：使用快门优先计算光圈
+ *         * 滑动Av滚轮：使用光圈优先计算快门
+ */
+ui_calc_data_t ui_calc_port_exposure(uint32_t lux, int iso, float ev, uint8_t mode,
+                                        CAM cam, LEN len,
+                                        lv_obj_t* roller_shutter, lv_obj_t* roller_aperture);
 
 /**
  * @brief 设置手动模式滚轮标志位

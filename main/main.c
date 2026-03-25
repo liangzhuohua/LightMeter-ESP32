@@ -4,7 +4,7 @@
 #include "bsp_i2c_init.h"
 #include "hw_veml7700.h"
 #include "app_ui.h"
-#include "app_contrller.h"
+#include "app_controller.h"
 
 static const char* TAG = "main";
 
@@ -29,6 +29,6 @@ void app_main(void)
         // Release the mutex
         example_lvgl_unlock();
     }
-    app_contrller_init();
+    app_controller_init();
 }
 

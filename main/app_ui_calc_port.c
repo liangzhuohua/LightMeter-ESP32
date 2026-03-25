@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "esp_log.h"
+
+static const char* TAG = "app_ui_calc_port";
 
 // ──────────────────────────────────────────────
 // 辅助函数：解析快门字符串
@@ -193,35 +196,41 @@ int ui_calc_port_get_lux_from_label(lv_obj_t* label)
 // 数据转换：算法 -> UI
 // ──────────────────────────────────────────────
 /**
- * @brief 将快门速度值设置到UI滚轮
- * @param roller LVGL快门滚轮对象
- * @param shutter 快门速度(秒)
- * @param shutter_array 可选的快门档位数组，用于查找最接近的档位
- * @param count 快门档位数组数量
- * @note 如果提供了快门数组，会先映射到最接近的档位，然后更新滚轮显示
+ * @brief 将快门速度值设置到 UI 滚轮
+ * @param roller LVGL 快门滚轮对象
+ * @param shutter 快门速度 (秒)
+ * @param cam 相机参数结构体，包含快门档位数组
+ * @note 如果提供了 cam 参数，会先从 cam 中提取快门数组并映射到最接近的档位，然后更新滚轮显示
  */
-void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter,
-                                         const float* shutter_array, int count)
+void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter, CAM cam)
 {
-    if (!roller || shutter <= 0) return;
+    if (!roller || shutter <= 0) {
+        ESP_LOGW(TAG, "Invalid roller or shutter: roller=%p, shutter=%.3f", (void*)roller, shutter);
+        return;
+    }
     
     // 获取 Port 层动态生成的选项字符串
     char* options = ui_calc_port_get_shutter_options();
     
     if (!options) {
+        ESP_LOGE(TAG, "No shutter options available");
         return;  // 没有选项，无法更新
     }
+    
+    ESP_LOGI(TAG, "Setting shutter to %.3f", shutter);
     
     // 获取当前滚轮的选项字符串，只在选项改变时才更新
     const char* current_options = lv_roller_get_options(roller);
     if (!current_options || strcmp(current_options, options) != 0) {
         // 选项字符串改变了，需要更新
+        ESP_LOGI(TAG, "Updating roller options");
         lv_roller_set_options(roller, options, LV_ANIM_OFF);
     }
     
-    // 如果提供了快门数组，查找最接近的档位
-    if (shutter_array && count > 0) {
-        float mapped = mapping_shutter(shutter, shutter_array, count);
+    // 如果提供了相机参数，查找最接近的档位
+    if (cam.shutter_stops && cam.shutter_stop_count > 0) {
+        float mapped = mapping_shutter(shutter, cam.shutter_stops, cam.shutter_stop_count);
+        ESP_LOGI(TAG, "Mapped shutter from %.3f to %.3f", shutter, mapped);
         shutter = mapped;
     }
     
@@ -234,14 +243,20 @@ void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter,
         snprintf(buf, sizeof(buf), "1/%d", (int)roundf(denom));
     }
     
+    ESP_LOGI(TAG, "Looking for shutter string: %s", buf);
+    
     // 使用字符串分割查找索引
     char* copy = strdup(options);
     char* token = strtok(copy, "\n");
     int index = 0;
+    int found = 0;
 
     while (token != NULL) {
+        ESP_LOGD(TAG, "Checking option %d: %s", index, token);
         if (strstr(token, buf) != NULL) {
+            ESP_LOGI(TAG, "Found shutter at index %d", index);
             lv_roller_set_selected(roller, index, LV_ANIM_OFF);
+            found = 1;
             free(copy);
             return;
         }
@@ -249,39 +264,46 @@ void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter,
         index++;
     }
 
+    ESP_LOGW(TAG, "Shutter value %s not found in options", buf);
     free(copy);
 }
 
 /**
- * @brief 将光圈值设置到UI滚轮
- * @param roller LVGL光圈滚轮对象
+ * @brief 将光圈值设置到 UI 滚轮
+ * @param roller LVGL 光圈滚轮对象
  * @param aperture 光圈值
- * @param aperture_array 可选的光圈档位数组，用于查找最接近的档位
- * @param count 光圈档位数组数量
- * @note 如果提供了光圈数组，会先映射到最接近的档位，然后更新滚轮显示
+ * @param len 镜头参数结构体，包含光圈档位数组
+ * @note 如果提供了 len 参数，会先从 len 中提取光圈数组并映射到最接近的档位，然后更新滚轮显示
  */
-void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture,
-                                          const float* aperture_array, int count)
+void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture, LEN len)
 {
-    if (!roller || aperture <= 0) return;
+    if (!roller || aperture <= 0) {
+        ESP_LOGW(TAG, "Invalid roller or aperture: roller=%p, aperture=%.1f", (void*)roller, aperture);
+        return;
+    }
     
     // 获取 Port 层动态生成的选项字符串
     char* options = ui_calc_port_get_aperture_options();
     
     if (!options) {
+        ESP_LOGE(TAG, "No aperture options available");
         return;  // 没有选项，无法更新
     }
+    
+    ESP_LOGI(TAG, "Setting aperture to %.1f", aperture);
     
     // 获取当前滚轮的选项字符串，只在选项改变时才更新
     const char* current_options = lv_roller_get_options(roller);
     if (!current_options || strcmp(current_options, options) != 0) {
         // 选项字符串改变了，需要更新
+        ESP_LOGI(TAG, "Updating roller options");
         lv_roller_set_options(roller, options, LV_ANIM_OFF);
     }
     
-    // 如果提供了光圈数组，查找最接近的档位
-    if (aperture_array && count > 0) {
-        float mapped = mapping_aperture(aperture, (float*)aperture_array, count);
+    // 如果提供了镜头参数，查找最接近的档位
+    if (len.aperture_stops && len.aperture_stop_count > 0) {
+        float mapped = mapping_aperture(aperture, (float*)len.aperture_stops, len.aperture_stop_count);
+        ESP_LOGI(TAG, "Mapped aperture from %.1f to %.1f", aperture, mapped);
         aperture = mapped;
     }
     
@@ -289,14 +311,20 @@ void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture,
     char buf[32];
     snprintf(buf, sizeof(buf), "%.1f", aperture);
     
+    ESP_LOGI(TAG, "Looking for aperture string: %s", buf);
+    
     // 使用字符串分割查找索引
     char* copy = strdup(options);
     char* token = strtok(copy, "\n");
     int index = 0;
+    int found = 0;
 
     while (token != NULL) {
+        ESP_LOGD(TAG, "Checking option %d: %s", index, token);
         if (strstr(token, buf) != NULL) {
+            ESP_LOGI(TAG, "Found aperture at index %d", index);
             lv_roller_set_selected(roller, index, LV_ANIM_OFF);
+            found = 1;
             free(copy);
             return;
         }
@@ -304,6 +332,7 @@ void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture,
         index++;
     }
 
+    ESP_LOGW(TAG, "Aperture value %s not found in options", buf);
     free(copy);
 }
 
@@ -354,22 +383,50 @@ CAM ui_calc_port_extract_cam_from_card(lv_obj_t* card)
     cam.shutter_stop_count = 0;
     cam.flash_sync_shutter = 0.0f;  // 0 表示无闪光同步限制
     
-    if (!card) return cam;
+    ESP_LOGI(TAG, "Extract cam from card: %p", (void*)card);
+    
+    if (!card) {
+        ESP_LOGW(TAG, "Card is NULL");
+        return cam;
+    }
     
     // 获取卡片内容容器
     lv_obj_t *card_content = lv_obj_get_child(card, 0);
-    if (!card_content) return cam;
+    ESP_LOGI(TAG, "Card content: %p", (void*)card_content);
+    if (!card_content) {
+        ESP_LOGW(TAG, "Card content is NULL");
+        return cam;
+    }
     
-    // 获取下拉菜单：快门步进、最小快门、最大快门
-    lv_obj_t *dropdown_shutter_step = lv_obj_get_child(card_content, 1);
-    lv_obj_t *dropdown_min_shutter = lv_obj_get_child(card_content, 2);
-    lv_obj_t *dropdown_max_shutter = lv_obj_get_child(card_content, 3);
-    lv_obj_t *textarea_flash_sync = lv_obj_get_child(card_content, 4);
+    // 获取行容器
+    lv_obj_t *row1 = lv_obj_get_child(card_content, 0);  // 第一行：名字和快门步进
+    lv_obj_t *row2 = lv_obj_get_child(card_content, 1);  // 第二行：最小/最大快门和闪光同步
+    
+    ESP_LOGI(TAG, "Rows: row1=%p, row2=%p", (void*)row1, (void*)row2);
+    
+    if (!row1 || !row2) {
+        ESP_LOGW(TAG, "Row1 or Row2 is NULL");
+        return cam;
+    }
+    
+    // 从 row1 获取：名字 (索引 0), 快门步进 (索引 1)
+    lv_obj_t *dropdown_shutter_step = lv_obj_get_child(row1, 1);
+    
+    // 从 row2 获取：最小快门 (索引 0), 最大快门 (索引 1), 闪光同步 (索引 2)
+    lv_obj_t *dropdown_min_shutter = lv_obj_get_child(row2, 0);
+    lv_obj_t *dropdown_max_shutter = lv_obj_get_child(row2, 1);
+    lv_obj_t *textarea_flash_sync = lv_obj_get_child(row2, 2);
+    
+    ESP_LOGI(TAG, "Dropdowns: step=%p, min=%p, max=%p, flash=%p", 
+             (void*)dropdown_shutter_step, (void*)dropdown_min_shutter, 
+             (void*)dropdown_max_shutter, (void*)textarea_flash_sync);
     
     if (dropdown_shutter_step && dropdown_min_shutter && dropdown_max_shutter) {
         uint32_t step_type = lv_dropdown_get_selected(dropdown_shutter_step);
         uint32_t min_idx = lv_dropdown_get_selected(dropdown_min_shutter);
         uint32_t max_idx = lv_dropdown_get_selected(dropdown_max_shutter);
+        
+        ESP_LOGI(TAG, "Step type: %d, Min idx: %d, Max idx: %d", step_type, min_idx, max_idx);
         
         const float *shutter_array;
         int count;
@@ -409,8 +466,16 @@ CAM ui_calc_port_extract_cam_from_card(lv_obj_t* card)
                 for (int i = orig_min_idx; i >= orig_max_idx && i >= 0 && i < count; i -= stride) {
                     cam.shutter_stops[idx++] = shutter_array[i];
                 }
+                ESP_LOGI(TAG, "Extracted %d shutter stops, first=%.3f, last=%.3f", 
+                         cam.shutter_stop_count, cam.shutter_stops[0], cam.shutter_stops[cam.shutter_stop_count-1]);
+            } else {
+                ESP_LOGE(TAG, "Failed to allocate shutter stops memory");
             }
+        } else {
+            ESP_LOGW(TAG, "Actual count is 0");
         }
+    } else {
+        ESP_LOGW(TAG, "One or more dropdowns are NULL");
     }
     
     // 读取闪光同步值
@@ -447,11 +512,31 @@ LEN ui_calc_port_extract_len_from_card(lv_obj_t* card)
     len.aperture_stop_count = 0;
     len.focal_length = 0.0f;  // 0 表示无自定义焦距
     
-    if (!card) return len;
+    ESP_LOGI(TAG, "Extract len from card: %p", (void*)card);
+    
+    if (!card) {
+        ESP_LOGW(TAG, "Card is NULL");
+        return len;
+    }
     
     // 获取卡片内容容器
     lv_obj_t *card_content = lv_obj_get_child(card, 0);
-    if (!card_content) return len;
+    ESP_LOGI(TAG, "Card content: %p", (void*)card_content);
+    if (!card_content) {
+        ESP_LOGW(TAG, "Card content is NULL");
+        return len;
+    }
+    
+    // 获取行容器
+    lv_obj_t *row1 = lv_obj_get_child(card_content, 0);  // 第一行：名字和光圈步进
+    lv_obj_t *row2 = lv_obj_get_child(card_content, 1);  // 第二行：最小/最大光圈和焦距
+    
+    ESP_LOGI(TAG, "Rows: row1=%p, row2=%p", (void*)row1, (void*)row2);
+    
+    if (!row1 || !row2) {
+        ESP_LOGW(TAG, "Row1 or Row2 is NULL");
+        return len;
+    }
     
     // 获取镜头卡片参数（存储在用户数据中）
     typedef struct {
@@ -467,11 +552,17 @@ LEN ui_calc_port_extract_len_from_card(lv_obj_t* card)
     
     len_card_params_t *params = (len_card_params_t *)lv_obj_get_user_data(card);
     
-    // 获取下拉菜单：光圈步进、最小光圈、最大光圈
-    lv_obj_t *dropdown_aperture_step = lv_obj_get_child(card_content, 1);
-    lv_obj_t *dropdown_min_aperture = lv_obj_get_child(card_content, 2);
-    lv_obj_t *dropdown_max_aperture = lv_obj_get_child(card_content, 3);
-    lv_obj_t *textarea_focal_length = lv_obj_get_child(card_content, 5);
+    // 从 row1 获取：名字 (索引 0), 光圈步进 (索引 1)
+    lv_obj_t *dropdown_aperture_step = lv_obj_get_child(row1, 1);
+    
+    // 从 row2 获取：最小光圈 (索引 0), 最大光圈 (索引 1), 焦距 (索引 2)
+    lv_obj_t *dropdown_min_aperture = lv_obj_get_child(row2, 0);
+    lv_obj_t *dropdown_max_aperture = lv_obj_get_child(row2, 1);
+    lv_obj_t *textarea_focal_length = lv_obj_get_child(row2, 2);
+    
+    ESP_LOGI(TAG, "Dropdowns: step=%p, min=%p, max=%p, focal=%p", 
+             (void*)dropdown_aperture_step, (void*)dropdown_min_aperture, 
+             (void*)dropdown_max_aperture, (void*)textarea_focal_length);
     
     if (dropdown_aperture_step) {
         uint32_t step_type = lv_dropdown_get_selected(dropdown_aperture_step);
@@ -619,140 +710,83 @@ char* ui_calc_port_get_aperture_options(void)
     return options;
 }
 
-// ──────────────────────────────────────────────
-// 曝光计算（整合UI和算法）
-// ──────────────────────────────────────────────
-/**
- * @brief 执行曝光计算并更新UI显示
- * @param lux 环境照度值
- * @param iso ISO感光度值
- * @param ev 曝光补偿值
- * @param mode 拍摄模式：EXPOSURE_AUTO(全自动)、EXPOSURE_LANDSCAPE(风光)、EXPOSURE_PORTRAIT(人像)
- * @param cam 相机参数结构体
- * @param len 镜头参数结构体
- * @param roller_shutter 快门滚轮对象（用于更新显示）
- * @param roller_aperture 光圈滚轮对象（用于更新显示）
- * @return ui_calc_data_t结构体，包含计算结果和状态标志
- * @note 根据模式自动选择计算方式，并将结果更新到UI滚轮
- */
-ui_calc_data_t ui_calc_port_calculate_exposure(float lux, int iso, float ev, uint8_t mode,
-                                                CAM cam, LEN len,
-                                                lv_obj_t* roller_shutter, lv_obj_t* roller_aperture)
+
+
+ui_calc_data_t ui_calc_port_exposure(uint32_t lux, int iso, float ev, uint8_t mode,
+                                        CAM cam, LEN len,
+                                        lv_obj_t* roller_shutter, lv_obj_t* roller_aperture)
 {
-    ui_calc_data_t result = {0};
-    result.lux = lux;
-    result.iso = (float)iso;
-    result.ev = ev;
-    result.mode = mode;
-    result.shutter = -1.0f;
-    result.aperture = -1.0f;
-    
-    if (lux <= 0 || iso <= 0) {
-        return result;
+    ui_calc_data_t calc_data;
+    calc_data.shutter = 0.0f;
+    calc_data.aperture = 0.0f;
+    memset(&calc_data.flags, 0, sizeof(calc_data.flags));
+
+    if (mode != EXPOSURE_MANUAL)
+    {
+        exposure_auto(lux, iso, mode, len, cam, &calc_data.aperture, &calc_data.shutter, &calc_data.flags);
     }
-    
-    // 根据模式选择计算方式
-    switch (mode) {
-        case EXPOSURE_AUTO:
-        case EXPOSURE_LANDSCAPE:
-        case EXPOSURE_PORTRAIT: {
-            // 自动曝光模式
-            exposure_auto(lux, (float)iso, mode, len, cam, &result.aperture, &result.shutter, &result.flags);
-            break;
+    else
+    {
+        ManualWheelType manual_mode = ui_calc_port_get_manual_wheel_type();
+        if (manual_mode == MANUAL_WHEEL_TV)
+        {
+            calc_data.shutter = ui_calc_port_get_shutter_from_roller(roller_shutter);
+            calc_data.aperture = exposure_aperture_priority(lux, iso, calc_data.shutter);
+            
+            if (calc_data.aperture > 0 && len.aperture_stops && len.aperture_stop_count > 0) {
+                float min_aperture = len.aperture_stops[0];
+                float max_aperture = len.aperture_stops[len.aperture_stop_count - 1];
+                if (calc_data.aperture < min_aperture || calc_data.aperture > max_aperture) {
+                    calc_data.flags.aperture_out_of_range = 1;
+                }
+            }
         }
-        default: {
-            // 手动模式或其他模式
-            // 这里可以添加其他计算逻辑
-            break;
+        else if (manual_mode == MANUAL_WHEEL_AV)
+        {
+            calc_data.aperture = ui_calc_port_get_aperture_from_roller(roller_aperture);
+            calc_data.shutter = exposure_shutter_priority(lux, iso, calc_data.aperture);
+            
+            if (calc_data.shutter > 0 && cam.shutter_stops && cam.shutter_stop_count > 0) {
+                float min_shutter = cam.shutter_stops[0];
+                float max_shutter = cam.shutter_stops[cam.shutter_stop_count - 1];
+                if (calc_data.shutter < min_shutter || calc_data.shutter > max_shutter) {
+                    calc_data.flags.shutter_out_of_range = 1;
+                }
+            }
+            
+            if (calc_data.shutter > 0 && calc_data.shutter < 1.0f / 30.0f) {
+                calc_data.flags.slow_shutter_warning = 1;
+            }
         }
     }
-    
-    // 更新UI
-    if (roller_shutter && result.shutter > 0) {
-        ui_calc_port_set_shutter_to_roller(roller_shutter, result.shutter,
-                                             cam.shutter_stops, cam.shutter_stop_count);
-    }
-    
-    if (roller_aperture && result.aperture > 0) {
-        ui_calc_port_set_aperture_to_roller(roller_aperture, result.aperture,
-                                            len.aperture_stops, len.aperture_stop_count);
-    }
-    
-    return result;
-}
 
-/**
- * @brief 从当前UI参数执行曝光计算
- * @param roller_shutter 快门滚轮对象
- * @param roller_aperture 光圈滚轮对象
- * @param roller_iso ISO滚轮对象
- * @param roller_ev EV滚轮对象
- * @param label_lux Lux标签对象
- * @param mode 拍摄模式
- * @param cam 相机参数结构体
- * @param len 镜头参数结构体
- * @return ui_calc_data_t结构体，包含计算结果和状态标志
- * @note 从UI滚轮和标签中获取当前参数，然后调用曝光计算函数
- */
-ui_calc_data_t ui_calc_port_calculate_from_ui(lv_obj_t* roller_shutter, lv_obj_t* roller_aperture,
-                                               lv_obj_t* roller_iso, lv_obj_t* roller_ev,
-                                               lv_obj_t* label_lux, uint8_t mode,
-                                               CAM cam, LEN len)
-{
-    // 从UI获取参数
-    int iso = ui_calc_port_get_iso_from_roller(roller_iso);
-    float ev = ui_calc_port_get_ev_from_roller(roller_ev);
-    int lux = ui_calc_port_get_lux_from_label(label_lux);
-    
-    // 调用计算函数
-    return ui_calc_port_calculate_exposure((float)lux, iso, ev, mode, cam, len,
-                                             roller_shutter, roller_aperture);
+    return calc_data;
 }
 
 // ──────────────────────────────────────────────
-// 自动模式支持
+// 曝光模式转换
 // ──────────────────────────────────────────────
 /**
- * @brief 自动曝光计算（全自动、风光、人像模式）
- * @param lux 环境照度值
- * @param iso ISO感光度值
- * @param mode 拍摄模式：EXPOSURE_AUTO(全自动)、EXPOSURE_LANDSCAPE(风光)、EXPOSURE_PORTRAIT(人像)
- * @param cam 相机参数结构体
- * @param len 镜头参数结构体
- * @param roller_shutter 快门滚轮对象（用于更新显示）
- * @param roller_aperture 光圈滚轮对象（用于更新显示）
- * @return ExposureFlags结构体，包含曝光状态标志
- * @note 自动计算最佳光圈和快门组合，并更新到UI滚轮
+ * @brief 获取当前曝光模式
+ * @return EXPOSURE_MANUAL(0), EXPOSURE_AUTO(1), EXPOSURE_LANDSCAPE(2), EXPOSURE_PORTRAIT(3)
+ * @note UI索引与EXPOSURE枚举的映射：
+ *       UI索引0 -> EXPOSURE_AUTO (auto_mode)
+ *       UI索引1 -> EXPOSURE_LANDSCAPE (landscape_mode)
+ *       UI索引2 -> EXPOSURE_MANUAL (manual_mode)
+ *       UI索引3 -> EXPOSURE_PORTRAIT (portrait_mode)
  */
-ExposureFlags ui_calc_port_auto_exposure(float lux, int iso, uint8_t mode,
-                                         CAM cam, LEN len,
-                                         lv_obj_t* roller_shutter, lv_obj_t* roller_aperture)
-{
-    ExposureFlags flags = {0};
-    float aperture = -1.0f;
-    float shutter = -1.0f;
-    
-    if (lux <= 0 || iso <= 0) {
-        return flags;
-    }
-    
-    // 调用自动曝光计算
-    exposure_auto(lux, (float)iso, mode, len, cam, &aperture, &shutter, &flags);
-    
-    // 更新UI
-    if (roller_shutter && shutter > 0) {
-        ui_calc_port_set_shutter_to_roller(roller_shutter, shutter,
-                                             cam.shutter_stops, cam.shutter_stop_count);
-    }
-    
-    if (roller_aperture && aperture > 0) {
-        ui_calc_port_set_aperture_to_roller(roller_aperture, aperture,
-                                            len.aperture_stops, len.aperture_stop_count);
-    }
-    
-    return flags;
-}
+uint8_t ui_calc_port_get_exposure_mode(void) {
+    extern uint8_t app_ui_get_selected_mode(void);
+    uint8_t ui_idx = app_ui_get_selected_mode();
 
+    switch (ui_idx) {
+        case 0: return EXPOSURE_AUTO;
+        case 1: return EXPOSURE_LANDSCAPE;
+        case 2: return EXPOSURE_MANUAL;
+        case 3: return EXPOSURE_PORTRAIT;
+        default: return EXPOSURE_MANUAL;
+    }
+}
 
 // ──────────────────────────────────────────────
 // 手动模式滚轮标志位实现

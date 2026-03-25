@@ -17,6 +17,8 @@
         "app_ui.h": "c",
         "lvgl.h": "c",
         "cstdio": "c",
-        "app_contrller.h": "c"
+        "app_contrller.h": "c",
+        "numbers": "c",
+        "random": "c"
     }
 }

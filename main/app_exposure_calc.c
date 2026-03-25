@@ -218,7 +218,7 @@ float mapping_shutter(float calculated_s, const float* s_stop, int s_stop_count)
  * - 全自动模式：根据环境亮度自动选择合适的光圈
  * - 会考虑镜头和相机的物理限制，并设置相应的标志位
  */
-void exposure_auto(float lux, float iso, uint8_t auto_mode, LEN len, CAM cam, float* aperture, float* shutter, ExposureFlags* flags) {
+void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam, float* aperture, float* shutter, ExposureFlags* flags) {
     if (!aperture || !shutter || !flags || lux <= 0 || iso <= 0) {
         *aperture = -1.0f; *shutter = -1.0f; return;
     }
@@ -301,3 +301,5 @@ void exposure_auto(float lux, float iso, uint8_t auto_mode, LEN len, CAM cam, fl
     *shutter = (cam.shutter_stops) ? 
                mapping_shutter(target_s, cam.shutter_stops, cam.shutter_stop_count) : target_s;
 }
+
+

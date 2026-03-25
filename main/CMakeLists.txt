@@ -8,7 +8,7 @@ idf_component_register(
     "app_ui.c"
     "img_cam.c"
     "img_len.c"
-    "app_contrller.c"
+    "app_controller.c"
     "app_ui_calc_port.c"
     "img_auto_mode.c"
     "img_landscape_mode.c"

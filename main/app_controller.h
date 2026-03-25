@@ -4,4 +4,6 @@
 #include "app_ui_calc_port.h"
 #include "app_ui.h"
 
+void app_controller_init(void);
+
 #endif
