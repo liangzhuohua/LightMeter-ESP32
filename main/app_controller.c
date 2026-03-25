@@ -104,8 +104,6 @@ static void task_calc_exposure(void* pvParameters) {
             example_lvgl_unlock();
         }
 
-
-        
         // 释放 cam 和 len 中分配的内存
         if (cam.shutter_stops) free(cam.shutter_stops);
         if (len.aperture_stops) free(len.aperture_stops);
