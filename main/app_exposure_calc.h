@@ -94,13 +94,13 @@ typedef struct {
 
 // 函数声明
 float exposure_lux_to_ev_incident(float lux, float iso);
-float exposure_aperture_priority(float lux, float iso, float aperture);
-float exposure_shutter_priority(float lux, float iso, float shutter);
+float exposure_aperture_priority(float lux, float iso, float ev_compensation, float aperture);
+float exposure_shutter_priority(float lux, float iso, float ev_compensation, float shutter);
 float* generate_aperture(float max_f, float min_f, float step_ev, int* out_count);
 float* generate_shutter(float max_s, float min_s, float step_ev, int* out_count);
 float mapping_aperture(float calculated_f, float* f_stop, int f_stop_count);
 float mapping_shutter(float calculated_s, const float* s_stop, int s_stop_count);
-void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam, float* aperture, float* shutter, ExposureFlags* flags);
+void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam, float ev_compensation, float* aperture, float* shutter, ExposureFlags* flags);
 
 
 

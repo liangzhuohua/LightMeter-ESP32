@@ -255,7 +255,7 @@ void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter, CAM cam
         ESP_LOGD(TAG, "Checking option %d: %s", index, token);
         if (strstr(token, buf) != NULL) {
             ESP_LOGI(TAG, "Found shutter at index %d", index);
-            lv_roller_set_selected(roller, index, LV_ANIM_OFF);
+            lv_roller_set_selected(roller, index, LV_ANIM_ON);
             found = 1;
             free(copy);
             return;
@@ -323,7 +323,7 @@ void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture, LEN l
         ESP_LOGD(TAG, "Checking option %d: %s", index, token);
         if (strstr(token, buf) != NULL) {
             ESP_LOGI(TAG, "Found aperture at index %d", index);
-            lv_roller_set_selected(roller, index, LV_ANIM_OFF);
+            lv_roller_set_selected(roller, index, LV_ANIM_ON);
             found = 1;
             free(copy);
             return;
@@ -723,40 +723,110 @@ ui_calc_data_t ui_calc_port_exposure(uint32_t lux, int iso, float ev, uint8_t mo
 
     if (mode != EXPOSURE_MANUAL)
     {
-        exposure_auto(lux, iso, mode, len, cam, &calc_data.aperture, &calc_data.shutter, &calc_data.flags);
+        exposure_auto(lux, iso, mode, len, cam, ev, &calc_data.aperture, &calc_data.shutter, &calc_data.flags);
     }
     else
     {
         ManualWheelType manual_mode = ui_calc_port_get_manual_wheel_type();
+        
+        // 获取相机和镜头的边界值
+        float min_shutter = 0.001f;
+        float max_shutter = 30.0f;
+        float min_aperture = 1.4f;    // 最小 f 值 = 最大光圈
+        float max_aperture = 22.0f;   // 最大 f 值 = 最小光圈
+        
+        if (cam.shutter_stops && cam.shutter_stop_count > 0) {
+            // 快门：数值越小表示越快
+            float v1 = cam.shutter_stops[0];
+            float v2 = cam.shutter_stops[cam.shutter_stop_count - 1];
+            min_shutter = (v1 < v2) ? v1 : v2;  // 最小值 = 最快快门
+            max_shutter = (v1 > v2) ? v1 : v2;  // 最大值 = 最慢慢门
+        }
+        
+        if (len.aperture_stops && len.aperture_stop_count > 0) {
+            // 光圈：数值越小表示光圈越大
+            // 数组通常是 [1.4, 2.0, 2.8, ..., 16, 22]，从小到大排列
+            min_aperture = len.aperture_stops[0];              // 最小 f 值 = 最大光圈
+            max_aperture = len.aperture_stops[len.aperture_stop_count - 1];  // 最大 f 值 = 最小光圈
+        }
+        
         if (manual_mode == MANUAL_WHEEL_TV)
         {
             calc_data.shutter = ui_calc_port_get_shutter_from_roller(roller_shutter);
-            calc_data.aperture = exposure_aperture_priority(lux, iso, calc_data.shutter);
+            float calc_aperture = exposure_shutter_priority(lux, iso, ev, calc_data.shutter);
             
-            if (calc_data.aperture > 0 && len.aperture_stops && len.aperture_stop_count > 0) {
-                float min_aperture = len.aperture_stops[0];
-                float max_aperture = len.aperture_stops[len.aperture_stop_count - 1];
-                if (calc_data.aperture < min_aperture || calc_data.aperture > max_aperture) {
+            ESP_LOGI(TAG, "TV mode: lux=%u, iso=%d, ev=%.1f, shutter=%.3f, calc aperture=%.1f", 
+                     lux, iso, ev, calc_data.shutter, calc_aperture);
+            
+            if (calc_aperture > 0 && len.aperture_stops && len.aperture_stop_count > 0) {
+                float actual_min_aperture = len.aperture_stops[0];
+                float actual_max_aperture = len.aperture_stops[len.aperture_stop_count - 1];
+                
+                calc_data.aperture = mapping_aperture(calc_aperture, len.aperture_stops, len.aperture_stop_count);
+                
+                ESP_LOGI(TAG, "Aperture: bounds [%.1f, %.1f], calc=%.1f, mapped=%.1f", 
+                         actual_min_aperture, actual_max_aperture, calc_aperture, calc_data.aperture);
+                
+                if (calc_aperture < actual_min_aperture) {
+                    calc_data.aperture = actual_min_aperture;
                     calc_data.flags.aperture_out_of_range = 1;
+                    calc_data.flags.overexposure = 1;
+                    ESP_LOGW(TAG, "Aperture too large (need f/%.1f < min f/%.1f), clamped to f/%.1f", 
+                             calc_aperture, actual_min_aperture, actual_min_aperture);
+                } else if (calc_aperture > actual_max_aperture) {
+                    calc_data.aperture = actual_max_aperture;
+                    calc_data.flags.aperture_out_of_range = 1;
+                    calc_data.flags.underexposure = 1;
+                    ESP_LOGW(TAG, "Aperture too small (need f/%.1f > max f/%.1f), clamped to f/%.1f", 
+                             calc_aperture, actual_max_aperture, actual_max_aperture);
                 }
+            } else {
+                calc_data.aperture = calc_aperture;
             }
         }
         else if (manual_mode == MANUAL_WHEEL_AV)
         {
             calc_data.aperture = ui_calc_port_get_aperture_from_roller(roller_aperture);
-            calc_data.shutter = exposure_shutter_priority(lux, iso, calc_data.aperture);
+            float calc_shutter = exposure_aperture_priority(lux, iso, ev, calc_data.aperture);
             
-            if (calc_data.shutter > 0 && cam.shutter_stops && cam.shutter_stop_count > 0) {
-                float min_shutter = cam.shutter_stops[0];
-                float max_shutter = cam.shutter_stops[cam.shutter_stop_count - 1];
-                if (calc_data.shutter < min_shutter || calc_data.shutter > max_shutter) {
+            ESP_LOGI(TAG, "AV mode: lux=%u, iso=%d, ev=%.1f, aperture=%.1f, calc shutter=%.3f", 
+                     lux, iso, ev, calc_data.aperture, calc_shutter);
+            
+            if (calc_shutter > 0 && cam.shutter_stops && cam.shutter_stop_count > 0) {
+                float actual_min_shutter = min_shutter;
+                float actual_max_shutter = max_shutter;
+                
+                calc_data.shutter = mapping_shutter(calc_shutter, cam.shutter_stops, cam.shutter_stop_count);
+                
+                ESP_LOGI(TAG, "Shutter: bounds [%.3f, %.3f], calc=%.3f, mapped=%.3f", 
+                         actual_min_shutter, actual_max_shutter, calc_shutter, calc_data.shutter);
+                
+                if (calc_shutter < actual_min_shutter) {
+                    calc_data.shutter = actual_min_shutter;
                     calc_data.flags.shutter_out_of_range = 1;
+                    calc_data.flags.overexposure = 1;
+                    ESP_LOGW(TAG, "Shutter too fast (need %.3f < min %.3f), clamped to %.3f", 
+                             calc_shutter, actual_min_shutter, actual_min_shutter);
+                } else if (calc_shutter > actual_max_shutter) {
+                    calc_data.shutter = actual_max_shutter;
+                    calc_data.flags.shutter_out_of_range = 1;
+                    calc_data.flags.underexposure = 1;
+                    ESP_LOGW(TAG, "Shutter too slow (need %.3f > max %.3f), clamped to %.3f", 
+                             calc_shutter, actual_max_shutter, actual_max_shutter);
                 }
+            } else {
+                calc_data.shutter = calc_shutter;
             }
             
             if (calc_data.shutter > 0 && calc_data.shutter < 1.0f / 30.0f) {
                 calc_data.flags.slow_shutter_warning = 1;
             }
+        }
+        else
+        {
+            // MANUAL_WHEEL_NONE - 手动模式但未操作滚轮，保持当前值
+            calc_data.shutter = ui_calc_port_get_shutter_from_roller(roller_shutter);
+            calc_data.aperture = ui_calc_port_get_aperture_from_roller(roller_aperture);
         }
     }
 

@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "hw_veml7700.h"
+#include "hw_oled.h"
 
 
 static const char* TAG = "app_controller";
@@ -46,9 +47,14 @@ static void task_calc_exposure(void* pvParameters) {
         {
             ESP_LOGI(TAG, "LUX: %u lx", lux);
         }
-        
+        if (example_lvgl_lock(-1))
+        {
+            ui_calc_port_update_lux_label(main_label_lux_value, lux);
+            example_lvgl_unlock();
+        }
+
         // 更新 lux 显示
-        ui_calc_port_update_lux_label(main_label_lux_value, lux);
+        
         
         // 获取其他参数
         iso = ui_calc_port_get_iso_from_roller(main_roller_iso);
@@ -89,9 +95,16 @@ static void task_calc_exposure(void* pvParameters) {
         
         ESP_LOGI(TAG, "Calc shutter: %.3f, aperture: %.1f", calc_data.shutter, calc_data.aperture);
         
-        // 直接更新 UI
-        ui_calc_port_set_shutter_to_roller(main_roller_shutter, calc_data.shutter, cam);
-        ui_calc_port_set_aperture_to_roller(main_roller_aperture, calc_data.aperture, len);
+        
+        if (example_lvgl_lock(-1))
+        {
+            // 直接更新 UI
+            ui_calc_port_set_shutter_to_roller(main_roller_shutter, calc_data.shutter, cam);
+            ui_calc_port_set_aperture_to_roller(main_roller_aperture, calc_data.aperture, len);
+            example_lvgl_unlock();
+        }
+
+
         
         // 释放 cam 和 len 中分配的内存
         if (cam.shutter_stops) free(cam.shutter_stops);

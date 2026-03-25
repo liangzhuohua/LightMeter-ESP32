@@ -19,6 +19,7 @@
         "cstdio": "c",
         "app_contrller.h": "c",
         "numbers": "c",
-        "random": "c"
+        "random": "c",
+        "ratio": "c"
     }
 }

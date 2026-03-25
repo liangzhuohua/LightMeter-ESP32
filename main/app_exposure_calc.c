@@ -24,28 +24,32 @@ float exposure_lux_to_ev_incident(float lux, float iso) {
 /**
  * @brief 光圈优先模式计算快门速度
  * @param lux 环境照度值，单位：lux
- * @param iso ISO感光度值
- * @param aperture 光圈值(f-number)
- * @return 快门速度(秒)，如果计算失败返回-1.0f
- * @note 计算公式：shutter = aperture² / 2^EV
+ * @param iso ISO 感光度值
+ * @param ev_compensation EV 曝光补偿值（通常为 0，可正可负）
+ * @param aperture 光圈值 (f-number)
+ * @return 快门速度 (秒)，如果计算失败返回 -1.0f
+ * @note 计算公式：shutter = aperture² / 2^(EV+ev_compensation)
  */
-float exposure_aperture_priority(float lux, float iso, float aperture) {
+float exposure_aperture_priority(float lux, float iso, float ev_compensation, float aperture) {
     float ev = exposure_lux_to_ev_incident(lux, iso);
     if (ev == -INFINITY) return -1.0f;
+    ev += ev_compensation;  // 应用 EV 补偿
     return powf(aperture, 2) / exp2f(ev);
 }
 
 /**
  * @brief 快门优先模式计算光圈值
  * @param lux 环境照度值，单位：lux
- * @param iso ISO感光度值
- * @param shutter 快门速度(秒)
- * @return 光圈值(f-number)，如果计算失败返回-1.0f
- * @note 计算公式：aperture = sqrt(2^EV * shutter)
+ * @param iso ISO 感光度值
+ * @param ev_compensation EV 曝光补偿值（通常为 0，可正可负）
+ * @param shutter 快门速度 (秒)
+ * @return 光圈值 (f-number)，如果计算失败返回 -1.0f
+ * @note 计算公式：aperture = sqrt(2^(EV+ev_compensation) * shutter)
  */
-float exposure_shutter_priority(float lux, float iso, float shutter) {
+float exposure_shutter_priority(float lux, float iso, float ev_compensation, float shutter) {
     float ev = exposure_lux_to_ev_incident(lux, iso);
     if (ev == -INFINITY || shutter <= 0.0f) return -1.0f;
+    ev += ev_compensation;  // 应用 EV 补偿
     return sqrtf(exp2f(ev) * shutter);
 }
 
@@ -218,7 +222,7 @@ float mapping_shutter(float calculated_s, const float* s_stop, int s_stop_count)
  * - 全自动模式：根据环境亮度自动选择合适的光圈
  * - 会考虑镜头和相机的物理限制，并设置相应的标志位
  */
-void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam, float* aperture, float* shutter, ExposureFlags* flags) {
+void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam, float ev_compensation, float* aperture, float* shutter, ExposureFlags* flags) {
     if (!aperture || !shutter || !flags || lux <= 0 || iso <= 0) {
         *aperture = -1.0f; *shutter = -1.0f; return;
     }
@@ -242,7 +246,7 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
         case EXPOSURE_LANDSCAPE: target_f = 11.0f; break;
         case EXPOSURE_PORTRAIT:  target_f = (len_f_max < 2.0f) ? 2.0f : len_f_max; break;
         default: {
-            float ev = exposure_lux_to_ev_incident(lux, iso);
+            float ev = exposure_lux_to_ev_incident(lux, iso) + ev_compensation;
             if (ev >= 15.0f) target_f = 11.0f;
             else if (ev >= 12.0f) target_f = 8.0f;
             else if (ev >= 10.0f) target_f = 5.6f;
@@ -255,10 +259,10 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
     if (target_f < len_f_max) target_f = len_f_max;
     if (target_f > len_f_min) target_f = len_f_min;
 
-    float target_s = exposure_aperture_priority(lux, iso, target_f);
+    float target_s = exposure_aperture_priority(lux, iso, ev_compensation, target_f);
 
     if (target_s < cam_s_fastest) {
-        float new_f = exposure_shutter_priority(lux, iso, cam_s_fastest);
+        float new_f = exposure_shutter_priority(lux, iso, ev_compensation, cam_s_fastest);
         if (new_f > len_f_min) {
             target_f = len_f_min;
             target_s = cam_s_fastest;
@@ -271,7 +275,7 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
     }
     else if (target_s > cam_s_slowest) {
         target_s = cam_s_slowest;
-        float re_calculated_f = exposure_shutter_priority(lux, iso, target_s);
+        float re_calculated_f = exposure_shutter_priority(lux, iso, ev_compensation, target_s);
 
         if (re_calculated_f > len_f_min) {
             target_f = len_f_min;
