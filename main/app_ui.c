@@ -2470,6 +2470,7 @@ static void wifi_hide_password_keyboard(void)
     if (cam_keyboard != NULL && lv_keyboard_get_textarea(cam_keyboard) == wifi_connect_pwd_ta) {
         lv_keyboard_set_textarea(cam_keyboard, NULL);
         lv_obj_add_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_center(wifi_connect_win);
     }
 }
 
@@ -2718,6 +2719,7 @@ static void wifi_pwd_ta_event_cb(lv_event_t * e)
             lv_keyboard_set_textarea(cam_keyboard, ta);
             lv_obj_clear_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
             lv_obj_move_foreground(cam_keyboard);
+            lv_obj_align(wifi_connect_win, LV_ALIGN_TOP_MID, 0, 20);
             lv_indev_wait_release(lv_indev_get_act());
         }
     }
@@ -3664,8 +3666,8 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_scroll_dir(wifi_card_win_container, LV_DIR_VER);
 
     // Initialize wifi connect window
-    wifi_connect_win = lv_win_create(lv_scr_act(), scr_act_height()/10);
-    lv_obj_set_size(wifi_connect_win, 35 * scr_act_width() / 40, 30 * scr_act_height() / 40);
+    wifi_connect_win = lv_win_create(lv_scr_act(), scr_act_height()/12);
+    lv_obj_set_size(wifi_connect_win, 28 * scr_act_width() / 40, 22 * scr_act_height() / 40);
     lv_obj_center(wifi_connect_win);
     lv_obj_set_style_bg_color(wifi_connect_win, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(wifi_connect_win, LV_OPA_80, 0);
