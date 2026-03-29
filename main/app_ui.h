@@ -31,4 +31,13 @@ char* app_ui_generate_shutter_options(const float* shutter_array, int count, int
 // 辅助函数：生成光圈选项字符串（供Port层使用）
 char* app_ui_generate_aperture_options(const float* aperture_array, int count, int stride);
 
+// ──────────────────────────────────────────────
+// WiFi UI 函数（内部使用，请通过 app_ui_wifi_port 访问）
+// ──────────────────────────────────────────────
+void add_wifi_card(const char *wifi_name, int signal_strength);
+void app_ui_wifi_on_connecting(const char *ssid);
+void app_ui_wifi_on_connected(const char *ssid);
+void app_ui_wifi_on_disconnected(const char *ssid);
+void app_ui_wifi_on_connect_failed(const char *ssid, int reason);
+
 #endif // __APP_UI_H__

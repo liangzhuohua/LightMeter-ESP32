@@ -14,6 +14,8 @@ idf_component_register(
     "img_landscape_mode.c"
     "img_manual_mode.c"
     "img_portrait_mode.c"
+    "hw_wifi.c"
+    "app_ui_wifi_port.c"
 
     INCLUDE_DIRS ".")
 

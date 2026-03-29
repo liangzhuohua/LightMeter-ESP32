@@ -19,7 +19,7 @@
 
 #include "bsp_i2c_init.h"
 
-#define LCD_HOST    SPI2_HOST
+#define LCD_HOST    SPI3_HOST
 #define TOUCH_HOST  I2C_HOST
 
 #if CONFIG_LV_COLOR_DEPTH == 32
@@ -33,7 +33,7 @@
 
 // 鱼鹰光电屏幕验证底板
 #define EXAMPLE_PIN_NUM_LCD_CS            (GPIO_NUM_40)
-#define EXAMPLE_PIN_NUM_LCD_PCLK          (GPIO_NUM_21) 
+#define EXAMPLE_PIN_NUM_LCD_PCLK          (GPIO_NUM_21)
 #define EXAMPLE_PIN_NUM_LCD_DATA0         (GPIO_NUM_47)
 #define EXAMPLE_PIN_NUM_LCD_DATA1         (GPIO_NUM_45)
 #define EXAMPLE_PIN_NUM_LCD_DATA2         (GPIO_NUM_38)
@@ -49,12 +49,12 @@
 
 
 
-#define EXAMPLE_LVGL_BUF_HEIGHT        (EXAMPLE_LCD_V_RES / 3)
+#define EXAMPLE_LVGL_BUF_HEIGHT        (EXAMPLE_LCD_V_RES / 5)
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 #define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
 #define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1
 #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
-#define EXAMPLE_LVGL_TASK_PRIORITY     2
+#define EXAMPLE_LVGL_TASK_PRIORITY      6
 
 
 #define EXAMPLE_LCD_H_RES              460
@@ -81,7 +81,7 @@ static const qspi_amoled_lcd_init_cmd_t lcd_init_cmds[] = {
 };
 
 
-#define TOUCH_IO_I2C_CONFIG    ESP_LCD_TOUCH_IO_I2C_CST820_CONFIG  
+#define TOUCH_IO_I2C_CONFIG    ESP_LCD_TOUCH_IO_I2C_CST820_CONFIG
 #define esp_lcd_touch_new_i2c  esp_lcd_touch_new_i2c_cst820
 
 void oled_lvgl_init(void);
@@ -90,4 +90,3 @@ void example_lvgl_unlock(void);
 void oled_set_brightness(uint8_t brightness);
 
 #endif // !__BSP_OLED_H__
-
