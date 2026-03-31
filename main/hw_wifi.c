@@ -127,11 +127,16 @@ static void wifi_scan_done_handler(void* arg, esp_event_base_t event_base, int32
         result.ap_list[i].rssi = ap_records[i].rssi;
         result.ap_list[i].channel = ap_records[i].primary;
         result.ap_list[i].authmode = ap_records[i].authmode;
+        memcpy(result.ap_list[i].bssid, ap_records[i].bssid, 6);
 
         ESP_LOGI("SCAN", "--- AP %d ---", i + 1);
         ESP_LOGI("SCAN", "SSID: \t\t%s", result.ap_list[i].ssid);
         ESP_LOGI("SCAN", "RSSI: \t\t%d dBm", result.ap_list[i].rssi);
         ESP_LOGI("SCAN", "Channel: \t%d", result.ap_list[i].channel);
+        ESP_LOGI("SCAN", "BSSID: \t\t%02X:%02X:%02X:%02X:%02X:%02X",
+                 result.ap_list[i].bssid[0], result.ap_list[i].bssid[1],
+                 result.ap_list[i].bssid[2], result.ap_list[i].bssid[3],
+                 result.ap_list[i].bssid[4], result.ap_list[i].bssid[5]);
     }
 
     free(ap_records);
@@ -304,11 +309,16 @@ wifi_scan_result_t hw_wifi_scan(void) {
         result.ap_list[i].rssi = ap_records[i].rssi;
         result.ap_list[i].channel = ap_records[i].primary;
         result.ap_list[i].authmode = ap_records[i].authmode;
+        memcpy(result.ap_list[i].bssid, ap_records[i].bssid, 6);
 
         ESP_LOGI("SCAN", "--- AP %d ---", i + 1);
         ESP_LOGI("SCAN", "SSID: \t\t%s", result.ap_list[i].ssid);
         ESP_LOGI("SCAN", "RSSI: \t\t%d dBm", result.ap_list[i].rssi);
         ESP_LOGI("SCAN", "Channel: \t%d", result.ap_list[i].channel);
+        ESP_LOGI("SCAN", "BSSID: \t\t%02X:%02X:%02X:%02X:%02X:%02X",
+                 result.ap_list[i].bssid[0], result.ap_list[i].bssid[1],
+                 result.ap_list[i].bssid[2], result.ap_list[i].bssid[3],
+                 result.ap_list[i].bssid[4], result.ap_list[i].bssid[5]);
     }
 
     free(ap_records);

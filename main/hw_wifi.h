@@ -8,6 +8,7 @@ typedef struct {
     int8_t rssi;        // 信号强度（dBm）
     uint8_t channel;    // 信道
     uint8_t authmode;   // 认证模式
+    uint8_t bssid[6];   // MAC地址
 } wifi_info_t;
 
 typedef struct {

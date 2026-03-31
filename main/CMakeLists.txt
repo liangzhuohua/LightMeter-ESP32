@@ -16,6 +16,10 @@ idf_component_register(
     "img_portrait_mode.c"
     "hw_wifi.c"
     "app_ui_wifi_port.c"
+    "app_location.c"
+    "app_http_requests.c"
+    "app_ui_time_port.c"
+    "app_ui_location_port.c"
 
     INCLUDE_DIRS ".")
 

@@ -61,7 +61,6 @@ lv_obj_t* main_roller_ev;               // ev值
 lv_obj_t* main_label_lux_value;         // 光照强度
 lv_obj_t* main_obj_mode_select;         // 模式选择容器
 
-
 lv_obj_t* cam_win_select;               // cam选择
 lv_obj_t* wifi_config_win;              // wifi配置
 static lv_obj_t* cam_keyboard;        // 相机参数键盘
@@ -146,10 +145,19 @@ static lv_obj_t *wifi_connect_pwd_ta = NULL;
 static lv_obj_t *wifi_connect_btn = NULL;
 static lv_obj_t *wifi_connect_btn_label = NULL;
 static lv_obj_t *wifi_summary_label = NULL;
+lv_obj_t *wifi_icon_label = NULL;
+lv_obj_t *wifi_ssid_label = NULL;
+lv_obj_t *wifi_status_label = NULL;
 static lv_obj_t *current_selected_wifi_card = NULL;
 static lv_obj_t *connected_wifi_card = NULL;
 static char wifi_connected_ssid[33] = {0};
 static char wifi_connecting_ssid[33] = {0};
+
+lv_obj_t *time_time_label = NULL;
+lv_obj_t *time_date_label = NULL;
+
+lv_obj_t *location_city_label = NULL;
+lv_obj_t *location_detail_label = NULL;
 
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
@@ -2866,6 +2874,19 @@ void app_ui_wifi_on_connected(const char *ssid)
         lv_label_set_text(wifi_summary_label, wifi_connected_ssid);
     }
 
+    // 更新新的WiFi卡片UI
+    if (wifi_icon_label != NULL) {
+        lv_obj_set_style_text_color(wifi_icon_label, lv_color_hex(0x00ff00), 0);
+    }
+    if (wifi_ssid_label != NULL) {
+        lv_label_set_text(wifi_ssid_label, ssid);
+        lv_obj_set_style_text_color(wifi_ssid_label, lv_color_white(), 0);
+    }
+    if (wifi_status_label != NULL) {
+        lv_label_set_text(wifi_status_label, "Connected");
+        lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0x00ff00), 0);
+    }
+
     wifi_sync_card_styles();
 
     if (current_selected_wifi_card != NULL) {
@@ -2895,6 +2916,19 @@ void app_ui_wifi_on_disconnected(const char *ssid)
         } else {
             lv_label_set_text(wifi_summary_label, "Not connected");
         }
+    }
+
+    // 更新新的WiFi卡片UI
+    if (wifi_icon_label != NULL) {
+        lv_obj_set_style_text_color(wifi_icon_label, lv_color_hex(0x888888), 0);
+    }
+    if (wifi_ssid_label != NULL) {
+        lv_label_set_text(wifi_ssid_label, "Not connected");
+        lv_obj_set_style_text_color(wifi_ssid_label, lv_color_hex(0x888888), 0);
+    }
+    if (wifi_status_label != NULL) {
+        lv_label_set_text(wifi_status_label, "Disconnected");
+        lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0xff6b6b), 0);
     }
 
     wifi_sync_card_styles();
@@ -3434,21 +3468,17 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(setting_container, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(setting_container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_row(setting_container, 8, 0);
-
-    lv_obj_t* title_label = lv_label_create(setting_container);
-    lv_label_set_text(title_label, LV_SYMBOL_SETTINGS " Settings");
-    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(title_label, lv_color_white(), 0);
-    lv_obj_set_style_pad_bottom(title_label, 5, 0);
+    lv_obj_set_style_pad_top(setting_container, 10, 0);
 
     lv_obj_t* weather_card = lv_obj_create(setting_container);
-    lv_obj_set_size(weather_card, lv_pct(95), LV_SIZE_CONTENT);
+    lv_obj_set_size(weather_card, lv_pct(95), 120);
     lv_obj_set_style_bg_color(weather_card, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(weather_card, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(weather_card, 15, 0);
     lv_obj_set_style_pad_all(weather_card, 15, 0);
     lv_obj_set_style_border_width(weather_card, 0, 0);
     lv_obj_set_flex_flow(weather_card, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(weather_card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_row(weather_card, 8, 0);
 
     lv_obj_t* weather_row1 = lv_obj_create(weather_card);
@@ -3477,6 +3507,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_size(weather_row2, lv_pct(100), LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(weather_row2, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(weather_row2, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_top(weather_row2, 20, 0);
 
     lv_obj_t* humidity_label = lv_label_create(weather_row2);
     lv_label_set_text(humidity_label, LV_SYMBOL_TINT " 65%");
@@ -3543,39 +3574,54 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_remove_style_all(cards_row);
     lv_obj_set_size(cards_row, lv_pct(95), LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(cards_row, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(cards_row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_align(cards_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(cards_row, 8, 0);
 
 //-----------------------------------------------------------------------------------------------
     // wifi card
     lv_obj_t* wifi_card = lv_obj_create(cards_row);
-    lv_obj_set_size(wifi_card, lv_pct(48), LV_SIZE_CONTENT);
+    lv_obj_set_size(wifi_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(wifi_card, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(wifi_card, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(wifi_card, 15, 0);
     lv_obj_set_style_pad_all(wifi_card, 12, 0);
     lv_obj_set_style_border_width(wifi_card, 0, 0);
     lv_obj_set_flex_flow(wifi_card, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(wifi_card, 3, 0);
+    lv_obj_set_style_pad_row(wifi_card, 6, 0);
 
     // 长按弹出窗口
     lv_obj_add_flag(wifi_card, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK);
     lv_obj_add_event_cb(wifi_card, wifi_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
 
-    lv_obj_t* wifi_icon = lv_label_create(wifi_card);
-    lv_label_set_text(wifi_icon, LV_SYMBOL_WIFI);
-    lv_obj_set_style_text_font(wifi_icon, &lv_font_montserrat_24, 0);
-    lv_obj_set_style_text_color(wifi_icon, lv_color_hex(0x00ff00), 0);
+    // 第一行：图标 + 标题
+    lv_obj_t* wifi_header = lv_obj_create(wifi_card);
+    lv_obj_remove_style_all(wifi_header);
+    lv_obj_set_size(wifi_header, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(wifi_header, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(wifi_header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(wifi_header, 8, 0);
 
-    lv_obj_t* wifi_title = lv_label_create(wifi_card);
+    wifi_icon_label = lv_label_create(wifi_header);
+    lv_label_set_text(wifi_icon_label, LV_SYMBOL_WIFI);
+    lv_obj_set_style_text_font(wifi_icon_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(wifi_icon_label, lv_color_hex(0x888888), 0);
+
+    lv_obj_t* wifi_title = lv_label_create(wifi_header);
     lv_label_set_text(wifi_title, "WiFi");
     lv_obj_set_style_text_font(wifi_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(wifi_title, lv_color_white(), 0);
 
-    wifi_summary_label = lv_label_create(wifi_card);
-    lv_label_set_text(wifi_summary_label, "Not connected");
-    lv_obj_set_style_text_font(wifi_summary_label, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(wifi_summary_label, lv_color_hex(0x888888), 0);
+    // 第二行：WiFi名称
+    wifi_ssid_label = lv_label_create(wifi_card);
+    lv_label_set_text(wifi_ssid_label, "Not connected");
+    lv_obj_set_style_text_font(wifi_ssid_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(wifi_ssid_label, lv_color_hex(0x888888), 0);
+
+    // 第三行：状态
+    wifi_status_label = lv_label_create(wifi_card);
+    lv_label_set_text(wifi_status_label, "Disconnected");
+    lv_obj_set_style_text_font(wifi_status_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0xff6b6b), 0);
 
 
     wifi_config_win = lv_win_create(lv_scr_act(), scr_act_height()/10);
@@ -3740,84 +3786,129 @@ static void ui_setting_page_init(lv_obj_t* parent) {
 //------------------------------------------------------------------------------------------
 
     lv_obj_t* time_card = lv_obj_create(cards_row);
-    lv_obj_set_size(time_card, lv_pct(48), LV_SIZE_CONTENT);
+    lv_obj_set_size(time_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(time_card, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(time_card, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(time_card, 15, 0);
     lv_obj_set_style_pad_all(time_card, 12, 0);
     lv_obj_set_style_border_width(time_card, 0, 0);
     lv_obj_set_flex_flow(time_card, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(time_card, 3, 0);
+    lv_obj_set_style_pad_row(time_card, 6, 0);
 
-    lv_obj_t* time_icon = lv_label_create(time_card);
+    // 第一行：图标 + 标题
+    lv_obj_t* time_header = lv_obj_create(time_card);
+    lv_obj_remove_style_all(time_header);
+    lv_obj_set_size(time_header, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(time_header, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(time_header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(time_header, 8, 0);
+
+    lv_obj_t* time_icon = lv_label_create(time_header);
     lv_label_set_text(time_icon, LV_SYMBOL_BELL);
-    lv_obj_set_style_text_font(time_icon, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(time_icon, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(time_icon, lv_color_hex(0x87ceeb), 0);
 
-    lv_obj_t* time_title = lv_label_create(time_card);
+    lv_obj_t* time_title = lv_label_create(time_header);
     lv_label_set_text(time_title, "Time");
     lv_obj_set_style_text_font(time_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(time_title, lv_color_white(), 0);
 
-    lv_obj_t* time_status = lv_label_create(time_card);
-    lv_label_set_text(time_status, "Auto Sync");
-    lv_obj_set_style_text_font(time_status, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(time_status, lv_color_hex(0x888888), 0);
+    // 第二行：时间
+    time_time_label = lv_label_create(time_card);
+    lv_label_set_text(time_time_label, "--:--");
+    lv_obj_set_style_text_font(time_time_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(time_time_label, lv_color_white(), 0);
+
+    // 第三行：日期
+    time_date_label = lv_label_create(time_card);
+    lv_label_set_text(time_date_label, "----/--/--");
+    lv_obj_set_style_text_font(time_date_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(time_date_label, lv_color_hex(0x888888), 0);
 
     lv_obj_t* cards_row2 = lv_obj_create(setting_container);
     lv_obj_remove_style_all(cards_row2);
     lv_obj_set_size(cards_row2, lv_pct(95), LV_SIZE_CONTENT);
     lv_obj_set_flex_flow(cards_row2, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(cards_row2, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_align(cards_row2, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(cards_row2, 8, 0);
 
     lv_obj_t* location_card = lv_obj_create(cards_row2);
-    lv_obj_set_size(location_card, lv_pct(48), LV_SIZE_CONTENT);
+    lv_obj_set_size(location_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(location_card, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(location_card, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(location_card, 15, 0);
     lv_obj_set_style_pad_all(location_card, 12, 0);
     lv_obj_set_style_border_width(location_card, 0, 0);
     lv_obj_set_flex_flow(location_card, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(location_card, 3, 0);
+    lv_obj_set_style_pad_row(location_card, 6, 0);
 
-    lv_obj_t* location_icon = lv_label_create(location_card);
+    // 第一行：图标 + 标题
+    lv_obj_t* location_header = lv_obj_create(location_card);
+    lv_obj_remove_style_all(location_header);
+    lv_obj_set_size(location_header, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(location_header, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(location_header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(location_header, 8, 0);
+
+    lv_obj_t* location_icon = lv_label_create(location_header);
     lv_label_set_text(location_icon, LV_SYMBOL_GPS);
-    lv_obj_set_style_text_font(location_icon, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(location_icon, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(location_icon, lv_color_hex(0xff6b6b), 0);
 
-    lv_obj_t* location_title = lv_label_create(location_card);
+    lv_obj_t* location_title = lv_label_create(location_header);
     lv_label_set_text(location_title, "Location");
     lv_obj_set_style_text_font(location_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(location_title, lv_color_white(), 0);
 
-    lv_obj_t* location_status = lv_label_create(location_card);
-    lv_label_set_text(location_status, "Beijing");
-    lv_obj_set_style_text_font(location_status, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(location_status, lv_color_hex(0x888888), 0);
+    // 第二行：城市
+    location_city_label = lv_label_create(location_card);
+    lv_label_set_text(location_city_label, "Unknown");
+    lv_obj_set_style_text_font(location_city_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(location_city_label, lv_color_hex(0x888888), 0);
+
+    // 第三行：详细地址
+    location_detail_label = lv_label_create(location_card);
+    lv_label_set_text(location_detail_label, "Not located");
+    lv_obj_set_style_text_font(location_detail_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(location_detail_label, lv_color_hex(0x888888), 0);
 
     lv_obj_t* about_card = lv_obj_create(cards_row2);
-    lv_obj_set_size(about_card, lv_pct(48), LV_SIZE_CONTENT);
+    lv_obj_set_size(about_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(about_card, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(about_card, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(about_card, 15, 0);
     lv_obj_set_style_pad_all(about_card, 12, 0);
     lv_obj_set_style_border_width(about_card, 0, 0);
     lv_obj_set_flex_flow(about_card, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(about_card, 3, 0);
+    lv_obj_set_style_pad_row(about_card, 6, 0);
 
-    lv_obj_t* about_icon = lv_label_create(about_card);
+    // 第一行：图标 + 标题
+    lv_obj_t* about_header = lv_obj_create(about_card);
+    lv_obj_remove_style_all(about_header);
+    lv_obj_set_size(about_header, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(about_header, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(about_header, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(about_header, 8, 0);
+
+    lv_obj_t* about_icon = lv_label_create(about_header);
     lv_label_set_text(about_icon, LV_SYMBOL_LIST);
-    lv_obj_set_style_text_font(about_icon, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(about_icon, &lv_font_montserrat_20, 0);
     lv_obj_set_style_text_color(about_icon, lv_color_hex(0xdda0dd), 0);
 
-    lv_obj_t* about_title = lv_label_create(about_card);
+    lv_obj_t* about_title = lv_label_create(about_header);
     lv_label_set_text(about_title, "About");
     lv_obj_set_style_text_font(about_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(about_title, lv_color_white(), 0);
 
-    lv_obj_t* about_status = lv_label_create(about_card);
-    lv_label_set_text(about_status, "v1.0.0");
-    lv_obj_set_style_text_font(about_status, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(about_status, lv_color_hex(0x888888), 0);
+    // 第二行：版本标签
+    lv_obj_t* about_version_label = lv_label_create(about_card);
+    lv_label_set_text(about_version_label, "Version");
+    lv_obj_set_style_text_font(about_version_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(about_version_label, lv_color_hex(0x888888), 0);
+
+    // 第三行：版本号
+    lv_obj_t* about_version_value = lv_label_create(about_card);
+    lv_label_set_text(about_version_value, "v1.0.0");
+    lv_obj_set_style_text_font(about_version_value, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(about_version_value, lv_color_white(), 0);
 }

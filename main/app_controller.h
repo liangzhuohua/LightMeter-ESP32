@@ -8,6 +8,7 @@
 #include "freertos/queue.h"
 
 extern QueueHandle_t wifi_operation_queue;
+extern QueueHandle_t location_queue;
 
 typedef enum {
     WIFI_OP_NONE = 0,       // 无操作
@@ -25,5 +26,6 @@ typedef struct {
 } WifiOperationMsg;
 
 void app_controller_init(void);
+void app_controller_request_location(void);
 
 #endif

@@ -2,18 +2,26 @@
 #include "app_ui_calc_port.h"
 #include "app_ui.h"
 #include "app_ui_wifi_port.h"
+#include "app_ui_location_port.h"
 #include "app_exposure_calc.h"
 #include <stdio.h>
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "hw_veml7700.h"
 #include "hw_oled.h"
 #include "hw_wifi.h"
+#include "app_location.h"
 
 static const char* TAG = "app_controller";
 
 QueueHandle_t lux_value_queue = NULL;
 QueueHandle_t calc_data_queue = NULL;
 QueueHandle_t wifi_operation_queue = NULL;
+SemaphoreHandle_t location_Sem = NULL;
+
+static wifi_scan_result_t g_wifi_scan_result = {0};
+static bool g_wifi_connected = false;
+static bool g_wifi_scanned = false;
 
 static void wifi_state_callback(const hw_wifi_state_event_t *event) {
     if (event == NULL) {
@@ -24,18 +32,22 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         switch (event->state) {
             case HW_WIFI_STATE_CONNECTING:
                 app_ui_wifi_on_connecting(event->ssid);
+                g_wifi_connected = false;
                 break;
 
             case HW_WIFI_STATE_CONNECTED:
                 app_ui_wifi_on_connected(event->ssid);
+                g_wifi_connected = true;
                 break;
 
             case HW_WIFI_STATE_DISCONNECTED:
                 app_ui_wifi_on_disconnected(event->ssid);
+                g_wifi_connected = false;
                 break;
 
             case HW_WIFI_STATE_CONNECT_FAILED:
                 app_ui_wifi_on_connect_failed(event->ssid, event->reason);
+                g_wifi_connected = false;
                 break;
 
             default:
@@ -43,12 +55,38 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         }
         example_lvgl_unlock();
     }
+
+    // WiFi连接成功后自动触发定位
+    if (event->state == HW_WIFI_STATE_CONNECTED && g_wifi_scanned) {
+        ESP_LOGI(TAG, "WiFi已连接，自动触发定位");
+        xSemaphoreGive(location_Sem);
+    }
 }
 
 static void wifi_scan_done_callback(wifi_scan_result_t* result) {
     if (result == NULL || result->count == 0 || result->ap_list == NULL) {
         ESP_LOGW(TAG, "WiFi扫描结果为空");
+        g_wifi_scanned = false;
         return;
+    }
+
+    // 释放之前保存的扫描结果
+    if (g_wifi_scan_result.ap_list != NULL) {
+        free(g_wifi_scan_result.ap_list);
+        g_wifi_scan_result.ap_list = NULL;
+        g_wifi_scan_result.count = 0;
+    }
+
+    // 保存新的扫描结果
+    g_wifi_scan_result.ap_list = malloc(sizeof(wifi_info_t) * result->count);
+    if (g_wifi_scan_result.ap_list != NULL) {
+        memcpy(g_wifi_scan_result.ap_list, result->ap_list, sizeof(wifi_info_t) * result->count);
+        g_wifi_scan_result.count = result->count;
+        g_wifi_scanned = true;
+        ESP_LOGI(TAG, "已保存 %d 个WiFi扫描结果", result->count);
+    } else {
+        ESP_LOGE(TAG, "保存WiFi扫描结果失败：内存不足");
+        g_wifi_scanned = false;
     }
 
     if (example_lvgl_lock(-1)) {
@@ -189,15 +227,122 @@ static void task_wifi_operation(void* pvParameters) {
     }
 }
 
+static void location_result_callback(const location_result_t* result) {
+    if (result == NULL) {
+        ESP_LOGE(TAG, "定位结果为空");
+        app_ui_location_set_unknown();
+        return;
+    }
+
+    ESP_LOGI(TAG, "定位结果回调:");
+    ESP_LOGI(TAG, "  纬度: %f", result->latitude);
+    ESP_LOGI(TAG, "  经度: %f", result->longitude);
+    ESP_LOGI(TAG, "  精度: %f 米", result->accuracy);
+    ESP_LOGI(TAG, "  地址: %s", result->address);
+
+    // 解析地址，格式: "广东省广州市海珠区滨江街道素社直街;..."
+    char city[64] = {0};
+    char detail[128] = {0};
+
+    const char* addr = result->address;
+    if (addr != NULL && addr[0] != '\0') {
+        // 查找第一个"省"后面的内容
+        const char* province_end = strstr(addr, "省");
+        if (province_end != NULL) {
+            province_end += 3; // 跳过"省"字
+        } else {
+            province_end = addr;
+        }
+
+        // 查找"市"
+        const char* city_end = strstr(province_end, "市");
+        if (city_end != NULL) {
+            int city_len = city_end - province_end;
+            if (city_len > 0 && city_len < sizeof(city)) {
+                strncpy(city, province_end, city_len);
+                city[city_len] = '\0';
+            }
+
+            // 市后面的内容作为详细地址
+            const char* detail_start = city_end + 3; // 跳过"市"字
+            if (detail_start[0] != '\0') {
+                // 截取到分号或换行符
+                const char* detail_end = strstr(detail_start, ";");
+                if (detail_end == NULL) {
+                    detail_end = strstr(detail_start, "\n");
+                }
+                if (detail_end == NULL) {
+                    detail_end = detail_start + strlen(detail_start);
+                }
+                int detail_len = detail_end - detail_start;
+                if (detail_len > 0 && detail_len < sizeof(detail)) {
+                    strncpy(detail, detail_start, detail_len);
+                    detail[detail_len] = '\0';
+                }
+            }
+        } else {
+            // 没有找到"市"，直接使用原地址
+            strncpy(city, province_end, sizeof(city) - 1);
+        }
+    }
+
+    // 更新UI
+    if (city[0] != '\0') {
+        app_ui_location_set_city(city);
+    } else {
+        app_ui_location_set_city("Unknown");
+    }
+
+    if (detail[0] != '\0') {
+        app_ui_location_set_detail(detail);
+    } else {
+        app_ui_location_set_detail(result->address);
+    }
+}
+
+static void task_get_location(void* pvParameters) {
+    while (1) {
+        // 等待定位请求消息
+        if (xSemaphoreTake(location_Sem, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGI(TAG, "收到定位请求");
+
+            // 检查条件1：是否已扫描WiFi
+            if (!g_wifi_scanned) {
+                ESP_LOGW(TAG, "定位失败：未扫描WiFi");
+                continue;
+            }
+
+            // 检查条件2：是否已连接WiFi
+            if (!g_wifi_connected) {
+                ESP_LOGW(TAG, "定位失败：未连接WiFi");
+                continue;
+            }
+
+            // 检查扫描结果是否有效
+            if (g_wifi_scan_result.count == 0 || g_wifi_scan_result.ap_list == NULL) {
+                ESP_LOGW(TAG, "定位失败：扫描结果为空");
+                continue;
+            }
+
+            ESP_LOGI(TAG, "开始定位，WiFi数量: %d", g_wifi_scan_result.count);
+
+            // 调用定位函数
+            app_location_get_location(&g_wifi_scan_result, location_result_callback);
+        }
+    }
+}
+
 
 
 void app_controller_init(void)
 {
     lux_value_queue = xQueueCreate(1, sizeof(uint32_t));
     wifi_operation_queue = xQueueCreate(10, sizeof(WifiOperationMsg));
+    location_Sem = xSemaphoreCreateBinary();
     hw_wifi_register_state_cb(wifi_state_callback);
 
     xTaskCreate(task_get_lux_value, "task_get_lux_value", 2048, NULL, 5, NULL);
     xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(task_get_location, "task_get_location", 4096, NULL, 5, NULL, 1);
 }
