@@ -1897,7 +1897,7 @@ rule C_STATIC_LIBRARY_LINKER____idf_lvgl__lvgl_
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER____idf_esp-idf-lib__i2cdev_
+rule C_COMPILER____idf_i2cdev_
   depfile = $DEP_FILE
   deps = gcc
   command = /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -1907,7 +1907,7 @@ rule C_COMPILER____idf_esp-idf-lib__i2cdev_
 #############################################
 # Rule for linking C static library.
 
-rule C_STATIC_LIBRARY_LINKER____idf_esp-idf-lib__i2cdev_
+rule C_STATIC_LIBRARY_LINKER____idf_i2cdev_
   command = $PRE_LINK && /usr/bin/cmake -E rm -f $TARGET_FILE && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-ar qc $TARGET_FILE $LINK_FLAGS $in && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-ranlib $TARGET_FILE && $POST_BUILD
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT
@@ -1916,7 +1916,7 @@ rule C_STATIC_LIBRARY_LINKER____idf_esp-idf-lib__i2cdev_
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER____idf_esp-idf-lib__veml7700_
+rule C_COMPILER____idf_veml7700_
   depfile = $DEP_FILE
   deps = gcc
   command = /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -1926,7 +1926,7 @@ rule C_COMPILER____idf_esp-idf-lib__veml7700_
 #############################################
 # Rule for linking C static library.
 
-rule C_STATIC_LIBRARY_LINKER____idf_esp-idf-lib__veml7700_
+rule C_STATIC_LIBRARY_LINKER____idf_veml7700_
   command = $PRE_LINK && /usr/bin/cmake -E rm -f $TARGET_FILE && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-ar qc $TARGET_FILE $LINK_FLAGS $in && /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32s3-elf-ranlib $TARGET_FILE && $POST_BUILD
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT

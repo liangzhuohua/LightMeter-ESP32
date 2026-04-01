@@ -1,5 +1,16 @@
-# ESP-IDF CMake component for i2cdev library
-set(req driver freertos esp_idf_lib_helpers)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/eil-cmake-utils/cmake)
+include(eil_check_idf_features)
+eil_check_idf_has_esp_drivers()
+
+# List of common ESP-IDF components required by this component
+set(REQUIRED_COMPONENTS log freertos esp_idf_lib_helpers)
+
+# Add version-specific required componenets
+if(EIL_IDF_HAS_ESP_DRIVERS)
+    list(APPEND REQUIRED_COMPONENTS esp_driver_gpio esp_driver_i2c)
+else()
+    list(APPEND REQUIRED_COMPONENTS driver)
+endif()
 
 # ESP-IDF version detection for automatic driver selection
 # Check for manual override via Kconfig
@@ -14,7 +25,7 @@ elseif(IDF_VERSION_MAJOR LESS 5)
     set(USE_LEGACY_DRIVER TRUE)
     message(STATUS "i2cdev: ESP-IDF v${IDF_VERSION_MAJOR}.x detected, using legacy driver")
 elseif(IDF_VERSION_MAJOR EQUAL 5 AND IDF_VERSION_MINOR LESS 3)
-    set(USE_LEGACY_DRIVER TRUE) 
+    set(USE_LEGACY_DRIVER TRUE)
     message(STATUS "i2cdev: ESP-IDF v${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR} detected, using legacy driver")
 else()
     set(USE_LEGACY_DRIVER FALSE)
@@ -33,13 +44,6 @@ endif()
 # Register the component
 idf_component_register(SRCS ${SRCS}
                        INCLUDE_DIRS "."
-                       REQUIRES ${req})
+                       REQUIRES ${REQUIRED_COMPONENTS})
 
-
-# include common cmake file for components
-set(ESP_IDF_LIB_CMAKE ${CMAKE_CURRENT_LIST_DIR}/common/cmake/esp-idf-lib.cmake)
-if(EXISTS ${ESP_IDF_LIB_CMAKE})
-    include(${ESP_IDF_LIB_CMAKE})
-else()
-    message(WARNING "${ESP_IDF_LIB_CMAKE} not found")
-endif()
+include(eil_ci)

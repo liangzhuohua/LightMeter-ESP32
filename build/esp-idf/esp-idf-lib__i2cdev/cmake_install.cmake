@@ -1,4 +1,4 @@
-# Install script for directory: /home/ziyue/esp/esp32_my/esp32s3_project/managed_components/esp-idf-lib__i2cdev
+# Install script for directory: /home/ziyue/esp/esp32_my/esp32s3_project/components/esp-idf-lib__i2cdev
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

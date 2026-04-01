@@ -569,17 +569,17 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp-idf-lib__esp_idf_lib_helpers/cmake_install.cmake")
+  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_idf_lib_helpers/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp-idf-lib__i2cdev/cmake_install.cmake")
+  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/i2cdev/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp-idf-lib__veml7700/cmake_install.cmake")
+  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/veml7700/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)

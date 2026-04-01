@@ -8,13 +8,38 @@ veml7700_config_t veml7700_configuration;
 
 static bool compare_configuration(veml7700_config_t* config_a, veml7700_config_t* config_b)
 {
-    return (config_a->gain == config_b->gain) &&
-           (config_a->integration_time == config_b->integration_time) &&
-           (config_a->persistence_protect == config_b->persistence_protect) &&
-           (config_a->interrupt_enable == config_b->interrupt_enable) &&
-           (config_a->shutdown == config_b->shutdown) &&
-           (config_a->power_saving_mode == config_b->power_saving_mode) &&
-           (config_a->power_saving_enable == config_b->power_saving_enable);
+    bool match = true;
+
+    if (config_a->gain != config_b->gain) {
+        ESP_LOGE(TAG, "gain mismatch: %d vs %d", config_a->gain, config_b->gain);
+        match = false;
+    }
+    if (config_a->integration_time != config_b->integration_time) {
+        ESP_LOGE(TAG, "integration_time mismatch: %d vs %d", config_a->integration_time, config_b->integration_time);
+        match = false;
+    }
+    if (config_a->persistence_protect != config_b->persistence_protect) {
+        ESP_LOGE(TAG, "persistence_protect mismatch: %d vs %d", config_a->persistence_protect, config_b->persistence_protect);
+        match = false;
+    }
+    if (config_a->interrupt_enable != config_b->interrupt_enable) {
+        ESP_LOGE(TAG, "interrupt_enable mismatch: %d vs %d", config_a->interrupt_enable, config_b->interrupt_enable);
+        match = false;
+    }
+    if (config_a->shutdown != config_b->shutdown) {
+        ESP_LOGE(TAG, "shutdown mismatch: %d vs %d", config_a->shutdown, config_b->shutdown);
+        match = false;
+    }
+    if (config_a->power_saving_mode != config_b->power_saving_mode) {
+        ESP_LOGE(TAG, "power_saving_mode mismatch: %d vs %d", config_a->power_saving_mode, config_b->power_saving_mode);
+        match = false;
+    }
+    if (config_a->power_saving_enable != config_b->power_saving_enable) {
+        ESP_LOGE(TAG, "power_saving_enable mismatch: %d vs %d", config_a->power_saving_enable, config_b->power_saving_enable);
+        match = false;
+    }
+
+    return match;
 }
 
 void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_saving_mode) {

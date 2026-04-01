@@ -73,9 +73,9 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         app_time_sntp_init();
         xSemaphoreGive(time_sync_Sem);
 
-        // ESP_LOGI(TAG, "WiFi已连接，开始测试天气获取");
-        // app_weather_init();
-        // app_weather_get("101280101", weather_result_callback);
+        ESP_LOGI(TAG, "WiFi已连接，开始测试天气获取");
+        app_weather_init();
+        app_weather_get("101280101", weather_result_callback);
     }
 }
 
