@@ -48,6 +48,7 @@
 
 #include <driver/gpio.h>
 #include <driver/i2c.h>
+#include <driver/i2c_master.h>
 #include <esp_err.h>
 #include <esp_idf_lib_helpers.h>
 #include <freertos/FreeRTOS.h>
@@ -194,6 +195,18 @@ typedef struct
  * @return ESP_OK on success
  */
 esp_err_t i2cdev_init(void);
+
+/**
+ * @brief Get the I2C master bus handle for a specific port
+ *
+ * @note This function returns the bus handle created by i2cdev for the specified port.
+ *       The bus must be initialized first by calling i2c_dev_create_mutex() for a device
+ *       on that port.
+ *
+ * @param port I2C port number
+ * @return i2c_master_bus_handle_t The bus handle, or NULL if the bus is not initialized
+ */
+i2c_master_bus_handle_t i2cdev_get_bus_handle(i2c_port_t port);
 
 /**
  * @brief Release I2C subsystem (deletes all devices, buses, and mutexes)

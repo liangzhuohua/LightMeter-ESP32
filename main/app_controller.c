@@ -3,7 +3,10 @@
 #include "app_ui.h"
 #include "app_ui_wifi_port.h"
 #include "app_ui_location_port.h"
+#include "app_ui_time_port.h"
 #include "app_exposure_calc.h"
+#include "app_time.h"
+#include "app_weather.h"
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -18,10 +21,14 @@ QueueHandle_t lux_value_queue = NULL;
 QueueHandle_t calc_data_queue = NULL;
 QueueHandle_t wifi_operation_queue = NULL;
 SemaphoreHandle_t location_Sem = NULL;
+SemaphoreHandle_t time_sync_Sem = NULL;
 
 static wifi_scan_result_t g_wifi_scan_result = {0};
 static bool g_wifi_connected = false;
 static bool g_wifi_scanned = false;
+static bool g_time_synced = false;
+
+static void weather_result_callback(const weather_data_t* data);
 
 static void wifi_state_callback(const hw_wifi_state_event_t *event) {
     if (event == NULL) {
@@ -56,10 +63,19 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         example_lvgl_unlock();
     }
 
-    // WiFi连接成功后自动触发定位
     if (event->state == HW_WIFI_STATE_CONNECTED && g_wifi_scanned) {
         ESP_LOGI(TAG, "WiFi已连接，自动触发定位");
         xSemaphoreGive(location_Sem);
+    }
+
+    if (event->state == HW_WIFI_STATE_CONNECTED) {
+        ESP_LOGI(TAG, "WiFi已连接，触发时间同步");
+        app_time_sntp_init();
+        xSemaphoreGive(time_sync_Sem);
+
+        // ESP_LOGI(TAG, "WiFi已连接，开始测试天气获取");
+        // app_weather_init();
+        // app_weather_get("101280101", weather_result_callback);
     }
 }
 
@@ -240,21 +256,18 @@ static void location_result_callback(const location_result_t* result) {
     ESP_LOGI(TAG, "  精度: %f 米", result->accuracy);
     ESP_LOGI(TAG, "  地址: %s", result->address);
 
-    // 解析地址，格式: "广东省广州市海珠区滨江街道素社直街;..."
     char city[64] = {0};
     char detail[128] = {0};
 
     const char* addr = result->address;
     if (addr != NULL && addr[0] != '\0') {
-        // 查找第一个"省"后面的内容
         const char* province_end = strstr(addr, "省");
         if (province_end != NULL) {
-            province_end += 3; // 跳过"省"字
+            province_end += 3;
         } else {
             province_end = addr;
         }
 
-        // 查找"市"
         const char* city_end = strstr(province_end, "市");
         if (city_end != NULL) {
             int city_len = city_end - province_end;
@@ -263,10 +276,8 @@ static void location_result_callback(const location_result_t* result) {
                 city[city_len] = '\0';
             }
 
-            // 市后面的内容作为详细地址
-            const char* detail_start = city_end + 3; // 跳过"市"字
+            const char* detail_start = city_end + 3;
             if (detail_start[0] != '\0') {
-                // 截取到分号或换行符
                 const char* detail_end = strstr(detail_start, ";");
                 if (detail_end == NULL) {
                     detail_end = strstr(detail_start, "\n");
@@ -281,12 +292,10 @@ static void location_result_callback(const location_result_t* result) {
                 }
             }
         } else {
-            // 没有找到"市"，直接使用原地址
             strncpy(city, province_end, sizeof(city) - 1);
         }
     }
 
-    // 更新UI
     if (city[0] != '\0') {
         app_ui_location_set_city(city);
     } else {
@@ -298,6 +307,22 @@ static void location_result_callback(const location_result_t* result) {
     } else {
         app_ui_location_set_detail(result->address);
     }
+}
+
+static void weather_result_callback(const weather_data_t* data) {
+    if (data == NULL) {
+        ESP_LOGE(TAG, "天气结果为空");
+        return;
+    }
+
+    ESP_LOGI(TAG, "========== 天气测试结果 ==========");
+    ESP_LOGI(TAG, "  温度: %d°C", data->temp);
+    ESP_LOGI(TAG, "  天气: %s", data->desc);
+    ESP_LOGI(TAG, "  湿度: %d%%", data->humidity);
+    ESP_LOGI(TAG, "  风速: %.1f km/h", data->wind_speed);
+    ESP_LOGI(TAG, "  日出: %02d:%02d", data->sunrise_hour, data->sunrise_minute);
+    ESP_LOGI(TAG, "  日落: %02d:%02d", data->sunset_hour, data->sunset_minute);
+    ESP_LOGI(TAG, "==================================");
 }
 
 static void task_get_location(void* pvParameters) {
@@ -332,6 +357,72 @@ static void task_get_location(void* pvParameters) {
     }
 }
 
+static void task_time_sync_and_update(void* pvParameters) {
+    app_time_t current_time;
+
+    while (1) {
+        if (xSemaphoreTake(time_sync_Sem, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGI(TAG, "收到时间同步请求");
+
+            if (!g_wifi_connected) {
+                ESP_LOGW(TAG, "时间同步失败：未连接WiFi");
+                continue;
+            }
+
+            if (!app_time_is_synced()) {
+                ESP_LOGI(TAG, "开始同步时间");
+                app_time_sntp_sync();
+                app_time_wait_sync(10000);
+            }
+
+            if (app_time_is_synced()) {
+                g_time_synced = true;
+                ESP_LOGI(TAG, "时间同步成功");
+
+                if (app_time_get_now(&current_time) == ESP_OK) {
+                    ESP_LOGI(TAG, "当前时间: %04d-%02d-%02d %02d:%02d:%02d",
+                             current_time.year, current_time.month, current_time.day,
+                             current_time.hour, current_time.minute, current_time.second);
+
+                    if (example_lvgl_lock(-1)) {
+                        app_ui_time_set_time(current_time.hour, current_time.minute);
+                        app_ui_time_set_date(current_time.year, current_time.month, current_time.day);
+                        app_ui_time_set_main_table_time(current_time.hour, current_time.minute);
+                        example_lvgl_unlock();
+                    }
+                }
+            } else {
+                ESP_LOGW(TAG, "时间同步失败");
+            }
+        }
+    }
+}
+
+static void task_time_update_periodic(void* pvParameters) {
+    app_time_t current_time;
+    int last_minute = -1;
+
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        if (!g_time_synced) {
+            continue;
+        }
+
+        if (app_time_get_now(&current_time) == ESP_OK) {
+            if (current_time.minute != last_minute) {
+                last_minute = current_time.minute;
+
+                if (example_lvgl_lock(-1)) {
+                    app_ui_time_set_time(current_time.hour, current_time.minute);
+                    app_ui_time_set_date(current_time.year, current_time.month, current_time.day);
+                    app_ui_time_set_main_table_time(current_time.hour, current_time.minute);
+                    example_lvgl_unlock();
+                }
+            }
+        }
+    }
+}
 
 
 void app_controller_init(void)
@@ -339,10 +430,14 @@ void app_controller_init(void)
     lux_value_queue = xQueueCreate(1, sizeof(uint32_t));
     wifi_operation_queue = xQueueCreate(10, sizeof(WifiOperationMsg));
     location_Sem = xSemaphoreCreateBinary();
+    time_sync_Sem = xSemaphoreCreateBinary();
+
     hw_wifi_register_state_cb(wifi_state_callback);
 
     xTaskCreate(task_get_lux_value, "task_get_lux_value", 2048, NULL, 5, NULL);
     xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(task_get_location, "task_get_location", 4096, NULL, 5, NULL, 1);
+    xTaskCreate(task_time_sync_and_update, "task_time_sync", 4096, NULL, 5, NULL);
+    xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
 }

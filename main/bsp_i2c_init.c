@@ -1,38 +1,47 @@
 #include "bsp_i2c_init.h"
+#include "i2cdev.h"
 
 static const char* TAG = "I2C_INIT";
 
-esp_err_t i2c_init(void) {
-    esp_err_t ret = ESP_OK;
-    ESP_LOGI(TAG, "Initialize I2C bus");
-    const i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
-        .sda_io_num = I2C_SDA,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = I2C_SCL,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 200 * 1000,
-    };
+static i2c_master_bus_handle_t s_bus_handle = NULL;
+static i2c_dev_t s_temp_dev = {0};
 
-    ret = i2c_param_config(I2C_HOST, &i2c_conf);
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "I2C param config FAIL: %s", esp_err_to_name(ret));
+esp_err_t i2c_init(void) {
+    ESP_LOGI(TAG, "Initialize I2C bus");
+
+    esp_err_t ret = i2cdev_init();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "i2cdev_init FAIL: %s", esp_err_to_name(ret));
         return ret;
     }
-    // 设置 I2C 超时时间
-    ret = i2c_set_timeout(I2C_HOST, 0x1f); // 0x1f: 31ms
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "I2C set timeout FAIL: %s", esp_err_to_name(ret));
+
+    s_temp_dev.port = I2C_HOST;
+    s_temp_dev.addr = 0x00;
+    s_temp_dev.cfg.sda_io_num = I2C_SDA;
+    s_temp_dev.cfg.scl_io_num = I2C_SCL;
+    s_temp_dev.cfg.sda_pullup_en = 1;
+    s_temp_dev.cfg.scl_pullup_en = 1;
+
+    ret = i2c_dev_create_mutex(&s_temp_dev);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "i2c_dev_create_mutex FAIL: %s", esp_err_to_name(ret));
         return ret;
     }
-    ret = i2c_driver_install(I2C_HOST, i2c_conf.mode, 0, 0, 0);  // 修复：赋值 ret
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "I2C driver install FAIL: %s", esp_err_to_name(ret));
-        return ret;
+
+    ret = i2c_dev_check_present(&s_temp_dev);
+    if (ret != ESP_OK && ret != ESP_ERR_NOT_FOUND) {
+        ESP_LOGW(TAG, "I2C bus probe returned: %s", esp_err_to_name(ret));
     }
-    ESP_LOGI(TAG, "I2C init OK");
-    return ret;
+
+    s_bus_handle = i2cdev_get_bus_handle(I2C_HOST);
+    ESP_LOGI(TAG, "I2C init OK, bus handle: %p", s_bus_handle);
+
+    return ESP_OK;
+}
+
+i2c_master_bus_handle_t i2c_get_bus_handle(void) {
+    if (s_bus_handle == NULL) {
+        s_bus_handle = i2cdev_get_bus_handle(I2C_HOST);
+    }
+    return s_bus_handle;
 }

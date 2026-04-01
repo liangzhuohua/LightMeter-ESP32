@@ -127,14 +127,10 @@ static void example_lvgl_port_task(void *arg)
 static void i2c_scan(void)
 {
     ESP_LOGI(TAG, "Scanning I2C bus...");
-    for (uint8_t addr = 1; addr < 127; addr++) {
-        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-        i2c_master_start(cmd);
-        i2c_master_write_byte(cmd, (addr << 1) | I2C_MASTER_WRITE, true);
-        i2c_master_stop(cmd);
-        esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-        i2c_cmd_link_delete(cmd);
+    extern i2c_master_bus_handle_t i2c_bus_handle;
 
+    for (uint8_t addr = 1; addr < 127; addr++) {
+        esp_err_t ret = i2c_master_probe(i2c_bus_handle, addr, 1000);
         if (ret == ESP_OK) {
             ESP_LOGI(TAG, "Found I2C device at address 0x%02x", addr);
         }
@@ -172,7 +168,7 @@ void oled_lvgl_init(void) {
     // Attach the LCD to the SPI bus
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
 
-    
+
     const esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
@@ -189,7 +185,7 @@ void oled_lvgl_init(void) {
     // 设置屏幕亮度
     ESP_ERROR_CHECK(panel_qspi_amoled_set_brightness(panel_handle, 255)); // 设置亮度为 15
 
-    
+
     // Scan I2C devices
     // i2c_scan();
     // vTaskDelay(pdMS_TO_TICKS(1000));
@@ -197,8 +193,9 @@ void oled_lvgl_init(void) {
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
     // const esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_CST820_CONFIG();
     const esp_lcd_panel_io_i2c_config_t tp_io_config = TOUCH_IO_I2C_CONFIG();
-    // Attach the TOUCH to the I2C bus
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)TOUCH_HOST, &tp_io_config, &tp_io_handle));
+    // Attach the TOUCH to the I2C bus (use bus handle for new driver)
+    i2c_master_bus_handle_t bus_handle = i2c_get_bus_handle();
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(bus_handle, &tp_io_config, &tp_io_handle));
 
     const esp_lcd_touch_config_t tp_cfg = {
         .x_max = EXAMPLE_LCD_H_RES,
@@ -235,10 +232,10 @@ void oled_lvgl_init(void) {
 
     lv_color_t *buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 60 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);  // 约 1/8 ~ 1/7 高度
     lv_color_t *buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 60 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    
+
     lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * 60);   // 双缓冲
 
-    
+
     ESP_LOGI(TAG, "Register display driver to LVGL");
     lv_disp_drv_init(&disp_drv);
     disp_drv.hor_res = EXAMPLE_LCD_H_RES;
@@ -250,7 +247,7 @@ void oled_lvgl_init(void) {
 
     // 设置旋转角度
     // disp_drv.rotated = LV_DISP_ROT_90; // 旋转90度
-    
+
     lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
 
     ESP_LOGI(TAG, "Install LVGL tick timer");

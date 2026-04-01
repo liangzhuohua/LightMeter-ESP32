@@ -5,5 +5,6 @@
 
 void app_ui_time_set_time(int hour, int minute);
 void app_ui_time_set_date(int year, int month, int day);
+void app_ui_time_set_main_table_time(int hour, int minute);
 
 #endif

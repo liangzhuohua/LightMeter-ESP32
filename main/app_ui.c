@@ -35,7 +35,12 @@ static const lv_btnmatrix_ctrl_t custom_aperture_kb_ctrl[] = {
 // ──────────────────────────────────────────────
 // 字体与常量
 // ──────────────────────────────────────────────
-static const lv_font_t* font;                                           // 字体
+static const lv_font_t* font;
+
+LV_FONT_DECLARE(SourceHanSansCN_Regular);
+LV_FONT_DECLARE(clock_icon);
+
+#define LV_SYMBOL_CLOCK "\xef\x80\x97"  // Unicode 0xF017
 
 static const char* roller_shutter_options = "1\n1/2\n1/4\n1/8\n1/15\n1/30\n1/60\n1/125\n1/250\n1/500\n1/1000";
 static const char* roller_aperture_options = "1.4\n2.0\n2.8\n4.0\n5.6\n8.0\n11.0\n16.0";
@@ -65,6 +70,15 @@ lv_obj_t* cam_win_select;               // cam选择
 lv_obj_t* wifi_config_win;              // wifi配置
 static lv_obj_t* cam_keyboard;        // 相机参数键盘
 static lv_obj_t* num_keyboard;        // 数字键盘（用于焦距、闪光同步、自定义光圈）
+
+lv_obj_t* weather_temp_label;           // 天气温度
+lv_obj_t* weather_desc_label;           // 天气描述
+lv_obj_t* humidity_label;               // 湿度
+lv_obj_t* wind_label;                   // 风速
+lv_obj_t* sunrise_label;                // 日出时间
+lv_obj_t* sunset_label;                 // 日落时间
+lv_obj_t* timeline_indicator;           // 时间线指示器
+lv_obj_t* timeline_bar;                 // 时间线进度条
 // ──────────────────────────────────────────────
 // 模式选择相关
 // ──────────────────────────────────────────────
@@ -2632,11 +2646,11 @@ static void wifi_refresh_connect_window(const char *ssid)
 
     if (wifi_connect_info_label != NULL) {
         if (is_connected) {
-            lv_label_set_text(wifi_connect_info_label, "Status: Connected");
+            lv_label_set_text(wifi_connect_info_label, "状态: 已连接");
         } else if (is_connecting) {
-            lv_label_set_text(wifi_connect_info_label, "Status: Connecting...");
+            lv_label_set_text(wifi_connect_info_label, "状态: 连接中...");
         } else {
-            lv_label_set_text(wifi_connect_info_label, "Status: Not connected");
+            lv_label_set_text(wifi_connect_info_label, "状态: 未连接");
         }
     }
 
@@ -2656,14 +2670,14 @@ static void wifi_refresh_connect_window(const char *ssid)
 
     if (wifi_connect_btn_label != NULL) {
         if (is_connected) {
-            lv_label_set_text(wifi_connect_btn_label, "Disconnect");
+            lv_label_set_text(wifi_connect_btn_label, "断开连接");
         } else if (is_connecting) {
-            lv_label_set_text(wifi_connect_btn_label, "Connecting...");
+            lv_label_set_text(wifi_connect_btn_label, "连接中...");
             if (wifi_connect_btn != NULL) {
                 lv_obj_add_state(wifi_connect_btn, LV_STATE_DISABLED);
             }
         } else {
-            lv_label_set_text(wifi_connect_btn_label, "Connect");
+            lv_label_set_text(wifi_connect_btn_label, "连接");
         }
     }
 }
@@ -2789,7 +2803,7 @@ void add_wifi_card(const char *wifi_name, int signal_strength)
 
     lv_obj_t *wifi_name_label = lv_label_create(card_content);
     lv_label_set_text(wifi_name_label, wifi_name);
-    lv_obj_set_style_text_font(wifi_name_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(wifi_name_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_name_label, lv_color_white(), 0);
 
     lv_obj_t *wifi_icon_label = lv_label_create(card_content);
@@ -2883,7 +2897,7 @@ void app_ui_wifi_on_connected(const char *ssid)
         lv_obj_set_style_text_color(wifi_ssid_label, lv_color_white(), 0);
     }
     if (wifi_status_label != NULL) {
-        lv_label_set_text(wifi_status_label, "Connected");
+        lv_label_set_text(wifi_status_label, "已连接");
         lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0x00ff00), 0);
     }
 
@@ -2923,11 +2937,11 @@ void app_ui_wifi_on_disconnected(const char *ssid)
         lv_obj_set_style_text_color(wifi_icon_label, lv_color_hex(0x888888), 0);
     }
     if (wifi_ssid_label != NULL) {
-        lv_label_set_text(wifi_ssid_label, "Not connected");
+        lv_label_set_text(wifi_ssid_label, "未连接");
         lv_obj_set_style_text_color(wifi_ssid_label, lv_color_hex(0x888888), 0);
     }
     if (wifi_status_label != NULL) {
-        lv_label_set_text(wifi_status_label, "Disconnected");
+        lv_label_set_text(wifi_status_label, "已断开");
         lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0xff6b6b), 0);
     }
 
@@ -3320,8 +3334,8 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_opa(cam_win_select, LV_OPA_50, LV_STATE_DEFAULT);
     lv_obj_set_style_radius(cam_win_select, 10, LV_STATE_DEFAULT);
 
-    lv_obj_t *cam_title_win = lv_win_add_title(cam_win_select, "Cam select");
-    lv_obj_set_style_text_font(cam_title_win, &lv_font_montserrat_14, LV_STATE_DEFAULT);
+    lv_obj_t *cam_title_win = lv_win_add_title(cam_win_select, "选择相机");
+    lv_obj_set_style_text_font(cam_title_win, &SourceHanSansCN_Regular, LV_STATE_DEFAULT);
 
     lv_obj_t *cam_btn_win_close = lv_win_add_btn(cam_win_select, LV_SYMBOL_CLOSE, 100);
     lv_obj_set_style_bg_opa(cam_btn_win_close, LV_OPA_30, LV_STATE_DEFAULT);
@@ -3411,8 +3425,8 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_opa(len_win_select, LV_OPA_50, LV_STATE_DEFAULT);
     lv_obj_set_style_radius(len_win_select, 10, LV_STATE_DEFAULT);
 
-    lv_obj_t *len_title_win = lv_win_add_title(len_win_select, "Len select");
-    lv_obj_set_style_text_font(len_title_win, &lv_font_montserrat_14, LV_STATE_DEFAULT);
+    lv_obj_t *len_title_win = lv_win_add_title(len_win_select, "选择镜头");
+    lv_obj_set_style_text_font(len_title_win, &SourceHanSansCN_Regular, LV_STATE_DEFAULT);
 
     lv_obj_t *len_btn_win_close = lv_win_add_btn(len_win_select, LV_SYMBOL_CLOSE, 100);
     lv_obj_set_style_bg_opa(len_btn_win_close, LV_OPA_30, LV_STATE_DEFAULT);
@@ -3492,15 +3506,15 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(weather_icon, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(weather_icon, lv_color_hex(0xffd700), 0);
 
-    lv_obj_t* weather_temp = lv_label_create(weather_row1);
-    lv_label_set_text(weather_temp, "26" "\xC2\xB0" "C");
-    lv_obj_set_style_text_font(weather_temp, &lv_font_montserrat_28, 0);
-    lv_obj_set_style_text_color(weather_temp, lv_color_white(), 0);
+    weather_temp_label = lv_label_create(weather_row1);
+    lv_label_set_text(weather_temp_label, "26" "\xC2\xB0" "C");
+    lv_obj_set_style_text_font(weather_temp_label, &lv_font_montserrat_28, 0);
+    lv_obj_set_style_text_color(weather_temp_label, lv_color_white(), 0);
 
-    lv_obj_t* weather_desc = lv_label_create(weather_row1);
-    lv_label_set_text(weather_desc, "Sunny");
-    lv_obj_set_style_text_font(weather_desc, &lv_font_montserrat_20, 0);
-    lv_obj_set_style_text_color(weather_desc, lv_color_hex(0xcccccc), 0);
+    weather_desc_label = lv_label_create(weather_row1);
+    lv_label_set_text(weather_desc_label, "Sunny");
+    lv_obj_set_style_text_font(weather_desc_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(weather_desc_label, lv_color_hex(0xcccccc), 0);
 
     lv_obj_t* weather_row2 = lv_obj_create(weather_card);
     lv_obj_remove_style_all(weather_row2);
@@ -3509,12 +3523,12 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_align(weather_row2, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_top(weather_row2, 20, 0);
 
-    lv_obj_t* humidity_label = lv_label_create(weather_row2);
+    humidity_label = lv_label_create(weather_row2);
     lv_label_set_text(humidity_label, LV_SYMBOL_TINT " 65%");
     lv_obj_set_style_text_font(humidity_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(humidity_label, lv_color_hex(0x87ceeb), 0);
 
-    lv_obj_t* wind_label = lv_label_create(weather_row2);
+    wind_label = lv_label_create(weather_row2);
     lv_label_set_text(wind_label, LV_SYMBOL_REFRESH " 3m/s");
     lv_obj_set_style_text_font(wind_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(wind_label, lv_color_hex(0x90ee90), 0);
@@ -3530,18 +3544,18 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_pad_row(sunrise_sunset_card, 5, 0);
 
     lv_obj_t* timeline_title = lv_label_create(sunrise_sunset_card);
-    lv_label_set_text(timeline_title, "Sunrise & Sunset Timeline");
-    lv_obj_set_style_text_font(timeline_title, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(timeline_title, lv_color_hex(0xaaaaaa), 0);
+    lv_label_set_text(timeline_title, "日出 & 日落");
+    lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
+    lv_obj_set_style_text_color(timeline_title, lv_color_hex(0xFFFFFF), 0);
 
-    lv_obj_t* timeline_bar = lv_obj_create(sunrise_sunset_card);
+    timeline_bar = lv_obj_create(sunrise_sunset_card);
     lv_obj_remove_style_all(timeline_bar);
     lv_obj_set_size(timeline_bar, lv_pct(100), 20);
     lv_obj_set_style_bg_color(timeline_bar, lv_color_hex(0x333344), 0);
     lv_obj_set_style_bg_opa(timeline_bar, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(timeline_bar, 10, 0);
 
-    lv_obj_t* timeline_indicator = lv_obj_create(timeline_bar);
+    timeline_indicator = lv_obj_create(timeline_bar);
     lv_obj_set_size(timeline_indicator, 12, 12);
     lv_obj_align(timeline_indicator, LV_ALIGN_LEFT_MID, 55, 0);
     lv_obj_set_style_bg_color(timeline_indicator, lv_color_hex(0xffcc00), 0);
@@ -3555,7 +3569,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(timeline_labels, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(timeline_labels, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_t* sunrise_label = lv_label_create(timeline_labels);
+    sunrise_label = lv_label_create(timeline_labels);
     lv_label_set_text(sunrise_label, LV_SYMBOL_UP " 06:12");
     lv_obj_set_style_text_font(sunrise_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(sunrise_label, lv_color_hex(0xffa500), 0);
@@ -3565,7 +3579,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(now_label, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(now_label, lv_color_hex(0xffcc00), 0);
 
-    lv_obj_t* sunset_label = lv_label_create(timeline_labels);
+    sunset_label = lv_label_create(timeline_labels);
     lv_label_set_text(sunset_label, LV_SYMBOL_DOWN " 18:35");
     lv_obj_set_style_text_font(sunset_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(sunset_label, lv_color_hex(0xff6b6b), 0);
@@ -3613,14 +3627,14 @@ static void ui_setting_page_init(lv_obj_t* parent) {
 
     // 第二行：WiFi名称
     wifi_ssid_label = lv_label_create(wifi_card);
-    lv_label_set_text(wifi_ssid_label, "Not connected");
-    lv_obj_set_style_text_font(wifi_ssid_label, &lv_font_montserrat_14, 0);
+    lv_label_set_text(wifi_ssid_label, "未连接");
+    lv_obj_set_style_text_font(wifi_ssid_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_ssid_label, lv_color_hex(0x888888), 0);
 
     // 第三行：状态
     wifi_status_label = lv_label_create(wifi_card);
-    lv_label_set_text(wifi_status_label, "Disconnected");
-    lv_obj_set_style_text_font(wifi_status_label, &lv_font_montserrat_12, 0);
+    lv_label_set_text(wifi_status_label, "未连接");
+    lv_obj_set_style_text_font(wifi_status_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0xff6b6b), 0);
 
 
@@ -3638,8 +3652,8 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_opa(wifi_config_win, LV_OPA_50, LV_STATE_DEFAULT);
     lv_obj_set_style_radius(wifi_config_win, 10, LV_STATE_DEFAULT);
 
-    lv_obj_t *wifi_title_win = lv_win_add_title(wifi_config_win, "Wifi Config");
-    lv_obj_set_style_text_font(wifi_title_win, &lv_font_montserrat_14, LV_STATE_DEFAULT);
+    lv_obj_t *wifi_title_win = lv_win_add_title(wifi_config_win, "WiFi设置");
+    lv_obj_set_style_text_font(wifi_title_win, &SourceHanSansCN_Regular, LV_STATE_DEFAULT);
 
     lv_obj_t *wifi_btn_win_close = lv_win_add_btn(wifi_config_win, LV_SYMBOL_CLOSE, 100);
     lv_obj_set_style_bg_opa(wifi_btn_win_close, LV_OPA_30, LV_STATE_DEFAULT);
@@ -3726,8 +3740,8 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_opa(wifi_connect_win, LV_OPA_50, LV_STATE_DEFAULT);
     lv_obj_set_style_radius(wifi_connect_win, 10, LV_STATE_DEFAULT);
 
-    lv_obj_t *wifi_connect_title = lv_win_add_title(wifi_connect_win, "Connect WiFi");
-    lv_obj_set_style_text_font(wifi_connect_title, &lv_font_montserrat_14, LV_STATE_DEFAULT);
+    lv_obj_t *wifi_connect_title = lv_win_add_title(wifi_connect_win, "连接WiFi");
+    lv_obj_set_style_text_font(wifi_connect_title, &SourceHanSansCN_Regular, LV_STATE_DEFAULT);
 
     lv_obj_t *wifi_connect_close_btn = lv_win_add_btn(wifi_connect_win, LV_SYMBOL_CLOSE, 100);
     lv_obj_set_style_bg_opa(wifi_connect_close_btn, LV_OPA_30, LV_STATE_DEFAULT);
@@ -3751,22 +3765,23 @@ static void ui_setting_page_init(lv_obj_t* parent) {
 
     wifi_connect_ssid_label = lv_label_create(wifi_connect_cont);
     lv_label_set_text(wifi_connect_ssid_label, "SSID");
-    lv_obj_set_style_text_font(wifi_connect_ssid_label, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_font(wifi_connect_ssid_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_connect_ssid_label, lv_color_white(), 0);
 
     wifi_connect_info_label = lv_label_create(wifi_connect_cont);
-    lv_label_set_text(wifi_connect_info_label, "Status: Not connected");
-    lv_obj_set_style_text_font(wifi_connect_info_label, &lv_font_montserrat_14, 0);
+    lv_label_set_text(wifi_connect_info_label, "状态: 未连接");
+    lv_obj_set_style_text_font(wifi_connect_info_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_connect_info_label, lv_color_hex(0xcccccc), 0);
 
     wifi_connect_pwd_ta = lv_textarea_create(wifi_connect_cont);
     lv_obj_set_size(wifi_connect_pwd_ta, LV_PCT(90), 40);
     lv_textarea_set_one_line(wifi_connect_pwd_ta, true);
     lv_textarea_set_password_mode(wifi_connect_pwd_ta, true);
-    lv_textarea_set_placeholder_text(wifi_connect_pwd_ta, "Password");
+    lv_textarea_set_placeholder_text(wifi_connect_pwd_ta, "密码");
     lv_obj_set_style_bg_color(wifi_connect_pwd_ta, lv_color_hex(0x1e1e2e), 0);
     lv_obj_set_style_border_color(wifi_connect_pwd_ta, lv_color_hex(0x444466), 0);
     lv_obj_set_style_text_color(wifi_connect_pwd_ta, lv_color_white(), 0);
+    lv_obj_set_style_text_font(wifi_connect_pwd_ta, &SourceHanSansCN_Regular, 0);
     lv_obj_add_event_cb(wifi_connect_pwd_ta, wifi_pwd_ta_event_cb, LV_EVENT_ALL, NULL);
 
     wifi_connect_btn = lv_btn_create(wifi_connect_cont);
@@ -3777,7 +3792,8 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(wifi_connect_btn, wifi_connect_btn_cb, LV_EVENT_CLICKED, NULL);
 
     wifi_connect_btn_label = lv_label_create(wifi_connect_btn);
-    lv_label_set_text(wifi_connect_btn_label, "Connect");
+    lv_label_set_text(wifi_connect_btn_label, "连接");
+    lv_obj_set_style_text_font(wifi_connect_btn_label, &SourceHanSansCN_Regular, 0);
     lv_obj_center(wifi_connect_btn_label);
     lv_obj_set_style_text_color(wifi_connect_btn_label, lv_color_white(), 0);
     wifi_refresh_connect_window(NULL);
@@ -3804,8 +3820,8 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_pad_column(time_header, 8, 0);
 
     lv_obj_t* time_icon = lv_label_create(time_header);
-    lv_label_set_text(time_icon, LV_SYMBOL_BELL);
-    lv_obj_set_style_text_font(time_icon, &lv_font_montserrat_20, 0);
+    lv_label_set_text(time_icon, LV_SYMBOL_CLOCK);
+    lv_obj_set_style_text_font(time_icon, &clock_icon, 0);
     lv_obj_set_style_text_color(time_icon, lv_color_hex(0x87ceeb), 0);
 
     lv_obj_t* time_title = lv_label_create(time_header);
@@ -3816,13 +3832,13 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     // 第二行：时间
     time_time_label = lv_label_create(time_card);
     lv_label_set_text(time_time_label, "--:--");
-    lv_obj_set_style_text_font(time_time_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_font(time_time_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(time_time_label, lv_color_white(), 0);
 
     // 第三行：日期
     time_date_label = lv_label_create(time_card);
     lv_label_set_text(time_date_label, "----/--/--");
-    lv_obj_set_style_text_font(time_date_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(time_date_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(time_date_label, lv_color_hex(0x888888), 0);
 
     lv_obj_t* cards_row2 = lv_obj_create(setting_container);
@@ -3862,14 +3878,14 @@ static void ui_setting_page_init(lv_obj_t* parent) {
 
     // 第二行：城市
     location_city_label = lv_label_create(location_card);
-    lv_label_set_text(location_city_label, "Unknown");
-    lv_obj_set_style_text_font(location_city_label, &lv_font_montserrat_14, 0);
+    lv_label_set_text(location_city_label, "未知");
+    lv_obj_set_style_text_font(location_city_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(location_city_label, lv_color_hex(0x888888), 0);
 
     // 第三行：详细地址
     location_detail_label = lv_label_create(location_card);
-    lv_label_set_text(location_detail_label, "Not located");
-    lv_obj_set_style_text_font(location_detail_label, &lv_font_montserrat_12, 0);
+    lv_label_set_text(location_detail_label, "未定位");
+    lv_obj_set_style_text_font(location_detail_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(location_detail_label, lv_color_hex(0x888888), 0);
 
     lv_obj_t* about_card = lv_obj_create(cards_row2);

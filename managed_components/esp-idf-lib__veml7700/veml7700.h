@@ -21,7 +21,7 @@
  * @defgroup veml7700 veml7700
  * @{
  *
- * ESP-IDF driver for VEML7700 brightness sensors for I2C-bus (updated for native I2C driver)
+ * ESP-IDF driver for VEML7700 brightness sensors for I2C-bus
  *
  * Copyright (c) 2022 Marc Luehr <marcluehr@gmail.com>
  *
@@ -31,10 +31,8 @@
 #define __VEML7700_H__
 
 #include <stddef.h>
-#include <driver/i2c.h>
-#include <driver/gpio.h>
+#include <i2cdev.h>
 #include <esp_err.h>
-#include <freertos/FreeRTOS.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,14 +63,6 @@ extern "C" {
 #define VEML7700_PERSISTENCE_PROTECTION_8 (0b11)
 
 /**
- * I2C device descriptor (simplified for native driver)
- */
-typedef struct {
-    i2c_port_t port;
-    uint8_t addr;
-} i2c_dev_t;
-
-/**
  * VEML configuration descriptor
  */
 typedef struct
@@ -85,13 +75,13 @@ typedef struct
     uint16_t threshold_high;          //!< high threshold for the interrupt
     uint16_t threshold_low;           //!< low threshold for the interrupt
     uint16_t power_saving_mode : 2;   //!< power saving mode
-    uint16_t power_saving_enable : 1; //!< enable the power saving mode
+    uint16_t power_saving_enable : 1; //!< enable the pover saving mode
 } veml7700_config_t;
 
 /**
- * @brief Initialize device descriptor and I2C bus
+ * @brief Initialize device descriptor
  *
- * Default SCL frequency is 200kHz. The I2C address is fixed.
+ * Default SCL frequency is 100kHz. The I2C address is fix.
  *
  * @param dev Pointer to I2C device descriptor
  * @param port I2C port number
@@ -102,7 +92,7 @@ typedef struct
 esp_err_t veml7700_init_desc(i2c_dev_t *dev, i2c_port_t port, gpio_num_t sda_gpio, gpio_num_t scl_gpio);
 
 /**
- * @brief Deinitialize I2C bus
+ * @brief Free device descriptor
  *
  * @param dev Pointer to I2C device descriptor
  * @return `ESP_OK` on success
@@ -110,7 +100,7 @@ esp_err_t veml7700_init_desc(i2c_dev_t *dev, i2c_port_t port, gpio_num_t sda_gpi
 esp_err_t veml7700_free_desc(i2c_dev_t *dev);
 
 /**
- * @brief Probe if the device exists on the bus
+ * @brief Probe if the device exist on the bus
  *
  * @param dev Pointer to I2C device descriptor
  * @return `ESP_OK` on success
@@ -127,7 +117,7 @@ esp_err_t veml7700_probe(i2c_dev_t *dev);
 esp_err_t veml7700_set_config(i2c_dev_t *dev, veml7700_config_t *config);
 
 /**
- * @brief Read the config from the device
+ * @brief Read the config to the device
  *
  * @param dev Pointer to I2C device descriptor
  * @param config Pointer to the config descriptor

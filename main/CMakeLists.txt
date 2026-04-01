@@ -20,6 +20,11 @@ idf_component_register(
     "app_http_requests.c"
     "app_ui_time_port.c"
     "app_ui_location_port.c"
+    "app_ui_weather_port.c"
+    "SourceHanSansCN_Regular.c"
+    "clock_icon.c"
+    "app_time.c"
+    "app_weather.c"
 
     INCLUDE_DIRS ".")
 

@@ -9,12 +9,10 @@ veml7700_config_t veml7700_configuration;
 static bool compare_configuration(veml7700_config_t* config_a, veml7700_config_t* config_b)
 {
     return (config_a->gain == config_b->gain) &&
-           (config_a->integration_time == config_b->integration_time) &&  // 修复：改为 integration_time
+           (config_a->integration_time == config_b->integration_time) &&
            (config_a->persistence_protect == config_b->persistence_protect) &&
            (config_a->interrupt_enable == config_b->interrupt_enable) &&
            (config_a->shutdown == config_b->shutdown) &&
-           (config_a->threshold_high == config_b->threshold_high) &&
-           (config_a->threshold_low == config_b->threshold_low) &&
            (config_a->power_saving_mode == config_b->power_saving_mode) &&
            (config_a->power_saving_enable == config_b->power_saving_enable);
 }
@@ -25,9 +23,6 @@ void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_s
     memset(&veml7700_configuration, 0, sizeof(veml7700_config_t));
 
     ESP_LOGI(TAG, "initializing hardware");
-
-    // 确保 I2C 总线已初始化（单次调用，避免重复）
-    // ESP_ERROR_CHECK(i2c_init());  // 新增：显式初始化总线
 
     ESP_ERROR_CHECK(veml7700_init_desc(&veml7700_device, HW_VEML7700_I2C_NUM, HW_VEML7700_SDA, HW_VEML7700_SCL));
 

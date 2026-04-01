@@ -60,18 +60,18 @@ void ui_wifi_port_set_connected(const char *ssid) {
     extern lv_obj_t *wifi_icon_label;
     extern lv_obj_t *wifi_ssid_label;
     extern lv_obj_t *wifi_status_label;
-    
+
     if (wifi_icon_label != NULL) {
         lv_obj_set_style_text_color(wifi_icon_label, lv_color_hex(0x00ff00), 0);
     }
-    
+
     if (wifi_ssid_label != NULL && ssid != NULL) {
         lv_label_set_text(wifi_ssid_label, ssid);
         lv_obj_set_style_text_color(wifi_ssid_label, lv_color_white(), 0);
     }
-    
+
     if (wifi_status_label != NULL) {
-        lv_label_set_text(wifi_status_label, "Connected");
+        lv_label_set_text(wifi_status_label, "已连接");
         lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0x00ff00), 0);
     }
 }
@@ -80,18 +80,18 @@ void ui_wifi_port_set_disconnected(void) {
     extern lv_obj_t *wifi_icon_label;
     extern lv_obj_t *wifi_ssid_label;
     extern lv_obj_t *wifi_status_label;
-    
+
     if (wifi_icon_label != NULL) {
         lv_obj_set_style_text_color(wifi_icon_label, lv_color_hex(0x888888), 0);
     }
-    
+
     if (wifi_ssid_label != NULL) {
-        lv_label_set_text(wifi_ssid_label, "Not connected");
+        lv_label_set_text(wifi_ssid_label, "未连接");
         lv_obj_set_style_text_color(wifi_ssid_label, lv_color_hex(0x888888), 0);
     }
-    
+
     if (wifi_status_label != NULL) {
-        lv_label_set_text(wifi_status_label, "Disconnected");
+        lv_label_set_text(wifi_status_label, "已断开");
         lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0xff6b6b), 0);
     }
 }

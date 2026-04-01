@@ -895,3 +895,12 @@ esp_err_t i2cdev_done(void)
     ESP_LOGV(TAG, "I2C subsystem cleanup finished with result: %d", result);
     return result;
 }
+
+i2c_master_bus_handle_t i2cdev_get_bus_handle(i2c_port_t port)
+{
+    if (port < 0 || port >= I2C_NUM_MAX)
+    {
+        return NULL;
+    }
+    return i2c_ports[port].bus_handle;
+}

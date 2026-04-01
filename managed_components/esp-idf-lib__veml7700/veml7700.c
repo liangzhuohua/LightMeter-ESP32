@@ -56,7 +56,7 @@
 /**
  * @file veml7700.c
  *
- * ESP-IDF driver for VEML7700 brightness sensors for I2C-bus (updated for native I2C)
+ * ESP-IDF driver for VEML7700 brightness sensors for I2C-bus
  *
  * Copyright (c) 2022 Marc Luehr <marcluehr@gmail.com>
  *
@@ -64,10 +64,8 @@
  */
 
 #include "veml7700.h"
-#include "esp_log.h"
 
-#define I2C_FREQ_HZ (200000)
-#define I2C_TIMEOUT_MS (1000)
+#define I2C_FREQ_HZ (100000)
 
 #define CHECK(x)                                                                                                       \
     do                                                                                                                 \
@@ -88,84 +86,57 @@
 static esp_err_t read_port(i2c_dev_t *dev, uint8_t command_code, uint16_t *data)
 {
     CHECK_ARG(dev);
-    CHECK_ARG(data);
 
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    CHECK(i2c_master_start(cmd));
-    CHECK(i2c_master_write_byte(cmd, (dev->addr << 1) | I2C_MASTER_WRITE, true));
-    CHECK(i2c_master_write_byte(cmd, command_code, true));
-    CHECK(i2c_master_start(cmd));
-    CHECK(i2c_master_write_byte(cmd, (dev->addr << 1) | I2C_MASTER_READ, true));
+    I2C_DEV_CHECK(dev, i2c_dev_read(dev, &command_code, 1, data, 2));
 
-    uint8_t buf[2];
-    CHECK(i2c_master_read(cmd, buf, 2, I2C_MASTER_LAST_NACK));
-    CHECK(i2c_master_stop(cmd));
-
-    esp_err_t ret = i2c_master_cmd_begin(dev->port, cmd, pdMS_TO_TICKS(I2C_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-
-    if (ret == ESP_OK) {
-        *data = buf[0] | (buf[1] << 8);  // Little-endian
-    }
-    return ret;
+    return ESP_OK;
 }
 
 static esp_err_t write_port(i2c_dev_t *dev, uint8_t command_code, uint16_t data)
 {
     CHECK_ARG(dev);
 
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    CHECK(i2c_master_start(cmd));
-    CHECK(i2c_master_write_byte(cmd, (dev->addr << 1) | I2C_MASTER_WRITE, true));
-    CHECK(i2c_master_write_byte(cmd, command_code, true));
+    I2C_DEV_CHECK(dev, i2c_dev_write(dev, &command_code, 1, &data, 2));
 
-    uint8_t data_low = data & 0xFF;
-    uint8_t data_high = (data >> 8) & 0xFF;
-    CHECK(i2c_master_write_byte(cmd, data_low, true));
-    CHECK(i2c_master_write_byte(cmd, data_high, true));
-    CHECK(i2c_master_stop(cmd));
-
-    esp_err_t ret = i2c_master_cmd_begin(dev->port, cmd, pdMS_TO_TICKS(I2C_TIMEOUT_MS));
-    i2c_cmd_link_delete(cmd);
-    return ret;
+    return ESP_OK;
 }
 
 static uint32_t resolution(veml7700_config_t *config)
 {
     CHECK_ARG(config);
 
-    uint32_t res = VEML7700_RESOLUTION_800MS_IT_GAIN_2;
+    uint32_t resolution = VEML7700_RESOLUTION_800MS_IT_GAIN_2;
     switch (config->gain)
     {
         case VEML7700_GAIN_1:
-            res *= 2;
+            resolution = resolution * 2;
             break;
         case VEML7700_GAIN_DIV_4:
-            res *= 8;
+            resolution = resolution * 8;
             break;
         case VEML7700_GAIN_DIV_8:
-            res *= 16;
+            resolution = resolution * 16;
             break;
     }
     switch (config->integration_time)
     {
         case VEML7700_INTEGRATION_TIME_400MS:
-            res *= 2;
+            resolution = resolution * 2;
             break;
         case VEML7700_INTEGRATION_TIME_200MS:
-            res *= 4;
+            resolution = resolution * 4;
             break;
         case VEML7700_INTEGRATION_TIME_100MS:
-            res *= 8;
+            resolution = resolution * 8;
             break;
         case VEML7700_INTEGRATION_TIME_50MS:
-            res *= 16;
+            resolution = resolution * 16;
             break;
         case VEML7700_INTEGRATION_TIME_25MS:
-            res *= 32;
+            resolution = resolution * 32;
             break;
     }
-    return res;
+    return resolution;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -176,39 +147,33 @@ esp_err_t veml7700_init_desc(i2c_dev_t *dev, i2c_port_t port, gpio_num_t sda_gpi
 
     dev->port = port;
     dev->addr = VEML7700_I2C_ADDR;
+    dev->cfg.sda_io_num = sda_gpio;
+    dev->cfg.scl_io_num = scl_gpio;
+#if HELPER_TARGET_IS_ESP32
+    dev->cfg.master.clk_speed = I2C_FREQ_HZ;
+#endif
 
-    // 移除：不再初始化总线（由 bsp_i2c_init 负责，避免重复安装）
-    // 注意：调用前必须确保 i2c_init() 已执行
-
-    ESP_LOGI("VEML7700", "Device descriptor initialized (bus assumed ready)");
-    return ESP_OK;
+    return i2c_dev_create_mutex(dev);
 }
 
 esp_err_t veml7700_free_desc(i2c_dev_t *dev)
 {
     CHECK_ARG(dev);
 
-    // return i2c_driver_delete(dev->port);
-    return ESP_OK;
+    return i2c_dev_delete_mutex(dev);
 }
 
 esp_err_t veml7700_probe(i2c_dev_t *dev)
 {
     CHECK_ARG(dev);
 
-    /* Use write request since read causes timeout; chip waits for command code */
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    CHECK(i2c_master_start(cmd));
-    CHECK(i2c_master_write_byte(cmd, (dev->addr << 1) | I2C_MASTER_WRITE, true));
-    CHECK(i2c_master_stop(cmd));
-
-    esp_err_t err = i2c_master_cmd_begin(dev->port, cmd, pdMS_TO_TICKS(100));
-    i2c_cmd_link_delete(cmd);
-    if (err == ESP_OK) {
-        ESP_LOGI("VEML7700", "Probe OK");
-    } else {
-        ESP_LOGE("VEML7700", "Probe FAIL: %s", esp_err_to_name(err));
-    }
+    /* use write request since read request causes a timeout;
+     * just doing a read is not intended to use by the chip,
+     * it is waiting for a command code
+     */
+    I2C_DEV_TAKE_MUTEX(dev);
+    esp_err_t err = i2c_dev_probe(dev, I2C_DEV_WRITE);
+    I2C_DEV_GIVE_MUTEX(dev);
     return err;
 }
 
@@ -218,20 +183,22 @@ esp_err_t veml7700_set_config(i2c_dev_t *dev, veml7700_config_t *config)
     CHECK_ARG(config);
 
     uint16_t config_data = 0;
-    config_data |= ((uint16_t)config->gain) << VEML7700_GAIN_SHIFT;
-    config_data |= ((uint16_t)config->integration_time) << VEML7700_INTEGRATION_TIME_SHIFT;
-    config_data |= ((uint16_t)config->persistence_protect) << VEML7700_PERSISTENCE_PROTECTION_SHIFT;
-    config_data |= ((uint16_t)config->interrupt_enable) << VEML7700_INTERRUPT_ENABLE_SHIFT;
-    config_data |= ((uint16_t)config->shutdown) << VEML7700_SHUTDOWN_SHIFT;
+    config_data |= config->gain << VEML7700_GAIN_SHIFT;
+    config_data |= config->integration_time << VEML7700_INTEGRATION_TIME_SHIFT;
+    config_data |= config->persistence_protect << VEML7700_PERSISTENCE_PROTECTION_SHIFT;
+    config_data |= config->interrupt_enable << VEML7700_INTERRUPT_ENABLE_SHIFT;
+    config_data |= config->shutdown << VEML7700_SHUTDOWN_SHIFT;
 
     uint16_t power_saving_data = 0;
-    power_saving_data |= ((uint16_t)config->power_saving_mode) << VEML7700_POWER_SAVING_MODE_SHIFT;
-    power_saving_data |= ((uint16_t)config->power_saving_enable) << VEML7700_POWER_SAVING_MODE_ENABLE_SHIFT;
+    power_saving_data |= config->power_saving_mode << VEML7700_POWER_SAVING_MODE_SHIFT;
+    power_saving_data |= config->power_saving_enable << VEML7700_POWER_SAVING_MODE_ENABLE_SHIFT;
 
-    CHECK(write_port(dev, VEML7700_COMMAND_CODE_ALS_CONF_0, config_data));
-    CHECK(write_port(dev, VEML7700_COMMAND_CODE_ALS_WH, config->threshold_high));
-    CHECK(write_port(dev, VEML7700_COMMAND_CODE_ALS_WL, config->threshold_low));
-    CHECK(write_port(dev, VEML7700_COMMAND_CODE_POWER_SAVING, power_saving_data));
+    I2C_DEV_TAKE_MUTEX(dev);
+    I2C_DEV_CHECK(dev, write_port(dev, VEML7700_COMMAND_CODE_ALS_CONF_0, config_data));
+    I2C_DEV_CHECK(dev, write_port(dev, VEML7700_COMMAND_CODE_ALS_WH, config->threshold_high));
+    I2C_DEV_CHECK(dev, write_port(dev, VEML7700_COMMAND_CODE_ALS_WL, config->threshold_low));
+    I2C_DEV_CHECK(dev, write_port(dev, VEML7700_COMMAND_CODE_POWER_SAVING, power_saving_data));
+    I2C_DEV_GIVE_MUTEX(dev);
     return ESP_OK;
 }
 
@@ -243,59 +210,67 @@ esp_err_t veml7700_get_config(i2c_dev_t *dev, veml7700_config_t *config)
     uint16_t config_data = 0;
     uint16_t power_saving_data = 0;
 
-    CHECK(read_port(dev, VEML7700_COMMAND_CODE_ALS_CONF_0, &config_data));
-    CHECK(read_port(dev, VEML7700_COMMAND_CODE_ALS_WH, &(config->threshold_high)));
-    CHECK(read_port(dev, VEML7700_COMMAND_CODE_ALS_WL, &(config->threshold_low)));
-    CHECK(read_port(dev, VEML7700_COMMAND_CODE_POWER_SAVING, &power_saving_data));
+    I2C_DEV_TAKE_MUTEX(dev);
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_ALS_CONF_0, &config_data));
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_ALS_WH, &(config->threshold_high)));
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_ALS_WL, &(config->threshold_low)));
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_POWER_SAVING, &power_saving_data));
+    I2C_DEV_GIVE_MUTEX(dev);
 
     config->gain = (config_data & VEML7700_GAIN_MASK) >> VEML7700_GAIN_SHIFT;
-    config->integration_time = (config_data & VEML7700_INTEGRATION_TIME_MASK) >> VEML7700_INTEGRATION_TIME_SHIFT;
-    config->persistence_protect = (config_data & VEML7700_PERSISTENCE_PROTECTION_MASK) >> VEML7700_PERSISTENCE_PROTECTION_SHIFT;
-    config->interrupt_enable = (config_data & VEML7700_INTERRUPT_ENABLE_MASK) >> VEML7700_INTERRUPT_ENABLE_SHIFT;
-    config->shutdown = (config_data & VEML7700_SHUTDOWN_MASK) >> VEML7700_SHUTDOWN_SHIFT;
+    config->integration_time = (config_data & VEML7700_INTEGRATION_TIME_MASK)
+                               >> VEML7700_INTEGRATION_TIME_SHIFT;
+    config->integration_time = (config_data & VEML7700_PERSISTENCE_PROTECTION_MASK)
+                               >> VEML7700_PERSISTENCE_PROTECTION_SHIFT;
+    config->integration_time = (config_data & VEML7700_INTERRUPT_ENABLE_MASK)
+                               >> VEML7700_INTERRUPT_ENABLE_SHIFT;
+    config->integration_time = (config_data & VEML7700_SHUTDOWN_MASK)
+                               >> VEML7700_SHUTDOWN_SHIFT;
 
-    config->power_saving_mode = (power_saving_data & VEML7700_POWER_SAVING_MODE_MASK) >> VEML7700_POWER_SAVING_MODE_SHIFT;
-    config->power_saving_enable = (power_saving_data & VEML7700_POWER_SAVING_MODE_ENABLE_MASK) >> VEML7700_POWER_SAVING_MODE_ENABLE_SHIFT;
+    config->power_saving_mode = (power_saving_data & VEML7700_POWER_SAVING_MODE_MASK)
+                                >> VEML7700_POWER_SAVING_MODE_SHIFT;
+    config->power_saving_enable = (power_saving_data & VEML7700_POWER_SAVING_MODE_ENABLE_MASK)
+                                  >> VEML7700_POWER_SAVING_MODE_ENABLE_SHIFT;
 
     return ESP_OK;
 }
 
-esp_err_t veml7700_get_ambient_light(i2c_dev_t *dev, veml7700_config_t *config, uint32_t *value_lux)
+esp_err_t veml7700_get_ambient_light(i2c_dev_t *dev, veml7700_config_t *config, uint32_t *value)
 {
     CHECK_ARG(dev);
     CHECK_ARG(config);
-    CHECK_ARG(value_lux);
 
     uint16_t raw_value = 0;
     CHECK(read_port(dev, VEML7700_COMMAND_CODE_ALS, &raw_value));
 
-    *value_lux = (raw_value * resolution(config)) / VEML7700_RESOLUTION_800MS_IT_GAIN_2_DIV;
+    *value = (raw_value * resolution(config)) / VEML7700_RESOLUTION_800MS_IT_GAIN_2_DIV;
     return ESP_OK;
 }
 
-esp_err_t veml7700_get_white_channel(i2c_dev_t *dev, veml7700_config_t *config, uint32_t *value_lux)
+esp_err_t veml7700_get_white_channel(i2c_dev_t *dev, veml7700_config_t *config, uint32_t *value)
 {
     CHECK_ARG(dev);
     CHECK_ARG(config);
-    CHECK_ARG(value_lux);
 
     uint16_t raw_value = 0;
-    CHECK(read_port(dev, VEML7700_COMMAND_CODE_WHITE, &raw_value));
+    I2C_DEV_TAKE_MUTEX(dev);
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_WHITE, &raw_value));
+    I2C_DEV_GIVE_MUTEX(dev);
 
-    *value_lux = (raw_value * resolution(config)) / VEML7700_RESOLUTION_800MS_IT_GAIN_2_DIV;
+    *value = (raw_value * resolution(config)) / VEML7700_RESOLUTION_800MS_IT_GAIN_2_DIV;
     return ESP_OK;
 }
 
 esp_err_t veml7700_get_interrupt_status(i2c_dev_t *dev, bool *low_threshold, bool *high_threshold)
 {
     CHECK_ARG(dev);
-    CHECK_ARG(low_threshold);
-    CHECK_ARG(high_threshold);
 
     uint16_t interrupt_status = 0;
-    CHECK(read_port(dev, VEML7700_COMMAND_CODE_ALS_INT, &interrupt_status));
+    I2C_DEV_TAKE_MUTEX(dev);
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_ALS_INT, &interrupt_status));
+    I2C_DEV_GIVE_MUTEX(dev);
 
-    *high_threshold = (interrupt_status & VEML7700_INTERRUPT_STATUS_HIGH_MASK) != 0;
-    *low_threshold = (interrupt_status & VEML7700_INTERRUPT_STATUS_LOW_MASK) != 0;
+    *high_threshold = interrupt_status & VEML7700_INTERRUPT_STATUS_HIGH_MASK;
+    *low_threshold = interrupt_status & VEML7700_INTERRUPT_STATUS_LOW_MASK;
     return ESP_OK;
 }

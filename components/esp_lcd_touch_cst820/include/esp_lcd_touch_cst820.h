@@ -50,6 +50,7 @@ esp_err_t esp_lcd_touch_new_i2c_cst820(const esp_lcd_panel_io_handle_t io, const
         .control_phase_bytes = 1,                          \
         .dc_bit_offset = 0,                                \
         .lcd_cmd_bits = 8,                                 \
+        .scl_speed_hz = 400000,                            \
         .flags =                                           \
         {                                                  \
             .disable_control_phase = 1,                    \
