@@ -18,7 +18,7 @@ typedef struct {
 
 typedef void (*weather_result_callback_t)(const weather_data_t* data);
 
-esp_err_t app_weather_init(void);
-esp_err_t app_weather_get(const char* location, weather_result_callback_t callback);
+void app_weather_init(void);
+void app_weather_get(const char* location_id, weather_result_callback_t callback);
 
 #endif

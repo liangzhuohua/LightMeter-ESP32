@@ -22,6 +22,7 @@ QueueHandle_t calc_data_queue = NULL;
 QueueHandle_t wifi_operation_queue = NULL;
 SemaphoreHandle_t location_Sem = NULL;
 SemaphoreHandle_t time_sync_Sem = NULL;
+SemaphoreHandle_t weather_Sem = NULL;
 
 static wifi_scan_result_t g_wifi_scan_result = {0};
 static bool g_wifi_connected = false;
@@ -73,9 +74,8 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         app_time_sntp_init();
         xSemaphoreGive(time_sync_Sem);
 
-        ESP_LOGI(TAG, "WiFi已连接，开始测试天气获取");
-        app_weather_init();
-        app_weather_get("101280101", weather_result_callback);
+        ESP_LOGI(TAG, "WiFi已连接，触发天气获取");
+        xSemaphoreGive(weather_Sem);
     }
 }
 
@@ -424,6 +424,25 @@ static void task_time_update_periodic(void* pvParameters) {
     }
 }
 
+static void task_weather_update(void* pvParameters) {
+    while (1) {
+        if (xSemaphoreTake(weather_Sem, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGI(TAG, "收到天气获取请求");
+
+            if (!g_wifi_connected) {
+                ESP_LOGW(TAG, "天气获取失败：未连接WiFi");
+                continue;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(1000));
+
+            ESP_LOGI(TAG, "开始获取天气");
+            app_weather_init();
+            app_weather_get("101280101", weather_result_callback);
+        }
+    }
+}
+
 
 void app_controller_init(void)
 {
@@ -431,6 +450,7 @@ void app_controller_init(void)
     wifi_operation_queue = xQueueCreate(10, sizeof(WifiOperationMsg));
     location_Sem = xSemaphoreCreateBinary();
     time_sync_Sem = xSemaphoreCreateBinary();
+    weather_Sem = xSemaphoreCreateBinary();
 
     hw_wifi_register_state_cb(wifi_state_callback);
 
@@ -440,4 +460,5 @@ void app_controller_init(void)
     xTaskCreatePinnedToCore(task_get_location, "task_get_location", 4096, NULL, 5, NULL, 1);
     xTaskCreate(task_time_sync_and_update, "task_time_sync", 4096, NULL, 5, NULL);
     xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
+    xTaskCreate(task_weather_update, "task_weather", 16384, NULL, 5, NULL);
 }
