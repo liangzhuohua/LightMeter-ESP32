@@ -1,9 +1,11 @@
 #include "app_ui.h"
 #include "app_ui_wifi_port.h"
+#include "app_nvs_storage.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include "esp_log.h"
 #include "app_exposure_calc.h"
 #include "app_ui_calc_port.h"
 
@@ -119,8 +121,10 @@ static void cam_show_delete_confirm_dialog(void);         // 显示相机删除�
 static void cam_restore_scroll_timer_cb(lv_timer_t * timer); // 定时器回调：恢复相机页面滚动位置
 static CAM extract_cam_from_card(lv_obj_t* card);       // 从相机卡片提取数据
 static void clear_wifi_cards(void);
+static void clear_wifi_cards_async(void *user_data);
 static void wifi_refresh_connect_window(const char *ssid);
 static void wifi_sync_card_styles(void);
+static lv_obj_t *wifi_find_card_by_ssid(const char *ssid);
 
 // ──────────────────────────────────────────────
 // 镜头参数设置相关
@@ -157,6 +161,7 @@ static void clear_wifi_cards(void);
 // ──────────────────────────────────────────────
 static lv_obj_t *wifi_card_win_container = NULL;
 static lv_obj_t *wifi_scan_btn = NULL;
+static lv_obj_t *wifi_switch_obj = NULL;
 static lv_obj_t *wifi_connect_win = NULL;
 static lv_obj_t *wifi_connect_ssid_label = NULL;
 static lv_obj_t *wifi_connect_info_label = NULL;
@@ -171,6 +176,7 @@ static lv_obj_t *current_selected_wifi_card = NULL;
 static lv_obj_t *connected_wifi_card = NULL;
 static char wifi_connected_ssid[33] = {0};
 static char wifi_connecting_ssid[33] = {0};
+static bool g_wifi_enabled = false;
 
 lv_obj_t *time_time_label = NULL;
 lv_obj_t *time_date_label = NULL;
@@ -626,6 +632,8 @@ static void cam_close_win_cb(lv_event_t * e)
         lv_obj_add_flag(num_keyboard, LV_OBJ_FLAG_HIDDEN);
         // 再关闭窗口
         lv_obj_add_flag(cam_win_select, LV_OBJ_FLAG_HIDDEN);
+        // 保存数据到 NVS
+        app_nvs_save_all();
     }
 
 }
@@ -860,6 +868,8 @@ static void cam_delete_confirm_event_cb(lv_event_t * e)
                     /* 创建定时器，在下一帧恢复滚动位置和更新主界面 */
                     lv_timer_t * timer = lv_timer_create(cam_restore_scroll_timer_cb, 1, NULL);
                     lv_timer_set_repeat_count(timer, 1);
+
+                    app_nvs_save_all();
                 }
             }
         }
@@ -993,6 +1003,8 @@ static void keyboard_done_cancel_cb(lv_event_t * e)
         // 更新主界面
         update_main_ui_from_cam_card();
         update_main_ui_from_len_card();
+        // 保存数据到 NVS
+        app_nvs_save_all();
     }
 }
 
@@ -1764,6 +1776,8 @@ static void len_delete_confirm_event_cb(lv_event_t * e)
                     /* 创建定时器，在下一帧恢复滚动位置和更新主界面 */
                     lv_timer_t * timer = lv_timer_create(len_restore_scroll_timer_cb, 1, NULL);
                     lv_timer_set_repeat_count(timer, 1);
+
+                    app_nvs_save_all();
                 }
             }
         }
@@ -1784,6 +1798,8 @@ static void len_close_win_cb(lv_event_t * e)
     lv_obj_add_flag(num_keyboard, LV_OBJ_FLAG_HIDDEN);
     // 再关闭窗口
     lv_obj_add_flag(len_win_select, LV_OBJ_FLAG_HIDDEN);
+    // 保存数据到 NVS
+    app_nvs_save_all();
 }
 
 // ──────────────────────────────────────────────
@@ -2421,6 +2437,131 @@ uint8_t app_ui_get_selected_mode(void) {
     return selected_idx;
 }
 
+void app_ui_set_selected_mode(uint8_t mode_idx) {
+    if (mode_idx >= 4) return;
+    if (selected_idx == mode_idx) return;
+
+    if (main_obj_mode_select == NULL) return;
+
+    // 取消上一个选中
+    lv_obj_t * prev = lv_obj_get_child(main_obj_mode_select, selected_idx);
+    if (prev) {
+        lv_obj_set_style_bg_opa(prev, LV_OPA_TRANSP, 0);
+        lv_obj_set_style_border_width(prev, 1, 0);
+        lv_obj_set_style_border_color(prev, lv_color_hex(0x404040), 0);
+        lv_obj_set_style_border_opa(prev, LV_OPA_60, 0);
+        lv_obj_clear_state(prev, LV_STATE_CHECKED);
+    }
+
+    // 选中当前
+    lv_obj_t * btn = lv_obj_get_child(main_obj_mode_select, mode_idx);
+    if (btn) {
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0x4C5C6E), 0);
+        lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+        lv_obj_set_style_border_width(btn, 2, 0);
+        lv_obj_set_style_border_color(btn, lv_color_hex(0x6A8ABF), 0);
+        lv_obj_add_state(btn, LV_STATE_CHECKED);
+    }
+
+    selected_idx = mode_idx;
+    ESP_LOGI("app_ui", "Mode set to: %d", mode_idx);
+}
+
+lv_obj_t* app_ui_get_cam_container(void) {
+    return cam_card_win_container;
+}
+
+lv_obj_t* app_ui_get_len_container(void) {
+    return len_card_win_container;
+}
+
+uint16_t app_ui_get_cam_count(void) {
+    if (cam_card_win_container == NULL) return 0;
+    return lv_obj_get_child_cnt(cam_card_win_container);
+}
+
+uint16_t app_ui_get_len_count(void) {
+    if (len_card_win_container == NULL) return 0;
+    return lv_obj_get_child_cnt(len_card_win_container);
+}
+
+int app_ui_get_cam_selected_index(void) {
+    if (cam_selected_card == NULL || cam_card_win_container == NULL) return -1;
+    uint32_t count = lv_obj_get_child_cnt(cam_card_win_container);
+    for (uint32_t i = 0; i < count; i++) {
+        if (lv_obj_get_child(cam_card_win_container, i) == cam_selected_card) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+int app_ui_get_len_selected_index(void) {
+    if (len_selected_card == NULL || len_card_win_container == NULL) return -1;
+    uint32_t count = lv_obj_get_child_cnt(len_card_win_container);
+    for (uint32_t i = 0; i < count; i++) {
+        if (lv_obj_get_child(len_card_win_container, i) == len_selected_card) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+void app_ui_set_cam_selected_index(int idx) {
+    if (cam_card_win_container == NULL || idx < 0) return;
+    uint32_t count = lv_obj_get_child_cnt(cam_card_win_container);
+    if (idx >= (int)count) return;
+
+    lv_obj_t* card = lv_obj_get_child(cam_card_win_container, (uint32_t)idx);
+    if (card == NULL) return;
+
+    if (cam_selected_card) {
+        lv_obj_set_style_bg_color(cam_selected_card, lv_color_hex(0x1e1e2e), 0);
+        lv_obj_set_style_border_color(cam_selected_card, lv_color_hex(0x444466), 0);
+        lv_obj_set_style_border_width(cam_selected_card, 1, 0);
+    }
+
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(card, 2, 0);
+
+    cam_selected_card = card;
+
+    update_main_ui_from_cam_card();
+
+    ESP_LOGI("app_ui", "Camera %d selected", idx);
+}
+
+void app_ui_set_len_selected_index(int idx) {
+    if (len_card_win_container == NULL || idx < 0) return;
+    uint32_t count = lv_obj_get_child_cnt(len_card_win_container);
+    if (idx >= (int)count) return;
+
+    lv_obj_t* card = lv_obj_get_child(len_card_win_container, (uint32_t)idx);
+    if (card == NULL) return;
+
+    if (len_selected_card) {
+        lv_obj_set_style_bg_color(len_selected_card, lv_color_hex(0x1e1e2e), 0);
+        lv_obj_set_style_border_color(len_selected_card, lv_color_hex(0x444466), 0);
+        lv_obj_set_style_border_width(len_selected_card, 1, 0);
+    }
+
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(card, 2, 0);
+
+    len_selected_card = card;
+
+    update_main_ui_from_len_card();
+
+    ESP_LOGI("app_ui", "Lens %d selected", idx);
+}
+
+uint16_t app_ui_get_roller_selected(lv_obj_t* roller) {
+    if (roller == NULL) return 0;
+    return lv_roller_get_selected(roller);
+}
+
 // ──────────────────────────────────────────────
 // 设置页面 UI
 // ──────────────────────────────────────────────
@@ -2446,7 +2587,23 @@ static void wifi_long_press_cb(lv_event_t * e)
 
     if (code == LV_EVENT_LONG_PRESSED)
     {
+        if (g_wifi_enabled) {
+            lv_obj_add_state(wifi_switch_obj, LV_STATE_CHECKED);
+            lv_obj_clear_state(wifi_scan_btn, LV_STATE_DISABLED);
+            lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_COVER, 0);
+        } else {
+            lv_obj_clear_state(wifi_switch_obj, LV_STATE_CHECKED);
+            lv_obj_add_state(wifi_scan_btn, LV_STATE_DISABLED);
+            lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_40, LV_STATE_DISABLED);
+        }
+
         lv_obj_clear_flag(wifi_config_win, LV_OBJ_FLAG_HIDDEN);
+
+        if (wifi_connected_ssid[0] != '\0') {
+            if (wifi_find_card_by_ssid(wifi_connected_ssid) == NULL) {
+                add_wifi_card(wifi_connected_ssid, -50);
+            }
+        }
     }
 }
 
@@ -2462,6 +2619,8 @@ static void wifi_switch_change_cb(lv_event_t * e) {
         lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_COVER, 0);
         // 往port层传递事件
         ui_wifi_port_wifi_enable();
+        app_nvs_set_wifi_enabled(true);
+        g_wifi_enabled = true;
     } else {
         // 开关是关闭的，禁用扫描按钮
         lv_obj_add_state(wifi_scan_btn, LV_STATE_DISABLED);
@@ -2469,6 +2628,8 @@ static void wifi_switch_change_cb(lv_event_t * e) {
         clear_wifi_cards();
         // 往port层传递事件
         ui_wifi_port_wifi_disable();
+        app_nvs_set_wifi_enabled(false);
+        g_wifi_enabled = false;
     }
 
 }
@@ -2777,6 +2938,277 @@ static void wifi_card_event_cb(lv_event_t * e)
     }
 }
 
+// ──────────────────────────────────────────────
+// 公开函数：创建相机卡片（供 NVS 恢复使用）
+// ──────────────────────────────────────────────
+void app_ui_create_cam_card(const char* name, int step_type, int min_idx, int max_idx, const char* flash_sync)
+{
+    if (!cam_card_win_container) return;
+
+    lv_obj_t *card = lv_obj_create(cam_card_win_container);
+    lv_obj_set_size(card, LV_PCT(100), 130);
+    lv_obj_set_style_radius(card, 8, 0);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x1e1e2e), 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(0x444466), 0);
+    lv_obj_set_style_border_width(card, 1, 0);
+    lv_obj_set_style_pad_all(card, 12, 0);
+
+    lv_obj_t *card_content = lv_obj_create(card);
+    lv_obj_remove_style_all(card_content);
+    lv_obj_set_size(card_content, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_bg_opa(card_content, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(card_content, 0, 0);
+    lv_obj_set_style_pad_all(card_content, 0, 0);
+    lv_obj_set_flex_flow(card_content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(card_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(card_content, 8, 0);
+    lv_obj_add_flag(card_content, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_clear_flag(card_content, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t *row1 = lv_obj_create(card_content);
+    lv_obj_set_size(row1, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row1, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row1, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row1, 8, 0);
+    lv_obj_set_style_bg_opa(row1, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row1, 0, 0);
+    lv_obj_set_style_pad_all(row1, 0, 0);
+    lv_obj_clear_flag(row1, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t *row2 = lv_obj_create(card_content);
+    lv_obj_set_size(row2, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row2, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row2, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row2, 8, 0);
+    lv_obj_set_style_bg_opa(row2, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row2, 0, 0);
+    lv_obj_set_style_pad_all(row2, 0, 0);
+    lv_obj_clear_flag(row2, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t* cam_ta_name = lv_textarea_create(row1);
+    lv_obj_set_size(cam_ta_name, 120, 55);
+    lv_textarea_set_placeholder_text(cam_ta_name, "Cam Name");
+    lv_textarea_set_one_line(cam_ta_name, true);
+    lv_obj_set_style_text_font(cam_ta_name, &lv_font_montserrat_14, 0);
+    lv_keyboard_set_textarea(cam_keyboard, cam_ta_name);
+    lv_obj_set_style_bg_color(cam_ta_name, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(cam_ta_name, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(cam_ta_name, 1, 0);
+    lv_obj_set_style_radius(cam_ta_name, 4, 0);
+    lv_obj_add_event_cb(cam_ta_name, cam_ta_name_event_cb, LV_EVENT_CLICKED, NULL);
+
+    if (name && strlen(name) > 0) {
+        lv_textarea_set_text(cam_ta_name, name);
+    }
+
+    lv_obj_t* dropdown_shutter_step = lv_dropdown_create(row1);
+    lv_obj_set_size(dropdown_shutter_step, 90, 45);
+    lv_dropdown_set_options(dropdown_shutter_step, "1\n1/2\n1/3");
+    lv_obj_set_style_text_font(dropdown_shutter_step, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(dropdown_shutter_step, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(dropdown_shutter_step, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(dropdown_shutter_step, 1, 0);
+    lv_obj_set_style_radius(dropdown_shutter_step, 4, 0);
+    lv_obj_set_style_text_align(dropdown_shutter_step, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+
+    lv_obj_t* dropdown_min_shutter = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_min_shutter, 90, 45);
+    lv_obj_set_style_text_font(dropdown_min_shutter, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(dropdown_min_shutter, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(dropdown_min_shutter, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(dropdown_min_shutter, 1, 0);
+    lv_obj_set_style_radius(dropdown_min_shutter, 4, 0);
+    lv_obj_set_style_text_align(dropdown_min_shutter, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+
+    lv_obj_t* dropdown_max_shutter = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_max_shutter, 90, 45);
+    lv_obj_set_style_text_font(dropdown_max_shutter, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(dropdown_max_shutter, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(dropdown_max_shutter, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(dropdown_max_shutter, 1, 0);
+    lv_obj_set_style_radius(dropdown_max_shutter, 4, 0);
+    lv_obj_set_style_text_align(dropdown_max_shutter, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+
+    lv_obj_t* textarea_flash_sync_obj = lv_textarea_create(row2);
+    lv_obj_set_size(textarea_flash_sync_obj, 90, 55);
+    lv_textarea_set_placeholder_text(textarea_flash_sync_obj, "1/250");
+    lv_textarea_set_one_line(textarea_flash_sync_obj, true);
+    lv_obj_set_style_text_font(textarea_flash_sync_obj, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(textarea_flash_sync_obj, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(textarea_flash_sync_obj, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(textarea_flash_sync_obj, 1, 0);
+    lv_obj_set_style_radius(textarea_flash_sync_obj, 4, 0);
+    lv_obj_add_event_cb(textarea_flash_sync_obj, num_ta_event_cb, LV_EVENT_CLICKED, NULL);
+
+    if (flash_sync && strlen(flash_sync) > 0) {
+        lv_textarea_set_text(textarea_flash_sync_obj, flash_sync);
+    }
+
+    cam_card_params_t *params = (cam_card_params_t *)malloc(sizeof(cam_card_params_t));
+    params->dropdown_shutter_step = dropdown_shutter_step;
+    params->dropdown_min_shutter = dropdown_min_shutter;
+    params->dropdown_max_shutter = dropdown_max_shutter;
+    params->textarea_flash_sync = textarea_flash_sync_obj;
+    params->current_step_type = step_type;
+
+    lv_obj_set_user_data(card, params);
+
+    int stride = (step_type == 0) ? 3 : (step_type == 1) ? 2 : 1;
+    char *options = app_ui_generate_shutter_options(SHUTTERS_1_3, COUNT_SHUTTERS_1_3, stride);
+    lv_dropdown_set_options(dropdown_min_shutter, options);
+    lv_dropdown_set_options(dropdown_max_shutter, options);
+
+    lv_dropdown_set_selected(dropdown_shutter_step, step_type);
+    lv_dropdown_set_selected(dropdown_min_shutter, min_idx);
+    lv_dropdown_set_selected(dropdown_max_shutter, max_idx);
+
+    lv_obj_add_event_cb(dropdown_shutter_step, shutter_step_event_cb, LV_EVENT_VALUE_CHANGED, params);
+    lv_obj_add_event_cb(dropdown_min_shutter, min_shutter_event_cb, LV_EVENT_VALUE_CHANGED, params);
+    lv_obj_add_event_cb(dropdown_max_shutter, max_shutter_event_cb, LV_EVENT_VALUE_CHANGED, params);
+
+    lv_obj_add_event_cb(card, cam_card_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(card, cam_card_event_cb, LV_EVENT_LONG_PRESSED, NULL);
+
+    lv_obj_scroll_to_view(card, LV_ANIM_ON);
+}
+
+// ──────────────────────────────────────────────
+// 公开函数：创建镜头卡片（供 NVS 恢复使用）
+// ──────────────────────────────────────────────
+void app_ui_create_len_card(const char* name, int step_type, int min_idx, int max_idx, const char* focal_length)
+{
+    if (!len_card_win_container) return;
+
+    lv_obj_t *card = lv_obj_create(len_card_win_container);
+    lv_obj_set_size(card, LV_PCT(100), 130);
+    lv_obj_set_style_radius(card, 8, 0);
+    lv_obj_set_style_bg_color(card, lv_color_hex(0x1e1e2e), 0);
+    lv_obj_set_style_border_color(card, lv_color_hex(0x444466), 0);
+    lv_obj_set_style_border_width(card, 1, 0);
+    lv_obj_set_style_pad_all(card, 12, 0);
+
+    lv_obj_t *card_content = lv_obj_create(card);
+    lv_obj_remove_style_all(card_content);
+    lv_obj_set_size(card_content, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_bg_opa(card_content, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(card_content, 0, 0);
+    lv_obj_set_style_pad_all(card_content, 0, 0);
+    lv_obj_set_flex_flow(card_content, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(card_content, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(card_content, 8, 0);
+    lv_obj_add_flag(card_content, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_clear_flag(card_content, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t *row1 = lv_obj_create(card_content);
+    lv_obj_set_size(row1, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row1, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row1, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row1, 8, 0);
+    lv_obj_set_style_bg_opa(row1, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row1, 0, 0);
+    lv_obj_set_style_pad_all(row1, 0, 0);
+    lv_obj_clear_flag(row1, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t *row2 = lv_obj_create(card_content);
+    lv_obj_set_size(row2, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(row2, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(row2, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(row2, 8, 0);
+    lv_obj_set_style_bg_opa(row2, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(row2, 0, 0);
+    lv_obj_set_style_pad_all(row2, 0, 0);
+    lv_obj_clear_flag(row2, LV_OBJ_FLAG_CLICKABLE);
+
+    lv_obj_t* len_ta_name = lv_textarea_create(row1);
+    lv_obj_set_size(len_ta_name, 120, 55);
+    lv_textarea_set_placeholder_text(len_ta_name, "Len Name");
+    lv_textarea_set_one_line(len_ta_name, true);
+    lv_obj_set_style_text_font(len_ta_name, &lv_font_montserrat_14, 0);
+    lv_keyboard_set_textarea(cam_keyboard, len_ta_name);
+    lv_obj_set_style_bg_color(len_ta_name, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(len_ta_name, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(len_ta_name, 1, 0);
+    lv_obj_set_style_radius(len_ta_name, 4, 0);
+    lv_obj_add_event_cb(len_ta_name, len_ta_name_event_cb, LV_EVENT_CLICKED, NULL);
+
+    if (name && strlen(name) > 0) {
+        lv_textarea_set_text(len_ta_name, name);
+    }
+
+    lv_obj_t* dropdown_aperture_step = lv_dropdown_create(row1);
+    lv_obj_set_size(dropdown_aperture_step, 90, 45);
+    lv_dropdown_set_options(dropdown_aperture_step, "1\n1/2\n1/3\nCustom");
+    lv_obj_set_style_text_font(dropdown_aperture_step, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(dropdown_aperture_step, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(dropdown_aperture_step, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(dropdown_aperture_step, 1, 0);
+    lv_obj_set_style_radius(dropdown_aperture_step, 4, 0);
+    lv_obj_set_style_text_align(dropdown_aperture_step, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+
+    lv_obj_t* dropdown_min_aperture = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_min_aperture, 90, 45);
+    lv_obj_set_style_text_font(dropdown_min_aperture, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(dropdown_min_aperture, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(dropdown_min_aperture, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(dropdown_min_aperture, 1, 0);
+    lv_obj_set_style_radius(dropdown_min_aperture, 4, 0);
+    lv_obj_set_style_text_align(dropdown_min_aperture, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+
+    lv_obj_t* dropdown_max_aperture = lv_dropdown_create(row2);
+    lv_obj_set_size(dropdown_max_aperture, 90, 45);
+    lv_obj_set_style_text_font(dropdown_max_aperture, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(dropdown_max_aperture, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(dropdown_max_aperture, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(dropdown_max_aperture, 1, 0);
+    lv_obj_set_style_radius(dropdown_max_aperture, 4, 0);
+    lv_obj_set_style_text_align(dropdown_max_aperture, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
+
+    lv_obj_t* textarea_focal_length_obj = lv_textarea_create(row2);
+    lv_obj_set_size(textarea_focal_length_obj, 90, 55);
+    lv_textarea_set_placeholder_text(textarea_focal_length_obj, "50");
+    lv_textarea_set_one_line(textarea_focal_length_obj, true);
+    lv_obj_set_style_text_font(textarea_focal_length_obj, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(textarea_focal_length_obj, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(textarea_focal_length_obj, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(textarea_focal_length_obj, 1, 0);
+    lv_obj_set_style_radius(textarea_focal_length_obj, 4, 0);
+    lv_obj_add_event_cb(textarea_focal_length_obj, num_ta_event_cb, LV_EVENT_CLICKED, NULL);
+
+    if (focal_length && strlen(focal_length) > 0) {
+        lv_textarea_set_text(textarea_focal_length_obj, focal_length);
+    }
+
+    len_card_params_t *params = (len_card_params_t *)malloc(sizeof(len_card_params_t));
+    params->dropdown_aperture_step = dropdown_aperture_step;
+    params->dropdown_min_aperture = dropdown_min_aperture;
+    params->dropdown_max_aperture = dropdown_max_aperture;
+    params->textarea_focal_length = textarea_focal_length_obj;
+    params->textarea_custom_aperture = NULL;
+    params->custom_aperture_array = NULL;
+    params->custom_aperture_count = 0;
+    params->current_step_type = step_type;
+
+    lv_obj_set_user_data(card, params);
+
+    int stride = (step_type == 0) ? 3 : (step_type == 1) ? 2 : 1;
+    char *options = app_ui_generate_aperture_options(APERTURES_1_3, COUNT_APERTURES_1_3, stride);
+    lv_dropdown_set_options(dropdown_min_aperture, options);
+    lv_dropdown_set_options(dropdown_max_aperture, options);
+
+    lv_dropdown_set_selected(dropdown_aperture_step, step_type);
+    lv_dropdown_set_selected(dropdown_min_aperture, min_idx);
+    lv_dropdown_set_selected(dropdown_max_aperture, max_idx);
+
+    lv_obj_add_event_cb(dropdown_aperture_step, aperture_step_event_cb, LV_EVENT_VALUE_CHANGED, params);
+    lv_obj_add_event_cb(dropdown_min_aperture, min_aperture_event_cb, LV_EVENT_VALUE_CHANGED, params);
+    lv_obj_add_event_cb(dropdown_max_aperture, max_aperture_event_cb, LV_EVENT_VALUE_CHANGED, params);
+
+    lv_obj_add_event_cb(card, len_card_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(card, len_card_event_cb, LV_EVENT_LONG_PRESSED, NULL);
+
+    lv_obj_scroll_to_view(card, LV_ANIM_ON);
+}
+
 /**
  * @brief 添加WiFi信息卡片到列表
  * @param wifi_name WiFi名称(SSID)
@@ -2834,19 +3266,32 @@ void add_wifi_card(const char *wifi_name, int signal_strength)
 }
 
 /**
- * @brief 清除列表中所有WiFi卡片
+ * @brief 异步清除WiFi卡片回调
  */
-static void clear_wifi_cards(void)
+static void clear_wifi_cards_async(void *user_data)
 {
+    (void)user_data;
     if (!wifi_card_win_container) return;
-
-    while (lv_obj_get_child_cnt(wifi_card_win_container) > 0) {
-        lv_obj_t *child = lv_obj_get_child(wifi_card_win_container, 0);
-        lv_obj_del(child);
-    }
+    if (!lv_obj_is_valid(wifi_card_win_container)) return;
 
     current_selected_wifi_card = NULL;
     connected_wifi_card = NULL;
+
+    uint32_t child_cnt = lv_obj_get_child_cnt(wifi_card_win_container);
+    for (uint32_t i = 0; i < child_cnt; i++) {
+        lv_obj_t *child = lv_obj_get_child(wifi_card_win_container, 0);
+        if (child && lv_obj_is_valid(child)) {
+            lv_obj_del(child);
+        }
+    }
+}
+
+/**
+ * @brief 清除列表中所有WiFi卡片（异步）
+ */
+static void clear_wifi_cards(void)
+{
+    lv_async_call(clear_wifi_cards_async, NULL);
 }
 
 /**
@@ -2992,6 +3437,34 @@ void app_ui_wifi_on_connect_failed(const char *ssid, int reason)
         snprintf(msg, sizeof(msg), "WiFi connection failed. Please check password, signal or AP status.\nReason: %d", reason);
     }
     wifi_show_notice("WiFi Error", msg);
+}
+
+/**
+ * @brief 设置WiFi开关状态
+ * @param enabled true=开启，false=关闭
+ */
+void app_ui_wifi_set_enabled(bool enabled)
+{
+    ESP_LOGI("app_ui", "app_ui_wifi_set_enabled called: enabled=%d, switch_obj=%p", enabled, (void*)wifi_switch_obj);
+
+    g_wifi_enabled = enabled;
+
+    if (wifi_switch_obj == NULL) {
+        ESP_LOGW("app_ui", "wifi_switch_obj is NULL, cannot set enabled state");
+        return;
+    }
+
+    if (enabled) {
+        lv_obj_add_state(wifi_switch_obj, LV_STATE_CHECKED);
+        lv_obj_clear_state(wifi_scan_btn, LV_STATE_DISABLED);
+        lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_COVER, 0);
+        ESP_LOGI("app_ui", "WiFi switch set to ON");
+    } else {
+        lv_obj_clear_state(wifi_switch_obj, LV_STATE_CHECKED);
+        lv_obj_add_state(wifi_scan_btn, LV_STATE_DISABLED);
+        lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_40, LV_STATE_DISABLED);
+        ESP_LOGI("app_ui", "WiFi switch set to OFF");
+    }
 }
 
 /**
@@ -3709,7 +4182,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(wifi_switch_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(wifi_switch_label, lv_color_white(), 0);
 
-    lv_obj_t *wifi_switch = lv_switch_create(wifi_switch_cont);
+    wifi_switch_obj = lv_switch_create(wifi_switch_cont);
 
     wifi_scan_btn = lv_btn_create(wifi_control_row);
     lv_obj_set_size(wifi_scan_btn, 100, 40);
@@ -3726,7 +4199,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_40, LV_STATE_DISABLED);
 
 
-    lv_obj_add_event_cb(wifi_switch, wifi_switch_change_cb, LV_EVENT_VALUE_CHANGED, wifi_switch);
+    lv_obj_add_event_cb(wifi_switch_obj, wifi_switch_change_cb, LV_EVENT_VALUE_CHANGED, wifi_switch_obj);
     lv_obj_add_event_cb(wifi_scan_btn, wifi_scan_press_cb, LV_EVENT_CLICKED, NULL);
 
     // wifi信息卡片显示区

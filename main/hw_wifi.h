@@ -41,5 +41,7 @@ void hw_wifi_deinit(void);
 void hw_wifi_connect(char* SSID, char* PASSWORD);
 void hw_wifi_disconnect(void);
 void hw_wifi_scan_result_free(wifi_scan_result_t* result);
+const char* hw_wifi_get_current_ssid(void);
+const char* hw_wifi_get_current_password(void);
 
 #endif

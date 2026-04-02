@@ -6,17 +6,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "hw_wakeup_key.h"
 
 extern QueueHandle_t wifi_operation_queue;
 extern QueueHandle_t location_queue;
 
 typedef enum {
-    WIFI_OP_NONE = 0,       // 无操作
-    WIFI_OP_SCAN,            // 扫描WiFi
-    WIFI_OP_CONNECT,          // 连接WiFi
-    WIFI_OP_DISCONNECT,       // 断开WiFi
-    WIFI_OP_ENABLE,          // 启用WiFi
-    WIFI_OP_DISABLE          // 禁用WiFi
+    WIFI_OP_NONE = 0,
+    WIFI_OP_SCAN,
+    WIFI_OP_CONNECT,
+    WIFI_OP_DISCONNECT,
+    WIFI_OP_ENABLE,
+    WIFI_OP_DISABLE
 } WifiOperationType;
 
 typedef struct {
@@ -27,5 +28,12 @@ typedef struct {
 
 void app_controller_init(void);
 void app_controller_request_location(void);
+void app_controller_enter_deep_sleep(void);
+void app_controller_wakeup_key_init(void);
+
+const char* app_controller_get_current_ssid(void);
+double app_controller_get_latitude(void);
+double app_controller_get_longitude(void);
+bool app_controller_get_location_valid(void);
 
 #endif

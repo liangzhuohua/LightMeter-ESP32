@@ -400,3 +400,11 @@ void hw_wifi_auto_reconnect(void) {
     WIFI_AUTO_RECONNECT_RETRIES_NOW = 0;
     ESP_LOGI("WIFI", "自动重连已启用, 最大重试次数:%d", WIFI_AUTO_RECONNECT_MAX_RETRIES);
 }
+
+const char* hw_wifi_get_current_ssid(void) {
+    return g_current_ssid;
+}
+
+const char* hw_wifi_get_current_password(void) {
+    return g_pending_password;
+}

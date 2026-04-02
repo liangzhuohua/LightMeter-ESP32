@@ -15,6 +15,7 @@ idf_component_register(
     "img_manual_mode.c"
     "img_portrait_mode.c"
     "hw_wifi.c"
+    "hw_nvs.c"
     "app_ui_wifi_port.c"
     "app_location.c"
     "app_http_requests.c"
@@ -26,6 +27,8 @@ idf_component_register(
     "app_time.c"
     "app_weather.c"
     "qweather_icons.c"
+    "app_nvs_storage.c"
+    "hw_wakeup_key.c"
 
     INCLUDE_DIRS ".")
 

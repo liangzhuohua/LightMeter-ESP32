@@ -8,6 +8,7 @@
 #include "app_exposure_calc.h"
 #include "app_time.h"
 #include "app_weather.h"
+#include "app_nvs_storage.h"
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -32,6 +33,9 @@ static bool g_time_synced = false;
 static bool g_location_ready = false;
 static double g_latitude = 0.0;
 static double g_longitude = 0.0;
+static char g_auto_connect_ssid[33] = {0};
+static char g_auto_connect_password[65] = {0};
+static bool g_auto_connect_pending = false;
 
 static void weather_result_callback(const weather_data_t* data);
 
@@ -50,6 +54,7 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
             case HW_WIFI_STATE_CONNECTED:
                 app_ui_wifi_on_connected(event->ssid);
                 g_wifi_connected = true;
+                app_nvs_save_all();
                 break;
 
             case HW_WIFI_STATE_DISCONNECTED:
@@ -87,6 +92,11 @@ static void wifi_scan_done_callback(wifi_scan_result_t* result) {
     if (result == NULL || result->count == 0 || result->ap_list == NULL) {
         ESP_LOGW(TAG, "WiFi扫描结果为空");
         g_wifi_scanned = false;
+
+        if (g_auto_connect_pending) {
+            ESP_LOGI(TAG, "扫描结果为空，无法自动连接");
+            g_auto_connect_pending = false;
+        }
         return;
     }
 
@@ -107,6 +117,25 @@ static void wifi_scan_done_callback(wifi_scan_result_t* result) {
     } else {
         ESP_LOGE(TAG, "保存WiFi扫描结果失败：内存不足");
         g_wifi_scanned = false;
+    }
+
+    // 检查是否需要自动连接
+    if (g_auto_connect_pending && g_auto_connect_ssid[0] != '\0') {
+        bool found = false;
+        for (int i = 0; i < result->count; i++) {
+            if (strcmp(result->ap_list[i].ssid, g_auto_connect_ssid) == 0) {
+                found = true;
+                ESP_LOGI(TAG, "找到保存的WiFi: %s，开始连接", g_auto_connect_ssid);
+                break;
+            }
+        }
+
+        if (found) {
+            hw_wifi_connect(g_auto_connect_ssid, g_auto_connect_password);
+        } else {
+            ESP_LOGI(TAG, "未找到保存的WiFi: %s，跳过连接", g_auto_connect_ssid);
+        }
+        g_auto_connect_pending = false;
     }
 
     if (example_lvgl_lock(-1)) {
@@ -310,13 +339,20 @@ static void location_result_callback(const location_result_t* result) {
         app_ui_location_set_city(city);
     } else {
         app_ui_location_set_city("Unknown");
+        strncpy(city, "Unknown", sizeof(city) - 1);
     }
 
     if (detail[0] != '\0') {
         app_ui_location_set_detail(detail);
     } else {
         app_ui_location_set_detail(result->address);
+        strncpy(detail, result->address, sizeof(detail) - 1);
+        detail[sizeof(detail) - 1] = '\0';
     }
+
+    app_nvs_set_location(result->latitude, result->longitude, true);
+    app_nvs_set_location_text(city, detail);
+    app_nvs_save_location();
 }
 
 static void weather_result_callback(const weather_data_t* data) {
@@ -338,6 +374,9 @@ static void weather_result_callback(const weather_data_t* data) {
     ESP_LOGI(TAG, "  月落: %02d:%02d", data->moonset_hour, data->moonset_minute);
     ESP_LOGI(TAG, "  月相: %s (%s)", data->moon_phase, data->moon_phase_icon);
     ESP_LOGI(TAG, "==================================");
+
+    app_nvs_set_weather(data);
+    app_nvs_save_weather();
 
     app_ui_weather_update_all(data);
 }
@@ -489,6 +528,58 @@ void app_controller_init(void)
 
     hw_wifi_register_state_cb(wifi_state_callback);
 
+    ESP_LOGI(TAG, "从NVS加载数据...");
+    app_nvs_load_all();
+
+    location_data_t cached_loc;
+    weather_data_t cached_weather;
+
+    bool has_location = (app_nvs_get_location_data(&cached_loc) == 0 && cached_loc.valid);
+    bool has_weather = (app_nvs_get_weather_data(&cached_weather) == 0);
+
+    if (has_location) {
+        g_latitude = cached_loc.latitude;
+        g_longitude = cached_loc.longitude;
+        g_location_ready = cached_loc.valid;
+        ESP_LOGI(TAG, "恢复缓存位置: %.6f, %.6f, city=%s", g_latitude, g_longitude, cached_loc.city);
+
+        if (cached_loc.city[0] != '\0') {
+            app_ui_location_set_city(cached_loc.city);
+        }
+        if (cached_loc.detail[0] != '\0') {
+            app_ui_location_set_detail(cached_loc.detail);
+        }
+    }
+
+    wifi_data_t wifi_config;
+    bool has_wifi_config = (app_nvs_get_wifi_config(&wifi_config) == 0 && wifi_config.ssid[0] != '\0');
+
+    if (has_wifi_config) {
+        app_ui_wifi_set_enabled(wifi_config.enabled);
+
+        if (wifi_config.enabled) {
+            ESP_LOGI(TAG, "WiFi已启用，扫描并尝试连接: %s", wifi_config.ssid);
+
+            strncpy(g_auto_connect_ssid, wifi_config.ssid, sizeof(g_auto_connect_ssid) - 1);
+            strncpy(g_auto_connect_password, wifi_config.password, sizeof(g_auto_connect_password) - 1);
+            g_auto_connect_pending = true;
+
+            hw_wifi_init_with_scan_cb(wifi_scan_done_callback);
+            vTaskDelay(pdMS_TO_TICKS(500));
+            hw_wifi_scan_async();
+        } else {
+            ESP_LOGI(TAG, "WiFi已禁用，跳过自动连接");
+        }
+    } else {
+        ESP_LOGI(TAG, "无WiFi配置");
+        app_ui_wifi_set_enabled(false);
+    }
+
+    if (has_weather) {
+        ESP_LOGI(TAG, "恢复缓存天气: %d°C, %s", cached_weather.temp, cached_weather.desc);
+        app_ui_weather_update_all(&cached_weather);
+    }
+
     xTaskCreate(task_get_lux_value, "task_get_lux_value", 2048, NULL, 5, NULL);
     xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
@@ -496,4 +587,20 @@ void app_controller_init(void)
     xTaskCreate(task_time_sync_and_update, "task_time_sync", 4096, NULL, 5, NULL);
     xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
     xTaskCreate(task_weather_update, "task_weather", 16384, NULL, 5, NULL);
+}
+
+const char* app_controller_get_current_ssid(void) {
+    return hw_wifi_get_current_ssid();
+}
+
+double app_controller_get_latitude(void) {
+    return g_latitude;
+}
+
+double app_controller_get_longitude(void) {
+    return g_longitude;
+}
+
+bool app_controller_get_location_valid(void) {
+    return g_location_ready;
 }
