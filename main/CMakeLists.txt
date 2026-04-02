@@ -25,6 +25,7 @@ idf_component_register(
     "clock_icon.c"
     "app_time.c"
     "app_weather.c"
+    "qweather_icons.c"
 
     INCLUDE_DIRS ".")
 

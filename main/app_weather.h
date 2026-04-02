@@ -8,6 +8,7 @@
 typedef struct {
     int temp;
     char desc[32];
+    char icon[8];
     int humidity;
     float wind_speed;
     int sunrise_hour;

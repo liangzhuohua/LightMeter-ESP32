@@ -73,6 +73,7 @@ static lv_obj_t* num_keyboard;        // 数字键盘（用于焦距、闪光同
 
 lv_obj_t* weather_temp_label;           // 天气温度
 lv_obj_t* weather_desc_label;           // 天气描述
+lv_obj_t* weather_icon;                 // 天气图标
 lv_obj_t* humidity_label;               // 湿度
 lv_obj_t* wind_label;                   // 风速
 lv_obj_t* sunrise_label;                // 日出时间
@@ -3501,7 +3502,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(weather_row1, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(weather_row1, LV_FLEX_ALIGN_SPACE_AROUND, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_t* weather_icon = lv_label_create(weather_row1);
+    weather_icon = lv_label_create(weather_row1);
     lv_label_set_text(weather_icon, LV_SYMBOL_IMAGE);
     lv_obj_set_style_text_font(weather_icon, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(weather_icon, lv_color_hex(0xffd700), 0);
@@ -3512,8 +3513,8 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_color(weather_temp_label, lv_color_white(), 0);
 
     weather_desc_label = lv_label_create(weather_row1);
-    lv_label_set_text(weather_desc_label, "Sunny");
-    lv_obj_set_style_text_font(weather_desc_label, &lv_font_montserrat_20, 0);
+    lv_label_set_text(weather_desc_label, "晴");
+    lv_obj_set_style_text_font(weather_desc_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(weather_desc_label, lv_color_hex(0xcccccc), 0);
 
     lv_obj_t* weather_row2 = lv_obj_create(weather_card);

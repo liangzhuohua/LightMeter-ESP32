@@ -4,6 +4,7 @@
 #include "app_ui_wifi_port.h"
 #include "app_ui_location_port.h"
 #include "app_ui_time_port.h"
+#include "app_ui_weather_port.h"
 #include "app_exposure_calc.h"
 #include "app_time.h"
 #include "app_weather.h"
@@ -28,6 +29,9 @@ static wifi_scan_result_t g_wifi_scan_result = {0};
 static bool g_wifi_connected = false;
 static bool g_wifi_scanned = false;
 static bool g_time_synced = false;
+static bool g_location_ready = false;
+static double g_latitude = 0.0;
+static double g_longitude = 0.0;
 
 static void weather_result_callback(const weather_data_t* data);
 
@@ -247,6 +251,7 @@ static void location_result_callback(const location_result_t* result) {
     if (result == NULL) {
         ESP_LOGE(TAG, "定位结果为空");
         app_ui_location_set_unknown();
+        g_location_ready = false;
         return;
     }
 
@@ -255,6 +260,11 @@ static void location_result_callback(const location_result_t* result) {
     ESP_LOGI(TAG, "  经度: %f", result->longitude);
     ESP_LOGI(TAG, "  精度: %f 米", result->accuracy);
     ESP_LOGI(TAG, "  地址: %s", result->address);
+
+    // 保存经纬度供天气API使用
+    g_latitude = result->latitude;
+    g_longitude = result->longitude;
+    g_location_ready = true;
 
     char city[64] = {0};
     char detail[128] = {0};
@@ -318,11 +328,14 @@ static void weather_result_callback(const weather_data_t* data) {
     ESP_LOGI(TAG, "========== 天气测试结果 ==========");
     ESP_LOGI(TAG, "  温度: %d°C", data->temp);
     ESP_LOGI(TAG, "  天气: %s", data->desc);
+    ESP_LOGI(TAG, "  图标: %s", data->icon);
     ESP_LOGI(TAG, "  湿度: %d%%", data->humidity);
     ESP_LOGI(TAG, "  风速: %.1f km/h", data->wind_speed);
     ESP_LOGI(TAG, "  日出: %02d:%02d", data->sunrise_hour, data->sunrise_minute);
     ESP_LOGI(TAG, "  日落: %02d:%02d", data->sunset_hour, data->sunset_minute);
     ESP_LOGI(TAG, "==================================");
+
+    app_ui_weather_update_all(data);
 }
 
 static void task_get_location(void* pvParameters) {
@@ -434,11 +447,29 @@ static void task_weather_update(void* pvParameters) {
                 continue;
             }
 
+            // 等待定位完成（最多等待30秒）
+            int wait_count = 0;
+            while (!g_location_ready && wait_count < 30) {
+                ESP_LOGI(TAG, "等待定位完成... (%d/30)", wait_count + 1);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                wait_count++;
+            }
+
+            if (!g_location_ready) {
+                ESP_LOGW(TAG, "定位超时，使用默认位置（广州）");
+                g_latitude = 23.12;
+                g_longitude = 113.26;
+            }
+
             vTaskDelay(pdMS_TO_TICKS(1000));
 
-            ESP_LOGI(TAG, "开始获取天气");
+            // 使用经纬度获取天气（格式：经度,纬度）
+            char location_str[32];
+            snprintf(location_str, sizeof(location_str), "%.2f,%.2f", g_longitude, g_latitude);
+
+            ESP_LOGI(TAG, "开始获取天气，位置: %s", location_str);
             app_weather_init();
-            app_weather_get("101280101", weather_result_callback);
+            app_weather_get(location_str, weather_result_callback);
         }
     }
 }

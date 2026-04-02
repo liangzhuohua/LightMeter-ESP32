@@ -18,6 +18,8 @@ extern lv_obj_t* main_roller_ev;               // EV 值
 extern lv_obj_t* main_label_lux_value;         // 光照强度数值显示
 extern lv_obj_t* main_obj_mode_select;         // 模式选择容器
 
+extern lv_obj_t* weather_icon;                 // 天气图标
+
 // 获取当前选中的相机和镜头卡片
 lv_obj_t* app_ui_get_cam_selected_card(void);
 lv_obj_t* app_ui_get_len_selected_card(void);
