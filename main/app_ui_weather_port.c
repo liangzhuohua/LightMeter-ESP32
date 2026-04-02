@@ -2,9 +2,11 @@
 #include "app_time.h"
 #include "lvgl.h"
 #include <stdio.h>
+#include <string.h>
 #include "esp_err.h"
 
 LV_FONT_DECLARE(qweather_icons);
+LV_FONT_DECLARE(SourceHanSansCN_Regular);
 
 static const struct {
     int code;
@@ -46,30 +48,101 @@ extern lv_obj_t* sunset_label;
 extern lv_obj_t* timeline_indicator;
 extern lv_obj_t* timeline_bar;
 extern lv_obj_t* weather_icon;
+extern lv_obj_t* timeline_title;
+extern lv_obj_t* moon_phase_icon_label;
+extern lv_obj_t* now_label;
 
 static int g_sunrise_minutes = 0;
 static int g_sunset_minutes = 0;
+static int g_moonrise_minutes = 0;
+static int g_moonset_minutes = 0;
+static char g_moon_phase_icon[8] = {0};
 static bool g_sunrise_sunset_valid = false;
-static lv_timer_t* g_sun_indicator_timer = NULL;
+static lv_timer_t* g_timeline_timer = NULL;
 
-static void sun_indicator_timer_cb(lv_timer_t* timer) {
+static void set_label_icon(lv_obj_t* label, uint32_t unicode) {
+    char buf[8];
+    buf[0] = (char)(0xF0 | ((unicode >> 18) & 0x07));
+    buf[1] = (char)(0x80 | ((unicode >> 12) & 0x3F));
+    buf[2] = (char)(0x80 | ((unicode >> 6) & 0x3F));
+    buf[3] = (char)(0x80 | (unicode & 0x3F));
+    buf[4] = '\0';
+    lv_label_set_text(label, buf);
+}
+
+static void update_timeline_display(bool is_daytime) {
+    if (is_daytime) {
+        lv_label_set_text(timeline_title, "日出 & 日落");
+        lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
+        lv_label_set_text(moon_phase_icon_label, "");
+    } else {
+        lv_label_set_text(timeline_title, "月出 & 月落");
+        lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
+        if (strlen(g_moon_phase_icon) > 0) {
+            int icon_num = atoi(g_moon_phase_icon);
+            uint32_t unicode = get_icon_unicode(icon_num);
+            set_label_icon(moon_phase_icon_label, unicode);
+            lv_obj_set_style_text_font(moon_phase_icon_label, &qweather_icons, 0);
+        }
+    }
+}
+
+static void timeline_timer_cb(lv_timer_t* timer) {
     if (!g_sunrise_sunset_valid) return;
 
     app_time_t now;
     if (app_time_get_now(&now) != ESP_OK) return;
 
     int now_minutes = now.hour * 60 + now.minute;
-    int position_percent = 0;
+    bool is_daytime = (now_minutes >= g_sunrise_minutes && now_minutes < g_sunset_minutes);
 
-    if (g_sunset_minutes > g_sunrise_minutes) {
-        if (now_minutes <= g_sunrise_minutes) {
+    update_timeline_display(is_daytime);
+
+    int position_percent = 0;
+    int rise_minutes, set_minutes;
+
+    if (is_daytime) {
+        rise_minutes = g_sunrise_minutes;
+        set_minutes = g_sunset_minutes;
+        char buf[16];
+        snprintf(buf, sizeof(buf), LV_SYMBOL_UP " %02d:%02d",
+                 g_sunrise_minutes / 60, g_sunrise_minutes % 60);
+        lv_label_set_text(sunrise_label, buf);
+        snprintf(buf, sizeof(buf), LV_SYMBOL_DOWN " %02d:%02d",
+                 g_sunset_minutes / 60, g_sunset_minutes % 60);
+        lv_label_set_text(sunset_label, buf);
+    } else {
+        rise_minutes = g_moonrise_minutes;
+        set_minutes = g_moonset_minutes;
+        char buf[16];
+        snprintf(buf, sizeof(buf), LV_SYMBOL_UP " %02d:%02d",
+                 g_moonrise_minutes / 60, g_moonrise_minutes % 60);
+        lv_label_set_text(sunrise_label, buf);
+        snprintf(buf, sizeof(buf), LV_SYMBOL_DOWN " %02d:%02d",
+                 g_moonset_minutes / 60, g_moonset_minutes % 60);
+        lv_label_set_text(sunset_label, buf);
+    }
+
+    if (set_minutes > rise_minutes) {
+        if (now_minutes <= rise_minutes) {
             position_percent = 0;
-        } else if (now_minutes >= g_sunset_minutes) {
+        } else if (now_minutes >= set_minutes) {
             position_percent = 100;
         } else {
-            position_percent = ((now_minutes - g_sunrise_minutes) * 100) / (g_sunset_minutes - g_sunrise_minutes);
+            position_percent = ((now_minutes - rise_minutes) * 100) / (set_minutes - rise_minutes);
+        }
+    } else {
+        if (now_minutes >= rise_minutes || now_minutes <= set_minutes) {
+            if (now_minutes >= rise_minutes) {
+                position_percent = ((now_minutes - rise_minutes) * 100) / (1440 - rise_minutes + set_minutes);
+            } else {
+                position_percent = ((1440 - rise_minutes + now_minutes) * 100) / (1440 - rise_minutes + set_minutes);
+            }
+        } else {
+            position_percent = 100;
         }
     }
+
     app_ui_sunrise_sunset_set_indicator(position_percent);
 }
 
@@ -165,16 +238,18 @@ void app_ui_weather_update_all(const weather_data_t* data) {
     app_ui_weather_set_icon(data->icon);
     app_ui_weather_set_humidity(data->humidity);
     app_ui_weather_set_wind(data->wind_speed);
-    app_ui_sunrise_set_time(data->sunrise_hour, data->sunrise_minute);
-    app_ui_sunset_set_time(data->sunset_hour, data->sunset_minute);
 
     g_sunrise_minutes = data->sunrise_hour * 60 + data->sunrise_minute;
     g_sunset_minutes = data->sunset_hour * 60 + data->sunset_minute;
+    g_moonrise_minutes = data->moonrise_hour * 60 + data->moonrise_minute;
+    g_moonset_minutes = data->moonset_hour * 60 + data->moonset_minute;
+    strncpy(g_moon_phase_icon, data->moon_phase_icon, sizeof(g_moon_phase_icon) - 1);
+    g_moon_phase_icon[sizeof(g_moon_phase_icon) - 1] = '\0';
     g_sunrise_sunset_valid = true;
 
-    if (g_sun_indicator_timer == NULL) {
-        g_sun_indicator_timer = lv_timer_create(sun_indicator_timer_cb, 60000, NULL);
+    if (g_timeline_timer == NULL) {
+        g_timeline_timer = lv_timer_create(timeline_timer_cb, 60000, NULL);
     }
 
-    sun_indicator_timer_cb(NULL);
+    timeline_timer_cb(NULL);
 }

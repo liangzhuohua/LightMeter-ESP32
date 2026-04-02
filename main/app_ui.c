@@ -39,6 +39,7 @@ static const lv_font_t* font;
 
 LV_FONT_DECLARE(SourceHanSansCN_Regular);
 LV_FONT_DECLARE(clock_icon);
+LV_FONT_DECLARE(qweather_icons);
 
 #define LV_SYMBOL_CLOCK "\xef\x80\x97"  // Unicode 0xF017
 
@@ -80,6 +81,9 @@ lv_obj_t* sunrise_label;                // 日出时间
 lv_obj_t* sunset_label;                 // 日落时间
 lv_obj_t* timeline_indicator;           // 时间线指示器
 lv_obj_t* timeline_bar;                 // 时间线进度条
+lv_obj_t* timeline_title;               // 时间线标题
+lv_obj_t* moon_phase_icon_label;        // 月相图标
+lv_obj_t* now_label;                    // Now标签
 // ──────────────────────────────────────────────
 // 模式选择相关
 // ──────────────────────────────────────────────
@@ -3544,10 +3548,21 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(sunrise_sunset_card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(sunrise_sunset_card, 5, 0);
 
-    lv_obj_t* timeline_title = lv_label_create(sunrise_sunset_card);
+    lv_obj_t* title_row = lv_obj_create(sunrise_sunset_card);
+    lv_obj_remove_style_all(title_row);
+    lv_obj_set_size(title_row, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(title_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(title_row, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+
+    timeline_title = lv_label_create(title_row);
     lv_label_set_text(timeline_title, "日出 & 日落");
     lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(timeline_title, lv_color_hex(0xFFFFFF), 0);
+
+    moon_phase_icon_label = lv_label_create(title_row);
+    lv_label_set_text(moon_phase_icon_label, "");
+    lv_obj_set_style_text_font(moon_phase_icon_label, &qweather_icons, 0);
+    lv_obj_set_style_text_color(moon_phase_icon_label, lv_color_hex(0xffd700), 0);
 
     timeline_bar = lv_obj_create(sunrise_sunset_card);
     lv_obj_remove_style_all(timeline_bar);
@@ -3575,7 +3590,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(sunrise_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(sunrise_label, lv_color_hex(0xffa500), 0);
 
-    lv_obj_t* now_label = lv_label_create(timeline_labels);
+    now_label = lv_label_create(timeline_labels);
     lv_label_set_text(now_label, "Now");
     lv_obj_set_style_text_font(now_label, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(now_label, lv_color_hex(0xffcc00), 0);

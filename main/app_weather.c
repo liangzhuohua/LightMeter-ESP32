@@ -132,6 +132,36 @@ static esp_err_t parse_weather_3d_response(const char* json_str, weather_data_t*
         }
     }
 
+    cJSON* moonrise = cJSON_GetObjectItem(today, "moonrise");
+    if (moonrise != NULL && strlen(moonrise->valuestring) > 0) {
+        int hour, minute;
+        if (sscanf(moonrise->valuestring, "%d:%d", &hour, &minute) == 2) {
+            data->moonrise_hour = hour;
+            data->moonrise_minute = minute;
+        }
+    }
+
+    cJSON* moonset = cJSON_GetObjectItem(today, "moonset");
+    if (moonset != NULL && strlen(moonset->valuestring) > 0) {
+        int hour, minute;
+        if (sscanf(moonset->valuestring, "%d:%d", &hour, &minute) == 2) {
+            data->moonset_hour = hour;
+            data->moonset_minute = minute;
+        }
+    }
+
+    cJSON* moonPhase = cJSON_GetObjectItem(today, "moonPhase");
+    if (moonPhase != NULL) {
+        strncpy(data->moon_phase, moonPhase->valuestring, sizeof(data->moon_phase) - 1);
+        data->moon_phase[sizeof(data->moon_phase) - 1] = '\0';
+    }
+
+    cJSON* moonPhaseIcon = cJSON_GetObjectItem(today, "moonPhaseIcon");
+    if (moonPhaseIcon != NULL) {
+        strncpy(data->moon_phase_icon, moonPhaseIcon->valuestring, sizeof(data->moon_phase_icon) - 1);
+        data->moon_phase_icon[sizeof(data->moon_phase_icon) - 1] = '\0';
+    }
+
     cJSON_Delete(root);
     return ESP_OK;
 }

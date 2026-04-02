@@ -17,6 +17,12 @@ typedef struct {
     int sunrise_minute;
     int sunset_hour;
     int sunset_minute;
+    int moonrise_hour;
+    int moonrise_minute;
+    int moonset_hour;
+    int moonset_minute;
+    char moon_phase[16];
+    char moon_phase_icon[8];
 } weather_data_t;
 
 typedef void (*weather_result_callback_t)(const weather_data_t* data);

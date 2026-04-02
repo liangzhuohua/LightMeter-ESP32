@@ -334,6 +334,9 @@ static void weather_result_callback(const weather_data_t* data) {
     ESP_LOGI(TAG, "  风速: %.1f km/h", data->wind_speed);
     ESP_LOGI(TAG, "  日出: %02d:%02d", data->sunrise_hour, data->sunrise_minute);
     ESP_LOGI(TAG, "  日落: %02d:%02d", data->sunset_hour, data->sunset_minute);
+    ESP_LOGI(TAG, "  月出: %02d:%02d", data->moonrise_hour, data->moonrise_minute);
+    ESP_LOGI(TAG, "  月落: %02d:%02d", data->moonset_hour, data->moonset_minute);
+    ESP_LOGI(TAG, "  月相: %s (%s)", data->moon_phase, data->moon_phase_icon);
     ESP_LOGI(TAG, "==================================");
 
     app_ui_weather_update_all(data);

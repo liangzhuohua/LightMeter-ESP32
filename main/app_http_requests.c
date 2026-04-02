@@ -5,8 +5,13 @@
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "miniz.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char* TAG = "app_http_requests";
+
+#define HTTP_MAX_RETRIES 3
+#define HTTP_RETRY_DELAY_MS 1000
 
 typedef struct {
     char *data;
@@ -298,65 +303,77 @@ esp_err_t app_http_get_with_headers(const char* url, const char* params, const h
     }
     snprintf(full_url, url_len + params_len + 2, "%s?%s", url, params);
 
-    char *response_buffer = (char *)malloc(16384);
-    if (response_buffer == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for response");
-        free(full_url);
-        return ESP_FAIL;
-    }
+    esp_err_t err = ESP_FAIL;
+    int retry_count = 0;
 
-    http_sync_internal_t internal_resp = {
-        .data = response_buffer,
-        .len = 0,
-        .size = 16384,
-    };
-
-    esp_http_client_config_t config = {
-        .url = full_url,
-        .method = HTTP_METHOD_GET,
-        .timeout_ms = 15000,
-        .buffer_size = 16384,
-        .event_handler = http_sync_event_handler,
-        .user_data = &internal_resp,
-        .crt_bundle_attach = esp_crt_bundle_attach,
-    };
-
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    if (client == NULL) {
-        ESP_LOGE(TAG, "Failed to initialize HTTP client");
-        free(full_url);
-        free(response_buffer);
-        return ESP_FAIL;
-    }
-
-    for (int i = 0; i < header_count; i++) {
-        if (headers[i].key != NULL && headers[i].value != NULL) {
-            esp_http_client_set_header(client, headers[i].key, headers[i].value);
-            ESP_LOGI(TAG, "Set header: %s: %s", headers[i].key, headers[i].value);
+    while (retry_count < HTTP_MAX_RETRIES) {
+        if (retry_count > 0) {
+            ESP_LOGI(TAG, "重试第 %d/%d 次...", retry_count, HTTP_MAX_RETRIES);
+            vTaskDelay(pdMS_TO_TICKS(HTTP_RETRY_DELAY_MS));
         }
-    }
 
-    esp_err_t err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
-        int status_code = esp_http_client_get_status_code(client);
-        ESP_LOGI(TAG, "HTTP GET with headers Status = %d, len = %d", status_code, internal_resp.len);
-
-        if (status_code >= 200 && status_code < 300) {
-            response->data = internal_resp.data;  // 使用 internal_resp.data（可能已被解压函数更新）
-            response->len = internal_resp.len;
+        char *response_buffer = (char *)malloc(16384);
+        if (response_buffer == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for response");
             free(full_url);
-            esp_http_client_cleanup(client);
-            return ESP_OK;
-        } else {
-            ESP_LOGE(TAG, "HTTP request failed with status code: %d", status_code);
-            err = ESP_FAIL;
+            return ESP_FAIL;
         }
-    } else {
-        ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+
+        http_sync_internal_t internal_resp = {
+            .data = response_buffer,
+            .len = 0,
+            .size = 16384,
+        };
+
+        esp_http_client_config_t config = {
+            .url = full_url,
+            .method = HTTP_METHOD_GET,
+            .timeout_ms = 15000,
+            .buffer_size = 16384,
+            .event_handler = http_sync_event_handler,
+            .user_data = &internal_resp,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+        };
+
+        esp_http_client_handle_t client = esp_http_client_init(&config);
+        if (client == NULL) {
+            ESP_LOGE(TAG, "Failed to initialize HTTP client");
+            free(response_buffer);
+            retry_count++;
+            continue;
+        }
+
+        for (int i = 0; i < header_count; i++) {
+            if (headers[i].key != NULL && headers[i].value != NULL) {
+                esp_http_client_set_header(client, headers[i].key, headers[i].value);
+            }
+        }
+
+        err = esp_http_client_perform(client);
+        if (err == ESP_OK) {
+            int status_code = esp_http_client_get_status_code(client);
+            ESP_LOGI(TAG, "HTTP GET with headers Status = %d, len = %d", status_code, internal_resp.len);
+
+            if (status_code >= 200 && status_code < 300) {
+                response->data = internal_resp.data;
+                response->len = internal_resp.len;
+                free(full_url);
+                esp_http_client_cleanup(client);
+                return ESP_OK;
+            } else {
+                ESP_LOGE(TAG, "HTTP request failed with status code: %d", status_code);
+                err = ESP_FAIL;
+            }
+        } else {
+            ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
+        }
+
+        esp_http_client_cleanup(client);
+        free(internal_resp.data);
+        retry_count++;
     }
 
-    esp_http_client_cleanup(client);
-    free(internal_resp.data);  // 释放 internal_resp.data（可能是原始 buffer 或解压后的 buffer）
+    ESP_LOGE(TAG, "HTTP请求失败，已重试 %d 次", HTTP_MAX_RETRIES);
     free(full_url);
     return err;
 }
