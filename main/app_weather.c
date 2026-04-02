@@ -104,20 +104,15 @@ static esp_err_t parse_weather_3d_response(const char* json_str, weather_data_t*
         return ESP_FAIL;
     }
 
-    // 从3天预报中提取今天的天气描述（覆盖now数据）
-    // cJSON* textDay = cJSON_GetObjectItem(today, "textDay");
-    // if (textDay != NULL) {
-    //     strncpy(data->desc, textDay->valuestring, sizeof(data->desc) - 1);
-    //     data->desc[sizeof(data->desc) - 1] = '\0';
-    // }
+    cJSON* tempMax = cJSON_GetObjectItem(today, "tempMax");
+    if (tempMax != NULL) {
+        data->temp_max = atoi(tempMax->valuestring);
+    }
 
-    // // 从3天预报中提取最高温度和最低温度
-    // cJSON* tempMax = cJSON_GetObjectItem(today, "tempMax");
-    // cJSON* tempMin = cJSON_GetObjectItem(today, "tempMin");
-    // if (tempMax != NULL && tempMin != NULL) {
-    //     // 如果有最高和最低温度，使用最高温度作为显示温度
-    //     data->temp = atoi(tempMax->valuestring);
-    // }
+    cJSON* tempMin = cJSON_GetObjectItem(today, "tempMin");
+    if (tempMin != NULL) {
+        data->temp_min = atoi(tempMin->valuestring);
+    }
 
     cJSON* sunrise = cJSON_GetObjectItem(today, "sunrise");
     if (sunrise != NULL) {

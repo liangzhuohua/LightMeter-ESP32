@@ -5,7 +5,7 @@
 #include "app_weather.h"
 
 void app_ui_weather_set_temp(int temp);
-void app_ui_weather_set_desc(const char* desc);
+void app_ui_weather_set_temp_range(int temp_min, int temp_max);
 void app_ui_weather_set_icon(const char* icon_code);
 void app_ui_weather_set_humidity(int humidity);
 void app_ui_weather_set_wind(float wind_speed);

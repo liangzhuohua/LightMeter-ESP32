@@ -327,6 +327,7 @@ static void weather_result_callback(const weather_data_t* data) {
 
     ESP_LOGI(TAG, "========== 天气测试结果 ==========");
     ESP_LOGI(TAG, "  温度: %d°C", data->temp);
+    ESP_LOGI(TAG, "  温度范围: %d°C ~ %d°C", data->temp_min, data->temp_max);
     ESP_LOGI(TAG, "  天气: %s", data->desc);
     ESP_LOGI(TAG, "  图标: %s", data->icon);
     ESP_LOGI(TAG, "  湿度: %d%%", data->humidity);

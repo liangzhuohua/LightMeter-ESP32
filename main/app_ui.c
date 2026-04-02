@@ -72,7 +72,7 @@ static lv_obj_t* cam_keyboard;        // 相机参数键盘
 static lv_obj_t* num_keyboard;        // 数字键盘（用于焦距、闪光同步、自定义光圈）
 
 lv_obj_t* weather_temp_label;           // 天气温度
-lv_obj_t* weather_desc_label;           // 天气描述
+lv_obj_t* weather_temp_range_label;     // 温度范围
 lv_obj_t* weather_icon;                 // 天气图标
 lv_obj_t* humidity_label;               // 湿度
 lv_obj_t* wind_label;                   // 风速
@@ -3512,10 +3512,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(weather_temp_label, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(weather_temp_label, lv_color_white(), 0);
 
-    weather_desc_label = lv_label_create(weather_row1);
-    lv_label_set_text(weather_desc_label, "晴");
-    lv_obj_set_style_text_font(weather_desc_label, &SourceHanSansCN_Regular, 0);
-    lv_obj_set_style_text_color(weather_desc_label, lv_color_hex(0xcccccc), 0);
+    weather_temp_range_label = lv_label_create(weather_row1);
+    lv_label_set_text(weather_temp_range_label, "18" "\xC2\xB0" "~28" "\xC2\xB0");
+    lv_obj_set_style_text_font(weather_temp_range_label, &lv_font_montserrat_20, 0);
+    lv_obj_set_style_text_color(weather_temp_range_label, lv_color_hex(0xcccccc), 0);
 
     lv_obj_t* weather_row2 = lv_obj_create(weather_card);
     lv_obj_remove_style_all(weather_row2);

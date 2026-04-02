@@ -7,6 +7,8 @@
 
 typedef struct {
     int temp;
+    int temp_max;
+    int temp_min;
     char desc[32];
     char icon[8];
     int humidity;

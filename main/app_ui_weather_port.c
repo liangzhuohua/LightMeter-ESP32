@@ -38,7 +38,7 @@ static uint32_t get_icon_unicode(int icon_code) {
 }
 
 extern lv_obj_t* weather_temp_label;
-extern lv_obj_t* weather_desc_label;
+extern lv_obj_t* weather_temp_range_label;
 extern lv_obj_t* humidity_label;
 extern lv_obj_t* wind_label;
 extern lv_obj_t* sunrise_label;
@@ -81,9 +81,12 @@ void app_ui_weather_set_temp(int temp) {
     lv_label_set_text(weather_temp_label, buf);
 }
 
-void app_ui_weather_set_desc(const char* desc) {
-    if (weather_desc_label == NULL || desc == NULL) return;
-    lv_label_set_text(weather_desc_label, desc);
+void app_ui_weather_set_temp_range(int temp_min, int temp_max) {
+    if (weather_temp_range_label == NULL) return;
+
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d°~%d°", temp_min, temp_max);
+    lv_label_set_text(weather_temp_range_label, buf);
 }
 
 void app_ui_weather_set_humidity(int humidity) {
@@ -158,7 +161,7 @@ void app_ui_weather_update_all(const weather_data_t* data) {
     if (data == NULL) return;
 
     app_ui_weather_set_temp(data->temp);
-    app_ui_weather_set_desc(data->desc);
+    app_ui_weather_set_temp_range(data->temp_min, data->temp_max);
     app_ui_weather_set_icon(data->icon);
     app_ui_weather_set_humidity(data->humidity);
     app_ui_weather_set_wind(data->wind_speed);
