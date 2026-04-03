@@ -899,3 +899,17 @@ void ui_calc_port_reset_manual_wheel_type(void)
 {
     manual_wheel_type = MANUAL_WHEEL_NONE;
 }
+
+// ──────────────────────────────────────────────
+// 配置保存
+// ──────────────────────────────────────────────
+
+/**
+ * @brief 保存配置到NVS
+ * @note 保存相机、镜头等配置数据
+ */
+void ui_calc_port_save_config(void)
+{
+    extern int app_nvs_save_all(void);
+    app_nvs_save_all();
+}

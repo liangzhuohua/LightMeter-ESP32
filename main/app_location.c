@@ -12,7 +12,13 @@ static const char* TAG = "app_location";
 static location_result_callback_t g_location_callback = NULL;
 
 static void http_response_handler(const char* response, int len, void* user_data) {
-    if (response == NULL || len <= 0 || g_location_callback == NULL) {
+    if (g_location_callback == NULL) {
+        return;
+    }
+
+    if (response == NULL || len <= 0) {
+        ESP_LOGE(TAG, "定位请求失败：响应为空");
+        g_location_callback(NULL);
         return;
     }
 
@@ -21,6 +27,7 @@ static void http_response_handler(const char* response, int len, void* user_data
     cJSON *root = cJSON_ParseWithLength(response, len);
     if (root == NULL) {
         ESP_LOGE(TAG, "JSON解析失败");
+        g_location_callback(NULL);
         return;
     }
 
@@ -50,12 +57,13 @@ static void http_response_handler(const char* response, int len, void* user_data
                  result.latitude, result.longitude, result.accuracy);
         ESP_LOGI(TAG, "地址: %s", result.address);
 
+        cJSON_Delete(root);
         g_location_callback(&result);
     } else {
         ESP_LOGE(TAG, "定位失败: errcode=%d", errcode ? errcode->valueint : -1);
+        cJSON_Delete(root);
+        g_location_callback(NULL);
     }
-
-    cJSON_Delete(root);
 }
 
 void app_location_get_location(wifi_scan_result_t* result, location_result_callback_t callback) {

@@ -9,7 +9,7 @@
 static const char* TAG = "hw_wifi";
 
 static uint8_t WIFI_AUTO_RECONNECT_ENABLED = 0;
-static uint8_t MAX_AP_SCAN_NUM = 10;
+static uint8_t MAX_AP_SCAN_NUM = 15;
 static uint8_t WIFI_AUTO_RECONNECT_RETRIES_NOW = 0;
 static uint8_t WIFI_AUTO_RECONNECT_MAX_RETRIES = 5;
 

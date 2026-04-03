@@ -94,7 +94,13 @@ static void timeline_timer_cb(lv_timer_t* timer) {
     if (app_time_get_now(&now) != ESP_OK) return;
 
     int now_minutes = now.hour * 60 + now.minute;
-    bool is_daytime = (now_minutes >= g_sunrise_minutes && now_minutes < g_sunset_minutes);
+    bool is_daytime;
+
+    if (app_time_is_synced()) {
+        is_daytime = (now_minutes >= g_sunrise_minutes && now_minutes < g_sunset_minutes);
+    } else {
+        is_daytime = true;
+    }
 
     update_timeline_display(is_daytime);
 
@@ -245,7 +251,31 @@ void app_ui_weather_update_all(const weather_data_t* data) {
     g_moonset_minutes = data->moonset_hour * 60 + data->moonset_minute;
     strncpy(g_moon_phase_icon, data->moon_phase_icon, sizeof(g_moon_phase_icon) - 1);
     g_moon_phase_icon[sizeof(g_moon_phase_icon) - 1] = '\0';
-    g_sunrise_sunset_valid = true;
+
+    if (g_sunrise_minutes > 0 && g_sunset_minutes > 0 && g_sunrise_minutes < g_sunset_minutes) {
+        g_sunrise_sunset_valid = true;
+    } else {
+        g_sunrise_sunset_valid = false;
+        g_sunrise_minutes = 6 * 60;
+        g_sunset_minutes = 18 * 60;
+
+        bool is_daytime = true;
+        if (app_time_is_synced()) {
+            app_time_t now;
+            if (app_time_get_now(&now) == ESP_OK) {
+                int now_minutes = now.hour * 60 + now.minute;
+                is_daytime = (now_minutes >= g_sunrise_minutes && now_minutes < g_sunset_minutes);
+            }
+        }
+
+        update_timeline_display(is_daytime);
+        char buf[16];
+        snprintf(buf, sizeof(buf), LV_SYMBOL_UP " %02d:%02d", 6, 0);
+        lv_label_set_text(sunrise_label, buf);
+        snprintf(buf, sizeof(buf), LV_SYMBOL_DOWN " %02d:%02d", 18, 0);
+        lv_label_set_text(sunset_label, buf);
+        return;
+    }
 
     if (g_timeline_timer == NULL) {
         g_timeline_timer = lv_timer_create(timeline_timer_cb, 60000, NULL);

@@ -16,8 +16,36 @@
 #include "hw_oled.h"
 #include "hw_wifi.h"
 #include "app_location.h"
+#include "esp_heap_caps.h"
 
 static const char* TAG = "app_controller";
+
+#define MAX_RETRIES 3
+
+typedef struct {
+    bool location_done;
+    bool time_done;
+    bool weather_done;
+    bool location_success;
+    bool time_success;
+    bool weather_success;
+    int location_retries;
+    int time_retries;
+    int weather_retries;
+} request_status_t;
+
+static request_status_t g_req_status = {0};
+
+static void log_memory(const char* stage) {
+    ESP_LOGI(TAG, "[MEM-%s] Free: %lu, Largest: %lu",
+             stage,
+             (unsigned long)esp_get_free_heap_size(),
+             (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
+}
+
+static void reset_request_status(void) {
+    memset(&g_req_status, 0, sizeof(request_status_t));
+}
 
 QueueHandle_t lux_value_queue = NULL;
 QueueHandle_t calc_data_queue = NULL;
@@ -74,17 +102,10 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
     }
 
     if (event->state == HW_WIFI_STATE_CONNECTED && g_wifi_scanned) {
-        ESP_LOGI(TAG, "WiFi已连接，自动触发定位");
+        ESP_LOGI(TAG, "WiFi已连接，开始串行请求：1.定位 -> 2.时间 -> 3.天气");
+        reset_request_status();
+        log_memory("WiFi连接后");
         xSemaphoreGive(location_Sem);
-    }
-
-    if (event->state == HW_WIFI_STATE_CONNECTED) {
-        ESP_LOGI(TAG, "WiFi已连接，触发时间同步");
-        app_time_sntp_init();
-        xSemaphoreGive(time_sync_Sem);
-
-        ESP_LOGI(TAG, "WiFi已连接，触发天气获取");
-        xSemaphoreGive(weather_Sem);
     }
 }
 
@@ -249,12 +270,14 @@ static void task_wifi_operation(void* pvParameters) {
         if (xQueueReceive(wifi_operation_queue, &msg, portMAX_DELAY) == pdTRUE) {
             switch (msg.op) {
                 case WIFI_OP_ENABLE:
-                    hw_wifi_init_with_scan_cb(wifi_scan_done_callback);
-                    break;
+                hw_wifi_init_with_scan_cb(wifi_scan_done_callback);
+                app_nvs_set_wifi_enabled(true);
+                break;
 
-                case WIFI_OP_DISABLE:
-                    hw_wifi_deinit();
-                    break;
+            case WIFI_OP_DISABLE:
+                hw_wifi_deinit();
+                app_nvs_set_wifi_enabled(false);
+                break;
 
                 case WIFI_OP_SCAN:
                     hw_wifi_scan_async();
@@ -277,137 +300,172 @@ static void task_wifi_operation(void* pvParameters) {
 }
 
 static void location_result_callback(const location_result_t* result) {
+    log_memory("定位后");
+
     if (result == NULL) {
         ESP_LOGE(TAG, "定位结果为空");
+        g_req_status.location_retries++;
+
+        if (g_req_status.location_retries < MAX_RETRIES) {
+            ESP_LOGI(TAG, "定位失败，准备重试 %d/%d", g_req_status.location_retries + 1, MAX_RETRIES);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            app_location_get_location(&g_wifi_scan_result, location_result_callback);
+            return;
+        }
+
+        ESP_LOGE(TAG, "定位失败，已达到最大重试次数");
         app_ui_location_set_unknown();
         g_location_ready = false;
-        return;
-    }
+        g_req_status.location_success = false;
+    } else {
+        ESP_LOGI(TAG, "定位结果回调:");
+        ESP_LOGI(TAG, "  纬度: %f", result->latitude);
+        ESP_LOGI(TAG, "  经度: %f", result->longitude);
+        ESP_LOGI(TAG, "  精度: %f 米", result->accuracy);
+        ESP_LOGI(TAG, "  地址: %s", result->address);
 
-    ESP_LOGI(TAG, "定位结果回调:");
-    ESP_LOGI(TAG, "  纬度: %f", result->latitude);
-    ESP_LOGI(TAG, "  经度: %f", result->longitude);
-    ESP_LOGI(TAG, "  精度: %f 米", result->accuracy);
-    ESP_LOGI(TAG, "  地址: %s", result->address);
+        g_latitude = result->latitude;
+        g_longitude = result->longitude;
+        g_location_ready = true;
+        g_req_status.location_success = true;
 
-    // 保存经纬度供天气API使用
-    g_latitude = result->latitude;
-    g_longitude = result->longitude;
-    g_location_ready = true;
+        char city[64] = {0};
+        char detail[128] = {0};
 
-    char city[64] = {0};
-    char detail[128] = {0};
-
-    const char* addr = result->address;
-    if (addr != NULL && addr[0] != '\0') {
-        const char* province_end = strstr(addr, "省");
-        if (province_end != NULL) {
-            province_end += 3;
-        } else {
-            province_end = addr;
-        }
-
-        const char* city_end = strstr(province_end, "市");
-        if (city_end != NULL) {
-            int city_len = city_end - province_end;
-            if (city_len > 0 && city_len < sizeof(city)) {
-                strncpy(city, province_end, city_len);
-                city[city_len] = '\0';
+        const char* addr = result->address;
+        if (addr != NULL && addr[0] != '\0') {
+            const char* province_end = strstr(addr, "省");
+            if (province_end != NULL) {
+                province_end += 3;
+            } else {
+                province_end = addr;
             }
 
-            const char* detail_start = city_end + 3;
-            if (detail_start[0] != '\0') {
-                const char* detail_end = strstr(detail_start, ";");
-                if (detail_end == NULL) {
-                    detail_end = strstr(detail_start, "\n");
+            const char* city_end = strstr(province_end, "市");
+            if (city_end != NULL) {
+                int city_len = city_end - province_end;
+                if (city_len > 0 && city_len < sizeof(city)) {
+                    strncpy(city, province_end, city_len);
+                    city[city_len] = '\0';
                 }
-                if (detail_end == NULL) {
-                    detail_end = detail_start + strlen(detail_start);
+
+                const char* detail_start = city_end + 3;
+                if (detail_start[0] != '\0') {
+                    const char* detail_end = strstr(detail_start, ";");
+                    if (detail_end == NULL) {
+                        detail_end = strstr(detail_start, "\n");
+                    }
+                    if (detail_end == NULL) {
+                        detail_end = detail_start + strlen(detail_start);
+                    }
+                    int detail_len = detail_end - detail_start;
+                    if (detail_len > 0 && detail_len < sizeof(detail)) {
+                        strncpy(detail, detail_start, detail_len);
+                        detail[detail_len] = '\0';
+                    }
                 }
-                int detail_len = detail_end - detail_start;
-                if (detail_len > 0 && detail_len < sizeof(detail)) {
-                    strncpy(detail, detail_start, detail_len);
-                    detail[detail_len] = '\0';
-                }
+            } else {
+                strncpy(city, province_end, sizeof(city) - 1);
             }
-        } else {
-            strncpy(city, province_end, sizeof(city) - 1);
         }
+
+        if (city[0] != '\0') {
+            app_ui_location_set_city(city);
+        } else {
+            app_ui_location_set_city("Unknown");
+            strncpy(city, "Unknown", sizeof(city) - 1);
+        }
+
+        if (detail[0] != '\0') {
+            app_ui_location_set_detail(detail);
+        } else {
+            app_ui_location_set_detail(result->address);
+            strncpy(detail, result->address, sizeof(detail) - 1);
+            detail[sizeof(detail) - 1] = '\0';
+        }
+
+        app_nvs_set_location(result->latitude, result->longitude, true);
+        app_nvs_set_location_text(city, detail);
+        app_nvs_save_location();
     }
 
-    if (city[0] != '\0') {
-        app_ui_location_set_city(city);
-    } else {
-        app_ui_location_set_city("Unknown");
-        strncpy(city, "Unknown", sizeof(city) - 1);
-    }
-
-    if (detail[0] != '\0') {
-        app_ui_location_set_detail(detail);
-    } else {
-        app_ui_location_set_detail(result->address);
-        strncpy(detail, result->address, sizeof(detail) - 1);
-        detail[sizeof(detail) - 1] = '\0';
-    }
-
-    app_nvs_set_location(result->latitude, result->longitude, true);
-    app_nvs_set_location_text(city, detail);
-    app_nvs_save_location();
+    ESP_LOGI(TAG, "定位完成(%s)，触发时间同步", g_req_status.location_success ? "成功" : "失败");
+    g_req_status.location_done = true;
+    app_time_sntp_init();
+    xSemaphoreGive(time_sync_Sem);
 }
 
 static void weather_result_callback(const weather_data_t* data) {
+    g_req_status.weather_done = true;
+    log_memory("天气请求后");
+
     if (data == NULL) {
         ESP_LOGE(TAG, "天气结果为空");
-        return;
+        g_req_status.weather_success = false;
+    } else {
+        ESP_LOGI(TAG, "========== 天气结果 ==========");
+        ESP_LOGI(TAG, "  温度: %d°C", data->temp);
+        ESP_LOGI(TAG, "  温度范围: %d°C ~ %d°C", data->temp_min, data->temp_max);
+        ESP_LOGI(TAG, "  天气: %s", data->desc);
+        ESP_LOGI(TAG, "  图标: %s", data->icon);
+        ESP_LOGI(TAG, "  湿度: %d%%", data->humidity);
+        ESP_LOGI(TAG, "  风速: %.1f km/h", data->wind_speed);
+        ESP_LOGI(TAG, "  日出: %02d:%02d", data->sunrise_hour, data->sunrise_minute);
+        ESP_LOGI(TAG, "  日落: %02d:%02d", data->sunset_hour, data->sunset_minute);
+        ESP_LOGI(TAG, "  月出: %02d:%02d", data->moonrise_hour, data->moonrise_minute);
+        ESP_LOGI(TAG, "  月落: %02d:%02d", data->moonset_hour, data->moonset_minute);
+        ESP_LOGI(TAG, "  月相: %s (%s)", data->moon_phase, data->moon_phase_icon);
+        ESP_LOGI(TAG, "==============================");
+
+        g_req_status.weather_success = true;
+        app_nvs_set_weather(data);
+        app_nvs_save_weather();
+        app_ui_weather_update_all(data);
     }
 
-    ESP_LOGI(TAG, "========== 天气测试结果 ==========");
-    ESP_LOGI(TAG, "  温度: %d°C", data->temp);
-    ESP_LOGI(TAG, "  温度范围: %d°C ~ %d°C", data->temp_min, data->temp_max);
-    ESP_LOGI(TAG, "  天气: %s", data->desc);
-    ESP_LOGI(TAG, "  图标: %s", data->icon);
-    ESP_LOGI(TAG, "  湿度: %d%%", data->humidity);
-    ESP_LOGI(TAG, "  风速: %.1f km/h", data->wind_speed);
-    ESP_LOGI(TAG, "  日出: %02d:%02d", data->sunrise_hour, data->sunrise_minute);
-    ESP_LOGI(TAG, "  日落: %02d:%02d", data->sunset_hour, data->sunset_minute);
-    ESP_LOGI(TAG, "  月出: %02d:%02d", data->moonrise_hour, data->moonrise_minute);
-    ESP_LOGI(TAG, "  月落: %02d:%02d", data->moonset_hour, data->moonset_minute);
-    ESP_LOGI(TAG, "  月相: %s (%s)", data->moon_phase, data->moon_phase_icon);
+    ESP_LOGI(TAG, "========== 串行请求完成 ==========");
+    ESP_LOGI(TAG, "  定位: %s", g_req_status.location_success ? "成功" : "失败");
+    ESP_LOGI(TAG, "  时间: %s", g_req_status.time_success ? "成功" : "失败");
+    ESP_LOGI(TAG, "  天气: %s", g_req_status.weather_success ? "成功" : "失败");
     ESP_LOGI(TAG, "==================================");
-
-    app_nvs_set_weather(data);
-    app_nvs_save_weather();
-
-    app_ui_weather_update_all(data);
 }
 
 static void task_get_location(void* pvParameters) {
     while (1) {
-        // 等待定位请求消息
         if (xSemaphoreTake(location_Sem, portMAX_DELAY) == pdTRUE) {
             ESP_LOGI(TAG, "收到定位请求");
+            log_memory("定位前");
 
-            // 检查条件1：是否已扫描WiFi
             if (!g_wifi_scanned) {
-                ESP_LOGW(TAG, "定位失败：未扫描WiFi");
+                ESP_LOGW(TAG, "定位失败：未扫描WiFi，跳过继续时间同步");
+                g_req_status.location_done = true;
+                g_req_status.location_success = false;
+                app_time_sntp_init();
+                xSemaphoreGive(time_sync_Sem);
                 continue;
             }
 
-            // 检查条件2：是否已连接WiFi
             if (!g_wifi_connected) {
-                ESP_LOGW(TAG, "定位失败：未连接WiFi");
+                ESP_LOGW(TAG, "定位失败：未连接WiFi，跳过继续时间同步");
+                g_req_status.location_done = true;
+                g_req_status.location_success = false;
+                app_time_sntp_init();
+                xSemaphoreGive(time_sync_Sem);
                 continue;
             }
 
-            // 检查扫描结果是否有效
             if (g_wifi_scan_result.count == 0 || g_wifi_scan_result.ap_list == NULL) {
-                ESP_LOGW(TAG, "定位失败：扫描结果为空");
+                ESP_LOGW(TAG, "定位失败：扫描结果为空，跳过继续时间同步");
+                g_req_status.location_done = true;
+                g_req_status.location_success = false;
+                app_time_sntp_init();
+                xSemaphoreGive(time_sync_Sem);
                 continue;
             }
 
-            ESP_LOGI(TAG, "开始定位，WiFi数量: %d", g_wifi_scan_result.count);
+            ESP_LOGI(TAG, "开始定位，WiFi数量: %d (重试 %d/%d)",
+                     g_wifi_scan_result.count, g_req_status.location_retries + 1, MAX_RETRIES);
 
-            // 调用定位函数
             app_location_get_location(&g_wifi_scan_result, location_result_callback);
         }
     }
@@ -419,20 +477,28 @@ static void task_time_sync_and_update(void* pvParameters) {
     while (1) {
         if (xSemaphoreTake(time_sync_Sem, portMAX_DELAY) == pdTRUE) {
             ESP_LOGI(TAG, "收到时间同步请求");
+            log_memory("时间同步前");
 
             if (!g_wifi_connected) {
-                ESP_LOGW(TAG, "时间同步失败：未连接WiFi");
+                ESP_LOGW(TAG, "时间同步失败：未连接WiFi，跳过继续天气请求");
+                g_req_status.time_done = true;
+                g_req_status.time_success = false;
+                xSemaphoreGive(weather_Sem);
                 continue;
             }
 
             if (!app_time_is_synced()) {
-                ESP_LOGI(TAG, "开始同步时间");
+                ESP_LOGI(TAG, "开始同步时间 (重试 %d/%d)",
+                         g_req_status.time_retries + 1, MAX_RETRIES);
                 app_time_sntp_sync();
                 app_time_wait_sync(10000);
             }
 
+            log_memory("时间同步后");
+
             if (app_time_is_synced()) {
                 g_time_synced = true;
+                g_req_status.time_success = true;
                 ESP_LOGI(TAG, "时间同步成功");
 
                 if (app_time_get_now(&current_time) == ESP_OK) {
@@ -448,8 +514,22 @@ static void task_time_sync_and_update(void* pvParameters) {
                     }
                 }
             } else {
-                ESP_LOGW(TAG, "时间同步失败");
+                g_req_status.time_retries++;
+
+                if (g_req_status.time_retries < MAX_RETRIES) {
+                    ESP_LOGW(TAG, "时间同步失败，准备重试 %d/%d",
+                             g_req_status.time_retries + 1, MAX_RETRIES);
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    xSemaphoreGive(time_sync_Sem);
+                    continue;
+                }
+
+                ESP_LOGW(TAG, "时间同步失败，已达到最大重试次数");
             }
+
+            g_req_status.time_done = true;
+            ESP_LOGI(TAG, "时间同步完成(%s)，触发天气请求", g_req_status.time_success ? "成功" : "失败");
+            xSemaphoreGive(weather_Sem);
         }
     }
 }
@@ -484,33 +564,33 @@ static void task_weather_update(void* pvParameters) {
     while (1) {
         if (xSemaphoreTake(weather_Sem, portMAX_DELAY) == pdTRUE) {
             ESP_LOGI(TAG, "收到天气获取请求");
+            log_memory("天气请求前");
 
             if (!g_wifi_connected) {
                 ESP_LOGW(TAG, "天气获取失败：未连接WiFi");
+                g_req_status.weather_done = true;
+                g_req_status.weather_success = false;
+                ESP_LOGI(TAG, "========== 请求完成 ==========");
+                ESP_LOGI(TAG, "定位: %s", g_req_status.location_success ? "成功" : "失败");
+                ESP_LOGI(TAG, "时间: %s", g_req_status.time_success ? "成功" : "失败");
+                ESP_LOGI(TAG, "天气: %s", g_req_status.weather_success ? "成功" : "失败");
+                ESP_LOGI(TAG, "==============================");
                 continue;
             }
 
-            // 等待定位完成（最多等待30秒）
-            int wait_count = 0;
-            while (!g_location_ready && wait_count < 30) {
-                ESP_LOGI(TAG, "等待定位完成... (%d/30)", wait_count + 1);
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                wait_count++;
-            }
-
             if (!g_location_ready) {
-                ESP_LOGW(TAG, "定位超时，使用默认位置（广州）");
+                ESP_LOGW(TAG, "定位未成功，使用默认位置（广州）");
                 g_latitude = 23.12;
                 g_longitude = 113.26;
             }
 
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(500));
 
-            // 使用经纬度获取天气（格式：经度,纬度）
             char location_str[32];
             snprintf(location_str, sizeof(location_str), "%.2f,%.2f", g_longitude, g_latitude);
 
-            ESP_LOGI(TAG, "开始获取天气，位置: %s", location_str);
+            ESP_LOGI(TAG, "开始获取天气，位置: %s (重试 %d/%d)",
+                     location_str, g_req_status.weather_retries + 1, MAX_RETRIES);
             app_weather_init();
             app_weather_get(location_str, weather_result_callback);
         }
@@ -518,7 +598,7 @@ static void task_weather_update(void* pvParameters) {
 }
 
 
-void app_controller_init(void)
+void    app_controller_init(void)
 {
     lux_value_queue = xQueueCreate(1, sizeof(uint32_t));
     wifi_operation_queue = xQueueCreate(10, sizeof(WifiOperationMsg));
@@ -580,7 +660,7 @@ void app_controller_init(void)
         app_ui_weather_update_all(&cached_weather);
     }
 
-    xTaskCreate(task_get_lux_value, "task_get_lux_value", 2048, NULL, 5, NULL);
+    xTaskCreate(task_get_lux_value, "task_get_lux_value", 4096, NULL, 5, NULL);
     xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(task_get_location, "task_get_location", 4096, NULL, 5, NULL, 1);

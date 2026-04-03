@@ -1,13 +1,12 @@
 #include "app_ui.h"
 #include "app_ui_wifi_port.h"
-#include "app_nvs_storage.h"
+#include "app_ui_calc_port.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "esp_log.h"
 #include "app_exposure_calc.h"
-#include "app_ui_calc_port.h"
 
 // ──────────────────────────────────────────────
 // 自定义键盘映射（数字 + 逗号，用于自定义光圈输入）
@@ -633,7 +632,7 @@ static void cam_close_win_cb(lv_event_t * e)
         // 再关闭窗口
         lv_obj_add_flag(cam_win_select, LV_OBJ_FLAG_HIDDEN);
         // 保存数据到 NVS
-        app_nvs_save_all();
+        ui_calc_port_save_config();
     }
 
 }
@@ -869,7 +868,7 @@ static void cam_delete_confirm_event_cb(lv_event_t * e)
                     lv_timer_t * timer = lv_timer_create(cam_restore_scroll_timer_cb, 1, NULL);
                     lv_timer_set_repeat_count(timer, 1);
 
-                    app_nvs_save_all();
+                    ui_calc_port_save_config();
                 }
             }
         }
@@ -1004,7 +1003,7 @@ static void keyboard_done_cancel_cb(lv_event_t * e)
         update_main_ui_from_cam_card();
         update_main_ui_from_len_card();
         // 保存数据到 NVS
-        app_nvs_save_all();
+        ui_calc_port_save_config();
     }
 }
 
@@ -1777,7 +1776,7 @@ static void len_delete_confirm_event_cb(lv_event_t * e)
                     lv_timer_t * timer = lv_timer_create(len_restore_scroll_timer_cb, 1, NULL);
                     lv_timer_set_repeat_count(timer, 1);
 
-                    app_nvs_save_all();
+                    ui_calc_port_save_config();
                 }
             }
         }
@@ -1799,7 +1798,7 @@ static void len_close_win_cb(lv_event_t * e)
     // 再关闭窗口
     lv_obj_add_flag(len_win_select, LV_OBJ_FLAG_HIDDEN);
     // 保存数据到 NVS
-    app_nvs_save_all();
+    ui_calc_port_save_config();
 }
 
 // ──────────────────────────────────────────────
@@ -2619,7 +2618,6 @@ static void wifi_switch_change_cb(lv_event_t * e) {
         lv_obj_set_style_bg_opa(wifi_scan_btn, LV_OPA_COVER, 0);
         // 往port层传递事件
         ui_wifi_port_wifi_enable();
-        app_nvs_set_wifi_enabled(true);
         g_wifi_enabled = true;
     } else {
         // 开关是关闭的，禁用扫描按钮
@@ -2628,7 +2626,6 @@ static void wifi_switch_change_cb(lv_event_t * e) {
         clear_wifi_cards();
         // 往port层传递事件
         ui_wifi_port_wifi_disable();
-        app_nvs_set_wifi_enabled(false);
         g_wifi_enabled = false;
     }
 

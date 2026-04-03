@@ -192,4 +192,14 @@ void ui_calc_port_set_manual_wheel_type(ManualWheelType type);
  */
 void ui_calc_port_reset_manual_wheel_type(void);
 
+// ──────────────────────────────────────────────
+// 配置保存
+// ──────────────────────────────────────────────
+
+/**
+ * @brief 保存配置到NVS
+ * @note 保存相机、镜头等配置数据
+ */
+void ui_calc_port_save_config(void);
+
 #endif // __APP_UI_CALC_PORT_H__

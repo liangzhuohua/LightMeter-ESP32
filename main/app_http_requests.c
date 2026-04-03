@@ -19,6 +19,7 @@ typedef struct {
     size_t size;
     http_response_callback_t callback;
     void* user_data;
+    bool callback_called;
 } http_response_t;
 
 
@@ -132,6 +133,10 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     switch (evt->event_id) {
         case HTTP_EVENT_ERROR:
             ESP_LOGE(TAG, "HTTP_EVENT_ERROR");
+            if (response && response->callback && !response->callback_called) {
+                response->callback_called = true;
+                response->callback(NULL, 0, response->user_data);
+            }
             break;
         case HTTP_EVENT_ON_CONNECTED:
             ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
@@ -153,16 +158,24 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
             break;
         case HTTP_EVENT_ON_FINISH:
             ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
-            if (response->len > 0) {
-                response->data[response->len] = '\0';
-                ESP_LOGI(TAG, "Response: %s", response->data);
-                if (response->callback) {
+            if (response && response->callback && !response->callback_called) {
+                if (response->len > 0) {
+                    response->data[response->len] = '\0';
+                    ESP_LOGI(TAG, "Response: %s", response->data);
+                    response->callback_called = true;
                     response->callback(response->data, response->len, response->user_data);
+                } else {
+                    response->callback_called = true;
+                    response->callback(NULL, 0, response->user_data);
                 }
             }
             break;
         case HTTP_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+            if (response && response->callback && !response->callback_called) {
+                response->callback_called = true;
+                response->callback(NULL, 0, response->user_data);
+            }
             break;
         case HTTP_EVENT_REDIRECT:
             ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
@@ -195,7 +208,8 @@ esp_err_t app_http_get(const char* url, const char* params, http_response_callba
         .len = 0,
         .size = 8192,
         .callback = callback,
-        .user_data = user_data
+        .user_data = user_data,
+        .callback_called = false
     };
 
     esp_http_client_config_t config = {

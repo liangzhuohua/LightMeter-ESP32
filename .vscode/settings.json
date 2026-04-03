@@ -39,7 +39,9 @@
         "regex": "cpp",
         "*.inc": "c",
         "math.h": "c",
-        "app_weather.h": "c"
+        "app_weather.h": "c",
+        "app_nvs_storage.h": "c",
+        "functional": "c"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
