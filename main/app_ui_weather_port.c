@@ -65,6 +65,7 @@ static int g_moonrise_minutes = 0;
 static int g_moonset_minutes = 0;
 static char g_moon_phase_icon[8] = {0};
 static bool g_sunrise_sunset_valid = false;
+static bool g_moonrise_moonset_valid = false;
 static lv_timer_t* g_timeline_timer = NULL;
 
 static void set_label_icon(lv_obj_t* label, uint32_t unicode) {
@@ -95,6 +96,12 @@ static void update_timeline_display(bool is_daytime) {
 }
 
 static void timeline_timer_cb(lv_timer_t* timer) {
+    static bool last_is_daytime = false;
+    static bool first_run = true;
+    static char last_rise_text[16] = "";
+    static char last_set_text[16] = "";
+    static int last_position = -1;
+
     if (!g_sunrise_sunset_valid) return;
 
     app_time_t now;
@@ -109,31 +116,44 @@ static void timeline_timer_cb(lv_timer_t* timer) {
         is_daytime = true;
     }
 
-    update_timeline_display(is_daytime);
+    if (first_run || is_daytime != last_is_daytime) {
+        update_timeline_display(is_daytime);
+        last_is_daytime = is_daytime;
+        first_run = false;
+    }
 
     int position_percent = 0;
     int rise_minutes, set_minutes;
+    char buf_rise[16], buf_set[16];
 
     if (is_daytime) {
         rise_minutes = g_sunrise_minutes;
         set_minutes = g_sunset_minutes;
-        char buf[16];
-        snprintf(buf, sizeof(buf), LV_SYMBOL_UP " %02d:%02d",
+        snprintf(buf_rise, sizeof(buf_rise), LV_SYMBOL_UP " %02d:%02d",
                  g_sunrise_minutes / 60, g_sunrise_minutes % 60);
-        lv_label_set_text(sunrise_label, buf);
-        snprintf(buf, sizeof(buf), LV_SYMBOL_DOWN " %02d:%02d",
+        snprintf(buf_set, sizeof(buf_set), LV_SYMBOL_DOWN " %02d:%02d",
                  g_sunset_minutes / 60, g_sunset_minutes % 60);
-        lv_label_set_text(sunset_label, buf);
     } else {
-        rise_minutes = g_moonrise_minutes;
-        set_minutes = g_moonset_minutes;
-        char buf[16];
-        snprintf(buf, sizeof(buf), LV_SYMBOL_UP " %02d:%02d",
-                 g_moonrise_minutes / 60, g_moonrise_minutes % 60);
-        lv_label_set_text(sunrise_label, buf);
-        snprintf(buf, sizeof(buf), LV_SYMBOL_DOWN " %02d:%02d",
-                 g_moonset_minutes / 60, g_moonset_minutes % 60);
-        lv_label_set_text(sunset_label, buf);
+        if (!g_moonrise_moonset_valid) {
+            rise_minutes = 18 * 60;
+            set_minutes = 6 * 60;
+        } else {
+            rise_minutes = g_moonrise_minutes;
+            set_minutes = g_moonset_minutes;
+        }
+        snprintf(buf_rise, sizeof(buf_rise), LV_SYMBOL_UP " %02d:%02d",
+                 rise_minutes / 60, rise_minutes % 60);
+        snprintf(buf_set, sizeof(buf_set), LV_SYMBOL_DOWN " %02d:%02d",
+                 set_minutes / 60, set_minutes % 60);
+    }
+
+    if (strcmp(buf_rise, last_rise_text) != 0) {
+        lv_label_set_text(sunrise_label, buf_rise);
+        strcpy(last_rise_text, buf_rise);
+    }
+    if (strcmp(buf_set, last_set_text) != 0) {
+        lv_label_set_text(sunset_label, buf_set);
+        strcpy(last_set_text, buf_set);
     }
 
     if (set_minutes > rise_minutes) {
@@ -145,18 +165,19 @@ static void timeline_timer_cb(lv_timer_t* timer) {
             position_percent = ((now_minutes - rise_minutes) * 100) / (set_minutes - rise_minutes);
         }
     } else {
-        if (now_minutes >= rise_minutes || now_minutes <= set_minutes) {
-            if (now_minutes >= rise_minutes) {
-                position_percent = ((now_minutes - rise_minutes) * 100) / (1440 - rise_minutes + set_minutes);
-            } else {
-                position_percent = ((1440 - rise_minutes + now_minutes) * 100) / (1440 - rise_minutes + set_minutes);
-            }
+        if (now_minutes >= rise_minutes) {
+            position_percent = ((now_minutes - rise_minutes) * 100) / (1440 - rise_minutes + set_minutes);
+        } else if (now_minutes <= set_minutes) {
+            position_percent = ((1440 - rise_minutes + now_minutes) * 100) / (1440 - rise_minutes + set_minutes);
         } else {
-            position_percent = 100;
+            position_percent = 0;
         }
     }
 
-    app_ui_sunrise_sunset_set_indicator(position_percent);
+    if (position_percent != last_position) {
+        app_ui_sunrise_sunset_set_indicator(position_percent);
+        last_position = position_percent;
+    }
 }
 
 void app_ui_weather_set_temp(int temp) {
@@ -267,6 +288,12 @@ void app_ui_weather_update_all(const weather_data_t* data) {
     g_moonset_minutes = data->moonset_hour * 60 + data->moonset_minute;
     strncpy(g_moon_phase_icon, data->moon_phase_icon, sizeof(g_moon_phase_icon) - 1);
     g_moon_phase_icon[sizeof(g_moon_phase_icon) - 1] = '\0';
+
+    if (g_moonrise_minutes > 0 || g_moonset_minutes > 0) {
+        g_moonrise_moonset_valid = true;
+    } else {
+        g_moonrise_moonset_valid = false;
+    }
 
     if (g_sunrise_minutes > 0 && g_sunset_minutes > 0 && g_sunrise_minutes < g_sunset_minutes) {
         g_sunrise_sunset_valid = true;

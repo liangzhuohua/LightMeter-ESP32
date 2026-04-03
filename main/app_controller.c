@@ -74,6 +74,7 @@ static double g_longitude = 0.0;
 static char g_auto_connect_ssid[33] = {0};
 static char g_auto_connect_password[65] = {0};
 static bool g_auto_connect_pending = false;
+static int g_auto_connect_retries = 0;
 static bool g_periodic_sync_mode = false;
 
 static void weather_result_callback(const weather_data_t* data);
@@ -93,6 +94,8 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
             case HW_WIFI_STATE_CONNECTED:
                 app_ui_wifi_on_connected(event->ssid);
                 g_wifi_connected = true;
+                g_auto_connect_pending = false;
+                g_auto_connect_retries = 0;
                 app_nvs_save_all();
                 break;
 
@@ -104,6 +107,17 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
             case HW_WIFI_STATE_CONNECT_FAILED:
                 app_ui_wifi_on_connect_failed(event->ssid, event->reason);
                 g_wifi_connected = false;
+
+                if (g_auto_connect_pending && g_auto_connect_retries < 3) {
+                    g_auto_connect_retries++;
+                    ESP_LOGI(TAG, "自动连接失败，重新扫描重试 (%d/3)", g_auto_connect_retries);
+                    vTaskDelay(pdMS_TO_TICKS(1000));
+                    hw_wifi_scan_async();
+                } else if (g_auto_connect_pending) {
+                    ESP_LOGW(TAG, "自动连接已达到最大重试次数");
+                    g_auto_connect_pending = false;
+                    g_auto_connect_retries = 0;
+                }
                 break;
 
             default:
@@ -166,8 +180,9 @@ static void wifi_scan_done_callback(wifi_scan_result_t* result) {
             hw_wifi_connect(g_auto_connect_ssid, g_auto_connect_password);
         } else {
             ESP_LOGI(TAG, "未找到保存的WiFi: %s，跳过连接", g_auto_connect_ssid);
+            g_auto_connect_pending = false;
+            g_auto_connect_retries = 0;
         }
-        g_auto_connect_pending = false;
     }
 
     if (example_lvgl_lock(-1)) {

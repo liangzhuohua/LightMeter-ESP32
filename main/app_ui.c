@@ -4040,10 +4040,20 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(timeline_title, lv_color_hex(0xFFFFFF), 0);
 
-    moon_phase_icon_label = lv_label_create(title_row);
+    lv_obj_t* moon_phase_container = lv_obj_create(title_row);
+    lv_obj_remove_style_all(moon_phase_container);
+    lv_obj_set_size(moon_phase_container, 28, 28);
+    lv_obj_set_style_bg_color(moon_phase_container, lv_color_hex(0xffd700), 0);
+    lv_obj_set_style_bg_opa(moon_phase_container, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(moon_phase_container, 14, 0);
+    lv_obj_set_style_border_width(moon_phase_container, 0, 0);
+
+    moon_phase_icon_label = lv_label_create(moon_phase_container);
     lv_label_set_text(moon_phase_icon_label, "");
     lv_obj_set_style_text_font(moon_phase_icon_label, &qweather_icons, 0);
-    lv_obj_set_style_text_color(moon_phase_icon_label, lv_color_hex(0xffd700), 0);
+    lv_obj_set_style_text_color(moon_phase_icon_label, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_text_opa(moon_phase_icon_label, LV_OPA_COVER, 0);
+    lv_obj_center(moon_phase_icon_label);
 
     timeline_bar = lv_obj_create(sunrise_sunset_card);
     lv_obj_remove_style_all(timeline_bar);
@@ -4071,10 +4081,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(sunrise_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(sunrise_label, lv_color_hex(0xffa500), 0);
 
-    now_label = lv_label_create(timeline_labels);
-    lv_label_set_text(now_label, "Now");
-    lv_obj_set_style_text_font(now_label, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(now_label, lv_color_hex(0xffcc00), 0);
+    // now_label = lv_label_create(timeline_labels);
+    // lv_label_set_text(now_label, "Now");
+    // lv_obj_set_style_text_font(now_label, &lv_font_montserrat_14, 0);
+    // lv_obj_set_style_text_color(now_label, lv_color_hex(0xffcc00), 0);
 
     sunset_label = lv_label_create(timeline_labels);
     lv_label_set_text(sunset_label, LV_SYMBOL_DOWN " 18:35");
