@@ -44,6 +44,22 @@ int hw_nvs_set_int(const char *namespace, const char *key, int32_t value);
  */
 int hw_nvs_get_int(const char *namespace, const char *key, int32_t *value);
 
+/* 写入64位整数
+ * namespace: 命名空间名称
+ * key: 键名
+ * value: 要写入的64位整数值
+ * 返回值: 0成功, -1失败
+ */
+int hw_nvs_set_i64(const char *namespace, const char *key, int64_t value);
+
+/* 读取64位整数
+ * namespace: 命名空间名称
+ * key: 键名
+ * value: 输出参数，存储读取的值
+ * 返回值: 0成功, -1失败
+ */
+int hw_nvs_get_i64(const char *namespace, const char *key, int64_t *value);
+
 /* 写入字符串
  * namespace: 命名空间名称
  * key: 键名

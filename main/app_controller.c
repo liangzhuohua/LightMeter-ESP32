@@ -17,10 +17,18 @@
 #include "hw_wifi.h"
 #include "app_location.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
 
 static const char* TAG = "app_controller";
 
 #define MAX_RETRIES 3
+
+#define TIME_SYNC_THRESHOLD_US    (6LL * 60 * 60 * 1000000)         // 6小时
+#define WEATHER_SYNC_THRESHOLD_US (30LL * 60 * 1000000)              // 30分钟
+#define LOCATION_SYNC_THRESHOLD_US (24LL * 60 * 60 * 1000000)       // 24小时
+
+#define TIME_SYNC_INTERVAL_MS     (30 * 60 * 1000)                   // 30分钟
+#define WEATHER_SYNC_INTERVAL_MS  (30 * 60 * 1000)                  // 30分钟
 
 typedef struct {
     bool location_done;
@@ -66,6 +74,7 @@ static double g_longitude = 0.0;
 static char g_auto_connect_ssid[33] = {0};
 static char g_auto_connect_password[65] = {0};
 static bool g_auto_connect_pending = false;
+static bool g_periodic_sync_mode = false;
 
 static void weather_result_callback(const weather_data_t* data);
 
@@ -329,6 +338,7 @@ static void location_result_callback(const location_result_t* result) {
         g_longitude = result->longitude;
         g_location_ready = true;
         g_req_status.location_success = true;
+        app_nvs_update_location_sync_timestamp();
 
         char city[64] = {0};
         char detail[128] = {0};
@@ -421,6 +431,7 @@ static void weather_result_callback(const weather_data_t* data) {
         g_req_status.weather_success = true;
         app_nvs_set_weather(data);
         app_nvs_save_weather();
+        app_nvs_update_weather_sync_timestamp();
         app_ui_weather_update_all(data);
     }
 
@@ -429,6 +440,8 @@ static void weather_result_callback(const weather_data_t* data) {
     ESP_LOGI(TAG, "  时间: %s", g_req_status.time_success ? "成功" : "失败");
     ESP_LOGI(TAG, "  天气: %s", g_req_status.weather_success ? "成功" : "失败");
     ESP_LOGI(TAG, "==================================");
+
+    g_periodic_sync_mode = false;
 }
 
 static void task_get_location(void* pvParameters) {
@@ -508,6 +521,7 @@ static void task_time_sync_and_update(void* pvParameters) {
             if (app_time_is_synced()) {
                 g_time_synced = true;
                 g_req_status.time_success = true;
+                app_nvs_update_time_sync_timestamp();
                 ESP_LOGI(TAG, "时间同步成功");
 
                 if (app_time_get_now(&current_time) == ESP_OK) {
@@ -537,9 +551,68 @@ static void task_time_sync_and_update(void* pvParameters) {
             }
 
             g_req_status.time_done = true;
-            ESP_LOGI(TAG, "时间同步完成(%s)，触发天气请求", g_req_status.time_success ? "成功" : "失败");
-            xSemaphoreGive(weather_Sem);
+
+            if (g_periodic_sync_mode) {
+                ESP_LOGI(TAG, "时间同步完成(%s)，定时同步模式不触发天气", g_req_status.time_success ? "成功" : "失败");
+                g_periodic_sync_mode = false;
+            } else {
+                ESP_LOGI(TAG, "时间同步完成(%s)，触发天气请求", g_req_status.time_success ? "成功" : "失败");
+                xSemaphoreGive(weather_Sem);
+            }
         }
+    }
+}
+
+static void periodic_sync_timer_cb(lv_timer_t* timer) {
+    if (!g_wifi_connected) {
+        ESP_LOGD(TAG, "WiFi未连接，跳过定时同步");
+        return;
+    }
+
+    ESP_LOGI(TAG, "定时同步检查...");
+
+    sync_timestamp_t ts;
+    app_nvs_load_sync_timestamps(&ts);
+
+    int64_t now = esp_timer_get_time();
+
+    if (now - ts.last_time_sync > TIME_SYNC_THRESHOLD_US) {
+        ESP_LOGI(TAG, "时间超过阈值，触发同步");
+        reset_request_status();
+        g_periodic_sync_mode = true;
+        xSemaphoreGive(time_sync_Sem);
+        return;
+    }
+
+    if (now - ts.last_weather_sync > WEATHER_SYNC_THRESHOLD_US) {
+        ESP_LOGI(TAG, "天气超过阈值，触发同步");
+        reset_request_status();
+        g_periodic_sync_mode = true;
+        xSemaphoreGive(weather_Sem);
+        return;
+    }
+}
+
+static void check_sync_on_startup(void) {
+    sync_timestamp_t ts;
+    if (app_nvs_load_sync_timestamps(&ts) != 0) {
+        ESP_LOGI(TAG, "无同步时间戳记录，将进行首次同步");
+        return;
+    }
+
+    int64_t now = esp_timer_get_time();
+
+    ESP_LOGI(TAG, "同步时间戳检查:");
+    ESP_LOGI(TAG, "  时间同步: %lld us 前", (now - ts.last_time_sync) / 1000000);
+    ESP_LOGI(TAG, "  天气同步: %lld us 前", (now - ts.last_weather_sync) / 1000000);
+    ESP_LOGI(TAG, "  位置同步: %lld us 前", (now - ts.last_location_sync) / 1000000);
+
+    if (now - ts.last_time_sync > TIME_SYNC_THRESHOLD_US) {
+        ESP_LOGI(TAG, "时间同步已过期，需要在WiFi连接后同步");
+    }
+
+    if (now - ts.last_weather_sync > WEATHER_SYNC_THRESHOLD_US) {
+        ESP_LOGI(TAG, "天气同步已过期，需要在WiFi连接后同步");
     }
 }
 
@@ -667,6 +740,15 @@ void    app_controller_init(void)
     if (has_weather) {
         ESP_LOGI(TAG, "恢复缓存天气: %d°C, %s", cached_weather.temp, cached_weather.desc);
         app_ui_weather_update_all(&cached_weather);
+    }
+
+    check_sync_on_startup();
+
+    lv_timer_t* sync_timer = lv_timer_create(periodic_sync_timer_cb, WEATHER_SYNC_INTERVAL_MS, NULL);
+    if (sync_timer == NULL) {
+        ESP_LOGW(TAG, "创建定时同步定时器失败");
+    } else {
+        ESP_LOGI(TAG, "定时同步定时器已创建，间隔: %d ms", WEATHER_SYNC_INTERVAL_MS);
     }
 
     xTaskCreate(task_get_lux_value, "task_get_lux_value", 4096, NULL, 5, NULL);

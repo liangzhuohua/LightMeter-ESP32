@@ -135,6 +135,56 @@ int hw_nvs_get_int(const char *namespace, const char *key, int32_t *value)
     return 0;
 }
 
+int hw_nvs_set_i64(const char *namespace, const char *key, int64_t value)
+{
+    nvs_handle_t handle;
+    if (open_nvs_handle(namespace, NVS_READWRITE, &handle) != 0) {
+        return -1;
+    }
+
+    esp_err_t ret = nvs_set_i64(handle, key, value);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "nvs_set_i64 failed: %s", esp_err_to_name(ret));
+        nvs_close(handle);
+        return -1;
+    }
+
+    ret = nvs_commit(handle);
+    nvs_close(handle);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "nvs_commit failed: %s", esp_err_to_name(ret));
+        return -1;
+    }
+
+    return 0;
+}
+
+int hw_nvs_get_i64(const char *namespace, const char *key, int64_t *value)
+{
+    nvs_handle_t handle;
+    if (open_nvs_handle(namespace, NVS_READONLY, &handle) != 0) {
+        return -1;
+    }
+
+    int64_t temp;
+    esp_err_t ret = nvs_get_i64(handle, key, &temp);
+    nvs_close(handle);
+
+    if (ret != ESP_OK) {
+        if (ret != ESP_ERR_NVS_NOT_FOUND) {
+            ESP_LOGE(TAG, "nvs_get_i64 failed: %s", esp_err_to_name(ret));
+        }
+        return -1;
+    }
+
+    if (value) {
+        *value = temp;
+    }
+
+    return 0;
+}
+
 int hw_nvs_set_string(const char *namespace, const char *key, const char *value)
 {
     nvs_handle_t handle;
@@ -334,6 +384,10 @@ bool hw_nvs_key_exists(const char *namespace, const char *key)
     if (ret == ESP_ERR_NVS_NOT_FOUND) {
         int32_t temp;
         ret = nvs_get_i32(handle, key, &temp);
+    }
+    if (ret == ESP_ERR_NVS_NOT_FOUND) {
+        int64_t temp;
+        ret = nvs_get_i64(handle, key, &temp);
     }
 
     nvs_close(handle);

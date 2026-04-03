@@ -79,4 +79,16 @@ void app_nvs_set_location(double latitude, double longitude, bool valid);
 void app_nvs_set_location_text(const char* city, const char* detail);
 void app_nvs_set_weather(const weather_data_t* weather);
 
+typedef struct {
+    int64_t last_time_sync;
+    int64_t last_weather_sync;
+    int64_t last_location_sync;
+} sync_timestamp_t;
+
+int app_nvs_save_sync_timestamps(const sync_timestamp_t* ts);
+int app_nvs_load_sync_timestamps(sync_timestamp_t* ts);
+void app_nvs_update_time_sync_timestamp(void);
+void app_nvs_update_weather_sync_timestamp(void);
+void app_nvs_update_location_sync_timestamp(void);
+
 #endif

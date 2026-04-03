@@ -5,6 +5,7 @@
 #include "app_controller.h"
 #include "hw_oled.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include <string.h>
 #include <stdio.h>
 #include "lvgl.h"
@@ -17,6 +18,7 @@ static const char* NS_UI_STATE = "ui_state";
 static const char* NS_WIFI = "wifi";
 static const char* NS_LOCATION = "location";
 static const char* NS_WEATHER = "weather";
+static const char* NS_SYNC_TS = "sync_ts";
 
 static location_data_t g_cached_location = {0};
 static weather_data_t g_cached_weather = {0};
@@ -692,4 +694,55 @@ int app_nvs_load_all(void) {
 
     ESP_LOGI(TAG, "All data loaded");
     return ret;
+}
+
+int app_nvs_save_sync_timestamps(const sync_timestamp_t* ts) {
+    if (ts == NULL) return -1;
+
+    int ret = 0;
+    ret |= hw_nvs_set_i64(NS_SYNC_TS, "time_sync", ts->last_time_sync);
+    ret |= hw_nvs_set_i64(NS_SYNC_TS, "weather_sync", ts->last_weather_sync);
+    ret |= hw_nvs_set_i64(NS_SYNC_TS, "location_sync", ts->last_location_sync);
+
+    if (ret == 0) {
+        ESP_LOGI(TAG, "Sync timestamps saved");
+    }
+    return ret;
+}
+
+int app_nvs_load_sync_timestamps(sync_timestamp_t* ts) {
+    if (ts == NULL) return -1;
+
+    memset(ts, 0, sizeof(sync_timestamp_t));
+
+    int ret = 0;
+    ret |= hw_nvs_get_i64(NS_SYNC_TS, "time_sync", &ts->last_time_sync);
+    ret |= hw_nvs_get_i64(NS_SYNC_TS, "weather_sync", &ts->last_weather_sync);
+    ret |= hw_nvs_get_i64(NS_SYNC_TS, "location_sync", &ts->last_location_sync);
+
+    return ret;
+}
+
+void app_nvs_update_time_sync_timestamp(void) {
+    sync_timestamp_t ts;
+    app_nvs_load_sync_timestamps(&ts);
+    ts.last_time_sync = esp_timer_get_time();
+    app_nvs_save_sync_timestamps(&ts);
+    ESP_LOGI(TAG, "Time sync timestamp updated");
+}
+
+void app_nvs_update_weather_sync_timestamp(void) {
+    sync_timestamp_t ts;
+    app_nvs_load_sync_timestamps(&ts);
+    ts.last_weather_sync = esp_timer_get_time();
+    app_nvs_save_sync_timestamps(&ts);
+    ESP_LOGI(TAG, "Weather sync timestamp updated");
+}
+
+void app_nvs_update_location_sync_timestamp(void) {
+    sync_timestamp_t ts;
+    app_nvs_load_sync_timestamps(&ts);
+    ts.last_location_sync = esp_timer_get_time();
+    app_nvs_save_sync_timestamps(&ts);
+    ESP_LOGI(TAG, "Location sync timestamp updated");
 }
