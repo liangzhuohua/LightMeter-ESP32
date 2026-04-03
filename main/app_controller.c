@@ -672,10 +672,10 @@ void    app_controller_init(void)
     xTaskCreate(task_get_lux_value, "task_get_lux_value", 4096, NULL, 5, NULL);
     xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
-    xTaskCreatePinnedToCore(task_get_location, "task_get_location", 8192, NULL, 5, NULL, 1);
-    xTaskCreate(task_time_sync_and_update, "task_time_sync", 6144, NULL, 5, NULL);
+    xTaskCreatePinnedToCore(task_get_location, "task_get_location", 8192, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(task_time_sync_and_update, "task_time_sync", 6144, NULL, 5, NULL, 0);
     xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
-    xTaskCreate(task_weather_update, "task_weather", 16384, NULL, 5, NULL);
+    xTaskCreatePinnedToCore(task_weather_update, "task_weather", 16384, NULL, 5, NULL, 0);
 }
 
 const char* app_controller_get_current_ssid(void) {

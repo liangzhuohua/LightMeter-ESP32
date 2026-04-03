@@ -215,11 +215,10 @@ esp_err_t app_http_get(const char* url, const char* params, http_response_callba
     esp_http_client_config_t config = {
         .url = full_url,
         .method = HTTP_METHOD_GET,
-        .timeout_ms = 10000,
+        .timeout_ms = 15000,
         .buffer_size = 8192,
         .event_handler = http_event_handler,
         .user_data = &response,
-        .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
