@@ -85,46 +85,55 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         return;
     }
 
-    if (example_lvgl_lock(-1)) {
-        switch (event->state) {
-            case HW_WIFI_STATE_CONNECTING:
+    switch (event->state) {
+        case HW_WIFI_STATE_CONNECTING:
+            if (example_lvgl_lock(-1)) {
                 app_ui_wifi_on_connecting(event->ssid);
-                g_wifi_connected = false;
-                break;
+                example_lvgl_unlock();
+            }
+            g_wifi_connected = false;
+            break;
 
-            case HW_WIFI_STATE_CONNECTED:
+        case HW_WIFI_STATE_CONNECTED:
+            if (example_lvgl_lock(-1)) {
                 app_ui_wifi_on_connected(event->ssid);
-                g_wifi_connected = true;
+                example_lvgl_unlock();
+            }
+            g_wifi_connected = true;
+            g_auto_connect_pending = false;
+            g_auto_connect_retries = 0;
+            app_nvs_save_all();
+            break;
+
+        case HW_WIFI_STATE_DISCONNECTED:
+            if (example_lvgl_lock(-1)) {
+                app_ui_wifi_on_disconnected(event->ssid);
+                example_lvgl_unlock();
+            }
+            g_wifi_connected = false;
+            break;
+
+        case HW_WIFI_STATE_CONNECT_FAILED:
+            if (example_lvgl_lock(-1)) {
+                app_ui_wifi_on_connect_failed(event->ssid, event->reason);
+                example_lvgl_unlock();
+            }
+            g_wifi_connected = false;
+
+            if (g_auto_connect_pending && g_auto_connect_retries < 3) {
+                g_auto_connect_retries++;
+                ESP_LOGI(TAG, "自动连接失败，重新扫描重试 (%d/3)", g_auto_connect_retries);
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                hw_wifi_scan_async();
+            } else if (g_auto_connect_pending) {
+                ESP_LOGW(TAG, "自动连接已达到最大重试次数");
                 g_auto_connect_pending = false;
                 g_auto_connect_retries = 0;
-                app_nvs_save_all();
-                break;
+            }
+            break;
 
-            case HW_WIFI_STATE_DISCONNECTED:
-                app_ui_wifi_on_disconnected(event->ssid);
-                g_wifi_connected = false;
-                break;
-
-            case HW_WIFI_STATE_CONNECT_FAILED:
-                app_ui_wifi_on_connect_failed(event->ssid, event->reason);
-                g_wifi_connected = false;
-
-                if (g_auto_connect_pending && g_auto_connect_retries < 3) {
-                    g_auto_connect_retries++;
-                    ESP_LOGI(TAG, "自动连接失败，重新扫描重试 (%d/3)", g_auto_connect_retries);
-                    vTaskDelay(pdMS_TO_TICKS(1000));
-                    hw_wifi_scan_async();
-                } else if (g_auto_connect_pending) {
-                    ESP_LOGW(TAG, "自动连接已达到最大重试次数");
-                    g_auto_connect_pending = false;
-                    g_auto_connect_retries = 0;
-                }
-                break;
-
-            default:
-                break;
-        }
-        example_lvgl_unlock();
+        default:
+            break;
     }
 
     if (event->state == HW_WIFI_STATE_CONNECTED && g_wifi_scanned) {
@@ -340,7 +349,10 @@ static void location_result_callback(const location_result_t* result) {
         }
 
         ESP_LOGE(TAG, "定位失败，已达到最大重试次数");
-        app_ui_location_set_unknown();
+        if (example_lvgl_lock(-1)) {
+            app_ui_location_set_unknown();
+            example_lvgl_unlock();
+        }
         g_location_ready = false;
         g_req_status.location_success = false;
     } else {
@@ -397,16 +409,28 @@ static void location_result_callback(const location_result_t* result) {
         }
 
         if (city[0] != '\0') {
-            app_ui_location_set_city(city);
+            if (example_lvgl_lock(-1)) {
+                app_ui_location_set_city(city);
+                example_lvgl_unlock();
+            }
         } else {
-            app_ui_location_set_city("Unknown");
+            if (example_lvgl_lock(-1)) {
+                app_ui_location_set_city("Unknown");
+                example_lvgl_unlock();
+            }
             strncpy(city, "Unknown", sizeof(city) - 1);
         }
 
         if (detail[0] != '\0') {
-            app_ui_location_set_detail(detail);
+            if (example_lvgl_lock(-1)) {
+                app_ui_location_set_detail(detail);
+                example_lvgl_unlock();
+            }
         } else {
-            app_ui_location_set_detail(result->address);
+            if (example_lvgl_lock(-1)) {
+                app_ui_location_set_detail(result->address);
+                example_lvgl_unlock();
+            }
             strncpy(detail, result->address, sizeof(detail) - 1);
             detail[sizeof(detail) - 1] = '\0';
         }
@@ -423,35 +447,37 @@ static void location_result_callback(const location_result_t* result) {
 }
 
 static void weather_result_callback(const weather_data_t* data) {
-    g_req_status.weather_done = true;
-    log_memory("天气请求后");
-
     if (data == NULL) {
-        ESP_LOGE(TAG, "天气结果为空");
+        ESP_LOGE(TAG, "获取天气失败");
+        g_req_status.weather_retries++;
+
+        if (g_req_status.weather_retries < MAX_RETRIES) {
+            ESP_LOGI(TAG, "天气获取失败，准备异步重试 %d/%d", g_req_status.weather_retries + 1, MAX_RETRIES);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            xSemaphoreGive(weather_Sem);
+            return;
+        }
+
+        ESP_LOGE(TAG, "天气获取失败，已达到最大重试次数");
         g_req_status.weather_success = false;
     } else {
-        ESP_LOGI(TAG, "========== 天气结果 ==========");
-        ESP_LOGI(TAG, "  温度: %d°C", data->temp);
-        ESP_LOGI(TAG, "  温度范围: %d°C ~ %d°C", data->temp_min, data->temp_max);
-        ESP_LOGI(TAG, "  天气: %s", data->desc);
-        ESP_LOGI(TAG, "  图标: %s", data->icon);
-        ESP_LOGI(TAG, "  湿度: %d%%", data->humidity);
-        ESP_LOGI(TAG, "  风速: %.1f km/h", data->wind_speed);
-        ESP_LOGI(TAG, "  日出: %02d:%02d", data->sunrise_hour, data->sunrise_minute);
-        ESP_LOGI(TAG, "  日落: %02d:%02d", data->sunset_hour, data->sunset_minute);
-        ESP_LOGI(TAG, "  月出: %02d:%02d", data->moonrise_hour, data->moonrise_minute);
-        ESP_LOGI(TAG, "  月落: %02d:%02d", data->moonset_hour, data->moonset_minute);
-        ESP_LOGI(TAG, "  月相: %s (%s)", data->moon_phase, data->moon_phase_icon);
-        ESP_LOGI(TAG, "==============================");
+        ESP_LOGI(TAG, "获取天气成功: %s, 温度: %d, 湿度: %d", data->desc, data->temp, data->humidity);
+
+        if (example_lvgl_lock(-1)) {
+            app_ui_weather_update_all(data);
+            example_lvgl_unlock();
+        }
+
+        app_nvs_set_weather(data);
+        app_nvs_update_weather_sync_timestamp();
+        app_nvs_save_weather();
 
         g_req_status.weather_success = true;
-        app_nvs_set_weather(data);
-        app_nvs_save_weather();
-        app_nvs_update_weather_sync_timestamp();
-        app_ui_weather_update_all(data);
     }
 
-    ESP_LOGI(TAG, "========== 串行请求完成 ==========");
+    g_req_status.weather_done = true;
+
+    ESP_LOGI(TAG, "全部同步流程结束，最终状态:");
     ESP_LOGI(TAG, "  定位: %s", g_req_status.location_success ? "成功" : "失败");
     ESP_LOGI(TAG, "  时间: %s", g_req_status.time_success ? "成功" : "失败");
     ESP_LOGI(TAG, "  天气: %s", g_req_status.weather_success ? "成功" : "失败");
@@ -639,10 +665,6 @@ static void task_time_update_periodic(void* pvParameters) {
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
 
-        if (!g_time_synced) {
-            continue;
-        }
-
         if (app_time_get_now(&current_time) == ESP_OK) {
             if (current_time.minute != last_minute) {
                 last_minute = current_time.minute;
@@ -736,7 +758,8 @@ void app_controller_wakeup_key_init(void) {
 void app_controller_enter_deep_sleep(void) {
     ESP_LOGI(TAG, "Preparing to enter deep sleep...");
 
-    // 关闭屏幕以节约功耗
+    app_time_save_to_rtc();
+
     oled_set_brightness(0);
 
     if (g_wifi_connected) {
@@ -747,7 +770,7 @@ void app_controller_enter_deep_sleep(void) {
     hw_wakeup_key_enable_sleep_wakeup();
 
     ESP_LOGI(TAG, "Entering deep sleep now");
-    vTaskDelay(pdMS_TO_TICKS(100)); // Allow log to print
+    vTaskDelay(pdMS_TO_TICKS(100));
     esp_deep_sleep_start();
 }
 
@@ -766,6 +789,25 @@ void    app_controller_init(void)
 
     app_controller_wakeup_key_init();
 
+    if (app_time_restore_from_rtc() == ESP_OK) {
+        ESP_LOGI(TAG, "从RTC内存恢复时间成功");
+    } else {
+        ESP_LOGW(TAG, "RTC内存无有效时间备份");
+    }
+
+    app_time_t current_time;
+    if (app_time_get_now(&current_time) == ESP_OK) {
+        ESP_LOGI(TAG, "唤醒时读取本地时间: %04d-%02d-%02d %02d:%02d:%02d",
+                 current_time.year, current_time.month, current_time.day,
+                 current_time.hour, current_time.minute, current_time.second);
+        if (example_lvgl_lock(-1)) {
+            app_ui_time_set_time(current_time.hour, current_time.minute);
+            app_ui_time_set_date(current_time.year, current_time.month, current_time.day);
+            app_ui_time_set_main_table_time(current_time.hour, current_time.minute);
+            example_lvgl_unlock();
+        }
+    }
+
     location_data_t cached_loc;
     weather_data_t cached_weather;
 
@@ -779,10 +821,16 @@ void    app_controller_init(void)
         ESP_LOGI(TAG, "恢复缓存位置: %.6f, %.6f, city=%s", g_latitude, g_longitude, cached_loc.city);
 
         if (cached_loc.city[0] != '\0') {
-            app_ui_location_set_city(cached_loc.city);
+            if (example_lvgl_lock(-1)) {
+                app_ui_location_set_city(cached_loc.city);
+                example_lvgl_unlock();
+            }
         }
         if (cached_loc.detail[0] != '\0') {
-            app_ui_location_set_detail(cached_loc.detail);
+            if (example_lvgl_lock(-1)) {
+                app_ui_location_set_detail(cached_loc.detail);
+                example_lvgl_unlock();
+            }
         }
     }
 
@@ -790,7 +838,10 @@ void    app_controller_init(void)
     bool has_wifi_config = (app_nvs_get_wifi_config(&wifi_config) == 0 && wifi_config.ssid[0] != '\0');
 
     if (has_wifi_config) {
-        app_ui_wifi_set_enabled(wifi_config.enabled);
+        if (example_lvgl_lock(-1)) {
+            app_ui_wifi_set_enabled(wifi_config.enabled);
+            example_lvgl_unlock();
+        }
 
         if (wifi_config.enabled) {
             ESP_LOGI(TAG, "WiFi已启用，扫描并尝试连接: %s", wifi_config.ssid);
@@ -807,12 +858,18 @@ void    app_controller_init(void)
         }
     } else {
         ESP_LOGI(TAG, "无WiFi配置");
-        app_ui_wifi_set_enabled(false);
+        if (example_lvgl_lock(-1)) {
+            app_ui_wifi_set_enabled(false);
+            example_lvgl_unlock();
+        }
     }
 
     if (has_weather) {
         ESP_LOGI(TAG, "恢复缓存天气: %d°C, %s", cached_weather.temp, cached_weather.desc);
-        app_ui_weather_update_all(&cached_weather);
+        if (example_lvgl_lock(-1)) {
+            app_ui_weather_update_all(&cached_weather);
+            example_lvgl_unlock();
+        }
     }
 
     check_sync_on_startup();

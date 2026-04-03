@@ -110,11 +110,7 @@ static void timeline_timer_cb(lv_timer_t* timer) {
     int now_minutes = now.hour * 60 + now.minute;
     bool is_daytime;
 
-    if (app_time_is_synced()) {
-        is_daytime = (now_minutes >= g_sunrise_minutes && now_minutes < g_sunset_minutes);
-    } else {
-        is_daytime = true;
-    }
+    is_daytime = (now_minutes >= g_sunrise_minutes && now_minutes < g_sunset_minutes);
 
     if (first_run || is_daytime != last_is_daytime) {
         update_timeline_display(is_daytime);

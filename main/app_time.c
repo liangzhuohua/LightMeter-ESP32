@@ -2,12 +2,22 @@
 #include "esp_sntp.h"
 #include "esp_netif.h"
 #include "esp_log.h"
+#include "esp_sleep.h"
+#include "esp_timer.h"
 #include <time.h>
 #include <sys/time.h>
 
 static const char* TAG = "app_time";
 static bool s_time_synced = false;
 static bool s_sntp_initialized = false;
+
+typedef struct {
+    int64_t timestamp_us;
+    int64_t sleep_enter_time_us;
+    bool valid;
+} rtc_time_backup_t;
+
+static RTC_DATA_ATTR rtc_time_backup_t s_rtc_time_backup = {0};
 
 static void time_sync_notification_cb(struct timeval *tv) {
     s_time_synced = true;
@@ -72,6 +82,12 @@ esp_err_t app_time_get_now(app_time_t* time) {
     localtime_r(&now, &timeinfo);
 
     time->year = timeinfo.tm_year + 1900;
+
+    // 增加对未同步时间的判断（1970年左右）
+    if (time->year < 2020) {
+        return ESP_FAIL;
+    }
+
     time->month = timeinfo.tm_mon + 1;
     time->day = timeinfo.tm_mday;
     time->hour = timeinfo.tm_hour;
@@ -96,4 +112,30 @@ void app_time_wait_sync(uint32_t timeout_ms) {
     } else {
         ESP_LOGW(TAG, "时间同步超时");
     }
+}
+
+esp_err_t app_time_save_to_rtc(void) {
+    // ESP-IDF 会自动在 Deep Sleep 期间通过 RTC 定时器维护系统时间（UTC）
+    // 所以这里不需要手动保存时间到 RTC_DATA_ATTR
+    ESP_LOGI(TAG, "系统时间将由底层 RTC 自动维护");
+    return ESP_OK;
+}
+
+esp_err_t app_time_restore_from_rtc(void) {
+    // 从 Deep Sleep 唤醒后，系统时间（UTC）已经由底层自动恢复
+    // 但环境变量（如时区 TZ）在唤醒后会丢失，需要重新设置
+    setenv("TZ", "CST-8", 1);
+    tzset();
+
+    app_time_t time;
+    if (app_time_get_now(&time) == ESP_OK) {
+        ESP_LOGI(TAG, "系统时区已恢复，当前 RTC 时间: %04d-%02d-%02d %02d:%02d:%02d",
+                 time.year, time.month, time.day,
+                 time.hour, time.minute, time.second);
+    }
+    return ESP_OK;
+}
+
+bool app_time_has_rtc_backup(void) {
+    return s_rtc_time_backup.valid;
 }
