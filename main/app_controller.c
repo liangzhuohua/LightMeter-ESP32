@@ -29,6 +29,8 @@ typedef struct {
     bool location_success;
     bool time_success;
     bool weather_success;
+    bool location_need_retry;
+    bool time_need_retry;
     int location_retries;
     int time_retries;
     int weather_retries;
@@ -307,9 +309,8 @@ static void location_result_callback(const location_result_t* result) {
         g_req_status.location_retries++;
 
         if (g_req_status.location_retries < MAX_RETRIES) {
-            ESP_LOGI(TAG, "定位失败，准备重试 %d/%d", g_req_status.location_retries + 1, MAX_RETRIES);
-            vTaskDelay(pdMS_TO_TICKS(1000));
-            app_location_get_location(&g_wifi_scan_result, location_result_callback);
+            ESP_LOGI(TAG, "定位失败，准备异步重试 %d/%d", g_req_status.location_retries + 1, MAX_RETRIES);
+            g_req_status.location_need_retry = true;
             return;
         }
 
@@ -466,7 +467,15 @@ static void task_get_location(void* pvParameters) {
             ESP_LOGI(TAG, "开始定位，WiFi数量: %d (重试 %d/%d)",
                      g_wifi_scan_result.count, g_req_status.location_retries + 1, MAX_RETRIES);
 
+            g_req_status.location_need_retry = false;
             app_location_get_location(&g_wifi_scan_result, location_result_callback);
+
+            if (g_req_status.location_need_retry) {
+                ESP_LOGI(TAG, "异步重试定位...");
+                vTaskDelay(pdMS_TO_TICKS(1000));
+                xSemaphoreGive(location_Sem);
+                continue;
+            }
         }
     }
 }
@@ -663,8 +672,8 @@ void    app_controller_init(void)
     xTaskCreate(task_get_lux_value, "task_get_lux_value", 4096, NULL, 5, NULL);
     xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
-    xTaskCreatePinnedToCore(task_get_location, "task_get_location", 4096, NULL, 5, NULL, 1);
-    xTaskCreate(task_time_sync_and_update, "task_time_sync", 4096, NULL, 5, NULL);
+    xTaskCreatePinnedToCore(task_get_location, "task_get_location", 8192, NULL, 5, NULL, 1);
+    xTaskCreate(task_time_sync_and_update, "task_time_sync", 6144, NULL, 5, NULL);
     xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
     xTaskCreate(task_weather_update, "task_weather", 16384, NULL, 5, NULL);
 }

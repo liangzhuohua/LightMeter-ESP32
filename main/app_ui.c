@@ -524,6 +524,15 @@ static void roller_manual_mode_event_cb(lv_event_t * e) {
     }
 }
 
+static void roller_iso_ev_event_cb(lv_event_t * e) {
+    lv_event_code_t code = lv_event_get_code(e);
+
+    if (code == LV_EVENT_VALUE_CHANGED) {
+        LV_LOG_USER("ISO/EV roller changed, saving config...");
+        ui_calc_port_save_config();
+    }
+}
+
 // ──────────────────────────────────────────────
 // 创建模式选择组件
 // ──────────────────────────────────────────────
@@ -3693,6 +3702,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_height(main_roller_iso, lv_pct(100));
     lv_obj_set_style_text_align(main_roller_iso, LV_TEXT_ALIGN_CENTER, 0);
     lv_roller_set_selected(main_roller_iso, 1, 0);
+    lv_obj_add_event_cb(main_roller_iso, roller_iso_ev_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* EV */
     lv_obj_t* main_obj_ev = lv_obj_create(main_grid_layout);
@@ -3730,6 +3740,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_height(main_roller_ev, lv_pct(100));
     lv_obj_set_style_text_align(main_roller_ev, LV_TEXT_ALIGN_CENTER, 0);
     lv_roller_set_selected(main_roller_ev, 4, 0);
+    lv_obj_add_event_cb(main_roller_ev, roller_iso_ev_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* 模式选择 */
     lv_obj_t* main_obj_mode = lv_obj_create(main_grid_layout);
