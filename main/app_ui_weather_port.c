@@ -8,6 +8,13 @@
 LV_FONT_DECLARE(qweather_icons);
 LV_FONT_DECLARE(SourceHanSansCN_Regular);
 
+static int g_current_indicator_offset = 0;
+
+static void indicator_anim_cb(void* var, int32_t v) {
+    lv_obj_t* indicator = (lv_obj_t*)var;
+    lv_obj_align(indicator, LV_ALIGN_LEFT_MID, (int)v, 0);
+}
+
 static const struct {
     int code;
     uint32_t unicode;
@@ -216,7 +223,16 @@ void app_ui_sunrise_sunset_set_indicator(int position_percent) {
 
     if (indicator_offset < 0) indicator_offset = 0;
 
-    lv_obj_align(timeline_indicator, LV_ALIGN_LEFT_MID, indicator_offset, 0);
+    lv_anim_t a;
+    lv_anim_init(&a);
+    lv_anim_set_var(&a, timeline_indicator);
+    lv_anim_set_exec_cb(&a, indicator_anim_cb);
+    lv_anim_set_values(&a, g_current_indicator_offset, indicator_offset);
+    lv_anim_set_time(&a, 500);
+    lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
+    lv_anim_start(&a);
+
+    g_current_indicator_offset = indicator_offset;
 }
 
 void app_ui_weather_set_icon(const char* icon_code) {
