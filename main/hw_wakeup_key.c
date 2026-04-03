@@ -27,6 +27,10 @@ static void gpio_isr_handler(void* arg) {
                 if (s_callback) {
                     s_callback(WAKEUP_KEY_EVENT_SHORT_PRESS);
                 }
+            } else {
+                if (s_callback) {
+                    s_callback(WAKEUP_KEY_EVENT_LONG_PRESS);
+                }
             }
         }
         s_press_start_time = 0;

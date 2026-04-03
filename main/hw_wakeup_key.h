@@ -4,6 +4,7 @@
 #include "esp_err.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include "driver/gpio.h"
 
 #define WAKEUP_KEY_GPIO GPIO_NUM_9
 #define WAKEUP_KEY_LONG_PRESS_MS 3000

@@ -18,6 +18,7 @@
 #include "app_location.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "esp_sleep.h"
 
 static const char* TAG = "app_controller";
 
@@ -695,6 +696,61 @@ static void task_weather_update(void* pvParameters) {
 }
 
 
+static SemaphoreHandle_t sleep_sem = NULL;
+
+static void task_power_manage(void* arg) {
+    while (1) {
+        if (xSemaphoreTake(sleep_sem, portMAX_DELAY) == pdTRUE) {
+            ESP_LOGI(TAG, "Wakeup key long pressed, entering deep sleep...");
+            app_controller_enter_deep_sleep();
+        }
+    }
+}
+
+static void wakeup_key_callback(wakeup_key_event_t event) {
+    if (event == WAKEUP_KEY_EVENT_LONG_PRESS) {
+        if (sleep_sem != NULL) {
+            BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+            xSemaphoreGiveFromISR(sleep_sem, &xHigherPriorityTaskWoken);
+            if (xHigherPriorityTaskWoken) {
+                portYIELD_FROM_ISR();
+            }
+        }
+    }
+}
+
+void app_controller_wakeup_key_init(void) {
+    if (sleep_sem == NULL) {
+        sleep_sem = xSemaphoreCreateBinary();
+        xTaskCreate(task_power_manage, "task_power_manage", 4096, NULL, 5, NULL);
+    }
+
+    hw_wakeup_key_init();
+    if (hw_wakeup_key_check_wakeup()) {
+        ESP_LOGI(TAG, "Woke up from deep sleep by wakeup key");
+        // Additional logic if needed on wakeup
+    }
+    hw_wakeup_key_set_callback(wakeup_key_callback);
+}
+
+void app_controller_enter_deep_sleep(void) {
+    ESP_LOGI(TAG, "Preparing to enter deep sleep...");
+
+    // 关闭屏幕以节约功耗
+    oled_set_brightness(0);
+
+    if (g_wifi_connected) {
+        WifiOperationMsg msg = { .op = WIFI_OP_DISCONNECT };
+        xQueueSend(wifi_operation_queue, &msg, 0);
+    }
+
+    hw_wakeup_key_enable_sleep_wakeup();
+
+    ESP_LOGI(TAG, "Entering deep sleep now");
+    vTaskDelay(pdMS_TO_TICKS(100)); // Allow log to print
+    esp_deep_sleep_start();
+}
+
 void    app_controller_init(void)
 {
     lux_value_queue = xQueueCreate(1, sizeof(uint32_t));
@@ -707,6 +763,8 @@ void    app_controller_init(void)
 
     ESP_LOGI(TAG, "从NVS加载数据...");
     app_nvs_load_all();
+
+    app_controller_wakeup_key_init();
 
     location_data_t cached_loc;
     weather_data_t cached_weather;
