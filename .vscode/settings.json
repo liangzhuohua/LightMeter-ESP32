@@ -41,7 +41,9 @@
         "math.h": "c",
         "app_weather.h": "c",
         "app_nvs_storage.h": "c",
-        "functional": "c"
+        "functional": "c",
+        "app_exposure_calc.h": "c",
+        "esp_sleep.h": "c"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

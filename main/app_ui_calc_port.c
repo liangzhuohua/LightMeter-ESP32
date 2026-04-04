@@ -245,7 +245,6 @@ void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter, CAM cam
 
     ESP_LOGD(TAG, "Looking for shutter string: %s", buf);
 
-    // 使用字符串分割查找索引
     char* copy = strdup(options);
     char* token = strtok(copy, "\n");
     int index = 0;
@@ -253,7 +252,7 @@ void ui_calc_port_set_shutter_to_roller(lv_obj_t* roller, float shutter, CAM cam
 
     while (token != NULL) {
         ESP_LOGD(TAG, "Checking option %d: %s", index, token);
-        if (strstr(token, buf) != NULL) {
+        if (strcmp(token, buf) == 0) {
             ESP_LOGD(TAG, "Found shutter at index %d", index);
             lv_roller_set_selected(roller, index, LV_ANIM_ON);
             found = 1;
@@ -312,7 +311,6 @@ void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture, LEN l
 
     ESP_LOGD(TAG, "Looking for aperture string: %s", buf);
 
-    // 使用字符串分割查找索引
     char* copy = strdup(options);
     char* token = strtok(copy, "\n");
     int index = 0;
@@ -320,7 +318,7 @@ void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture, LEN l
 
     while (token != NULL) {
         ESP_LOGD(TAG, "Checking option %d: %s", index, token);
-        if (strstr(token, buf) != NULL) {
+        if (strcmp(token, buf) == 0) {
             ESP_LOGD(TAG, "Found aperture at index %d", index);
             lv_roller_set_selected(roller, index, LV_ANIM_ON);
             found = 1;

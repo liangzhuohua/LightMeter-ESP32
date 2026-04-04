@@ -3082,7 +3082,7 @@ void app_ui_create_cam_card(const char* name, int step_type, int min_idx, int ma
 // ──────────────────────────────────────────────
 // 公开函数：创建镜头卡片（供 NVS 恢复使用）
 // ──────────────────────────────────────────────
-void app_ui_create_len_card(const char* name, int step_type, int min_idx, int max_idx, const char* focal_length)
+void app_ui_create_len_card(const char* name, int step_type, int min_idx, int max_idx, const char* focal_length, const char* custom_aperture)
 {
     if (!len_card_win_container) return;
 
@@ -3185,26 +3185,55 @@ void app_ui_create_len_card(const char* name, int step_type, int min_idx, int ma
         lv_textarea_set_text(textarea_focal_length_obj, focal_length);
     }
 
+    lv_obj_t* textarea_custom_aperture_obj = lv_textarea_create(row2);
+    lv_obj_set_size(textarea_custom_aperture_obj, 220, 55);
+    lv_textarea_set_placeholder_text(textarea_custom_aperture_obj, "1.4,2,2.8,4");
+    lv_textarea_set_one_line(textarea_custom_aperture_obj, true);
+    lv_obj_set_style_text_font(textarea_custom_aperture_obj, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_bg_color(textarea_custom_aperture_obj, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_border_color(textarea_custom_aperture_obj, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_border_width(textarea_custom_aperture_obj, 1, 0);
+    lv_obj_set_style_radius(textarea_custom_aperture_obj, 4, 0);
+    lv_obj_add_event_cb(textarea_custom_aperture_obj, custom_aperture_ta_event_cb, LV_EVENT_CLICKED, NULL);
+
+    if (custom_aperture && strlen(custom_aperture) > 0) {
+        lv_textarea_set_text(textarea_custom_aperture_obj, custom_aperture);
+    }
+
     len_card_params_t *params = (len_card_params_t *)malloc(sizeof(len_card_params_t));
     params->dropdown_aperture_step = dropdown_aperture_step;
     params->dropdown_min_aperture = dropdown_min_aperture;
     params->dropdown_max_aperture = dropdown_max_aperture;
     params->textarea_focal_length = textarea_focal_length_obj;
-    params->textarea_custom_aperture = NULL;
+    params->textarea_custom_aperture = textarea_custom_aperture_obj;
     params->custom_aperture_array = NULL;
     params->custom_aperture_count = 0;
     params->current_step_type = step_type;
 
     lv_obj_set_user_data(card, params);
 
-    int stride = (step_type == 0) ? 3 : (step_type == 1) ? 2 : 1;
-    char *options = app_ui_generate_aperture_options(APERTURES_1_3, COUNT_APERTURES_1_3, stride);
-    lv_dropdown_set_options(dropdown_min_aperture, options);
-    lv_dropdown_set_options(dropdown_max_aperture, options);
+    if (step_type == 3) {
+        lv_obj_add_flag(dropdown_min_aperture, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(dropdown_max_aperture, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(textarea_custom_aperture_obj, LV_OBJ_FLAG_HIDDEN);
+
+        if (custom_aperture && strlen(custom_aperture) > 0) {
+            params->custom_aperture_array = parse_custom_aperture_string(custom_aperture, &params->custom_aperture_count);
+        }
+    } else {
+        lv_obj_clear_flag(dropdown_min_aperture, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(dropdown_max_aperture, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(textarea_custom_aperture_obj, LV_OBJ_FLAG_HIDDEN);
+
+        int stride = (step_type == 0) ? 3 : (step_type == 1) ? 2 : 1;
+        char *options = app_ui_generate_aperture_options(APERTURES_1_3, COUNT_APERTURES_1_3, stride);
+        lv_dropdown_set_options(dropdown_min_aperture, options);
+        lv_dropdown_set_options(dropdown_max_aperture, options);
+        lv_dropdown_set_selected(dropdown_min_aperture, min_idx);
+        lv_dropdown_set_selected(dropdown_max_aperture, max_idx);
+    }
 
     lv_dropdown_set_selected(dropdown_aperture_step, step_type);
-    lv_dropdown_set_selected(dropdown_min_aperture, min_idx);
-    lv_dropdown_set_selected(dropdown_max_aperture, max_idx);
 
     lv_obj_add_event_cb(dropdown_aperture_step, aperture_step_event_cb, LV_EVENT_VALUE_CHANGED, params);
     lv_obj_add_event_cb(dropdown_min_aperture, min_aperture_event_cb, LV_EVENT_VALUE_CHANGED, params);

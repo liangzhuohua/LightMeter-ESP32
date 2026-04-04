@@ -59,7 +59,7 @@ char* app_ui_generate_aperture_options(const float* aperture_array, int count, i
 // 相机/镜头卡片创建函数（供 NVS 恢复使用）
 // ──────────────────────────────────────────────
 void app_ui_create_cam_card(const char* name, int step_type, int min_idx, int max_idx, const char* flash_sync);
-void app_ui_create_len_card(const char* name, int step_type, int min_idx, int max_idx, const char* focal_length);
+void app_ui_create_len_card(const char* name, int step_type, int min_idx, int max_idx, const char* focal_length, const char* custom_aperture);
 
 // ──────────────────────────────────────────────
 // WiFi UI 函数（内部使用，请通过 app_ui_wifi_port 访问）

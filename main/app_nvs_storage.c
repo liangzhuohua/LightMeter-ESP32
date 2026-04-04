@@ -220,12 +220,13 @@ int app_nvs_save_lens(void) {
         snprintf(key, sizeof(key), "l%d_cc", i);
         hw_nvs_set_int(NS_LENS, key, params->custom_aperture_count);
 
-        // 暂时跳过保存 custom_aperture_array，可能有内存问题
-        // if (params->custom_aperture_count > 0 && params->custom_aperture_array != NULL) {
-        //     snprintf(key, sizeof(key), "l%d_ca", i);
-        //     hw_nvs_set_blob(NS_LENS, key, params->custom_aperture_array,
-        //                    params->custom_aperture_count * sizeof(float));
-        // }
+        if (params->textarea_custom_aperture != NULL) {
+            snprintf(key, sizeof(key), "l%d_ca", i);
+            const char* custom_aperture = lv_textarea_get_text(params->textarea_custom_aperture);
+            if (custom_aperture != NULL && strlen(custom_aperture) > 0) {
+                hw_nvs_set_string(NS_LENS, key, custom_aperture);
+            }
+        }
 
         lv_obj_t* card_content = lv_obj_get_child(card, 0);
         if (card_content) {
@@ -268,6 +269,7 @@ int app_nvs_load_lens(void) {
         int32_t step_type = 0, min_idx = 0, max_idx = 0;
         char name[64] = {0};
         char focal_length[32] = {0};
+        char custom_aperture[128] = {0};
         size_t len;
 
         snprintf(key, sizeof(key), "l%d_st", i);
@@ -287,10 +289,14 @@ int app_nvs_load_lens(void) {
         len = sizeof(focal_length);
         hw_nvs_get_string(NS_LENS, key, focal_length, &len);
 
-        ESP_LOGI(TAG, "Restoring lens %d: name=%s, step=%d, min=%d, max=%d, focal=%s",
-                 i, name, step_type, min_idx, max_idx, focal_length);
+        snprintf(key, sizeof(key), "l%d_ca", i);
+        len = sizeof(custom_aperture);
+        hw_nvs_get_string(NS_LENS, key, custom_aperture, &len);
 
-        app_ui_create_len_card(name, step_type, min_idx, max_idx, focal_length);
+        ESP_LOGI(TAG, "Restoring lens %d: name=%s, step=%d, min=%d, max=%d, focal=%s, custom=%s",
+                 i, name, step_type, min_idx, max_idx, focal_length, custom_aperture);
+
+        app_ui_create_len_card(name, step_type, min_idx, max_idx, focal_length, custom_aperture);
     }
 
     int32_t selected_idx = 0;
