@@ -57,6 +57,7 @@ extern lv_obj_t* timeline_bar;
 extern lv_obj_t* weather_icon;
 extern lv_obj_t* timeline_title;
 extern lv_obj_t* moon_phase_icon_label;
+extern lv_obj_t* moon_phase_container;
 extern lv_obj_t* now_label;
 
 static int g_sunrise_minutes = 0;
@@ -83,9 +84,11 @@ static void update_timeline_display(bool is_daytime) {
         lv_label_set_text(timeline_title, "日出 & 日落");
         lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
         lv_label_set_text(moon_phase_icon_label, "");
+        lv_obj_set_style_bg_opa(moon_phase_container, LV_OPA_TRANSP, 0);
     } else {
         lv_label_set_text(timeline_title, "月出 & 月落");
         lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
+        lv_obj_set_style_bg_opa(moon_phase_container, LV_OPA_COVER, 0);
         if (strlen(g_moon_phase_icon) > 0) {
             int icon_num = atoi(g_moon_phase_icon);
             uint32_t unicode = get_icon_unicode(icon_num);

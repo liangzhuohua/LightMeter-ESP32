@@ -84,6 +84,7 @@ lv_obj_t* timeline_indicator;           // 时间线指示器
 lv_obj_t* timeline_bar;                 // 时间线进度条
 lv_obj_t* timeline_title;               // 时间线标题
 lv_obj_t* moon_phase_icon_label;        // 月相图标
+lv_obj_t* moon_phase_container;         // 月相图标容器
 lv_obj_t* now_label;                    // Now标签
 // ──────────────────────────────────────────────
 // 模式选择相关
@@ -4040,11 +4041,11 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(timeline_title, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(timeline_title, lv_color_hex(0xFFFFFF), 0);
 
-    lv_obj_t* moon_phase_container = lv_obj_create(title_row);
+    moon_phase_container = lv_obj_create(title_row);
     lv_obj_remove_style_all(moon_phase_container);
     lv_obj_set_size(moon_phase_container, 28, 28);
     lv_obj_set_style_bg_color(moon_phase_container, lv_color_hex(0xffd700), 0);
-    lv_obj_set_style_bg_opa(moon_phase_container, LV_OPA_COVER, 0);
+    lv_obj_set_style_bg_opa(moon_phase_container, LV_OPA_TRANSP, 0);
     lv_obj_set_style_radius(moon_phase_container, 14, 0);
     lv_obj_set_style_border_width(moon_phase_container, 0, 0);
 
