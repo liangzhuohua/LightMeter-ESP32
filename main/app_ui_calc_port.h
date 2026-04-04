@@ -193,6 +193,26 @@ void ui_calc_port_set_manual_wheel_type(ManualWheelType type);
 void ui_calc_port_reset_manual_wheel_type(void);
 
 // ──────────────────────────────────────────────
+// 警告颜色显示
+// ──────────────────────────────────────────────
+
+/**
+ * @brief 根据曝光标志位更新 Tv/Av roller 选中项的颜色
+ * @param shutter_roller 快门滚轮对象
+ * @param aperture_roller 光圈滚轮对象
+ * @param flags 曝光计算返回的标志位
+ *
+ * 颜色规则（优先级从高到低）：
+ *   - overexposure: 橙色 #FF8800 (Tv+Av)
+ *   - underexposure: 蓝色 #4488FF (Tv+Av)
+ *   - shutter_out_of_range: 红色 #FF4444 (仅Tv)
+ *   - aperture_out_of_range: 红色 #FF4444 (仅Av)
+ *   - slow_shutter_warning: 黄色 #FFCC00 (仅Tv)
+ *   - 正常: 白色 #FFFFFF
+ */
+void ui_calc_port_update_roller_warning_color(lv_obj_t* shutter_roller, lv_obj_t* aperture_roller, ExposureFlags flags);
+
+// ──────────────────────────────────────────────
 // 配置保存
 // ──────────────────────────────────────────────
 

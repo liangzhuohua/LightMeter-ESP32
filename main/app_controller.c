@@ -287,9 +287,9 @@ static void task_calc_exposure(void* pvParameters) {
 
         if (example_lvgl_lock(-1))
         {
-            // 直接更新 UI
             ui_calc_port_set_shutter_to_roller(main_roller_shutter, calc_data.shutter, cam);
             ui_calc_port_set_aperture_to_roller(main_roller_aperture, calc_data.aperture, len);
+            ui_calc_port_update_roller_warning_color(main_roller_shutter, main_roller_aperture, calc_data.flags);
             example_lvgl_unlock();
         }
 
@@ -774,7 +774,7 @@ void app_controller_enter_deep_sleep(void) {
     esp_deep_sleep_start();
 }
 
-void    app_controller_init(void)
+void app_controller_init(void)
 {
     lux_value_queue = xQueueCreate(1, sizeof(uint32_t));
     wifi_operation_queue = xQueueCreate(10, sizeof(WifiOperationMsg));

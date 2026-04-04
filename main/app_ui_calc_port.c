@@ -817,7 +817,8 @@ ui_calc_data_t ui_calc_port_exposure(uint32_t lux, int iso, float ev, uint8_t mo
                 calc_data.shutter = calc_shutter;
             }
 
-            if (calc_data.shutter > 0 && calc_data.shutter < 1.0f / 30.0f) {
+            float safe_shutter = 1.0f / fmaxf(len.focal_length, 50.0f);
+            if (calc_data.shutter > safe_shutter) {
                 calc_data.flags.slow_shutter_warning = 1;
             }
         }
@@ -912,4 +913,34 @@ void ui_calc_port_save_config(void)
 {
     extern int app_nvs_save_all(void);
     app_nvs_save_all();
+}
+
+// ──────────────────────────────────────────────
+// 警告颜色显示
+// ──────────────────────────────────────────────
+
+void ui_calc_port_update_roller_warning_color(lv_obj_t* shutter_roller, lv_obj_t* aperture_roller, ExposureFlags flags)
+{
+    lv_color_t tv_color = lv_color_hex(0xFFFFFF);
+    lv_color_t av_color = lv_color_hex(0xFFFFFF);
+
+    if (flags.overexposure) {
+        tv_color = lv_color_hex(0xFF8800);
+        av_color = lv_color_hex(0xFF8800);
+    } else if (flags.underexposure) {
+        tv_color = lv_color_hex(0x4488FF);
+        av_color = lv_color_hex(0x4488FF);
+    } else {
+        if (flags.shutter_out_of_range) {
+            tv_color = lv_color_hex(0xFF4444);
+        } else if (flags.slow_shutter_warning) {
+            tv_color = lv_color_hex(0xFFCC00);
+        }
+        if (flags.aperture_out_of_range) {
+            av_color = lv_color_hex(0xFF4444);
+        }
+    }
+
+    lv_obj_set_style_text_color(shutter_roller, tv_color, LV_PART_SELECTED);
+    lv_obj_set_style_text_color(aperture_roller, av_color, LV_PART_SELECTED);
 }
