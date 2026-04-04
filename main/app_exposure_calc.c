@@ -33,7 +33,7 @@ float exposure_lux_to_ev_incident(float lux, float iso) {
 float exposure_aperture_priority(float lux, float iso, float ev_compensation, float aperture) {
     float ev = exposure_lux_to_ev_incident(lux, iso);
     if (ev == -INFINITY) return -1.0f;
-    ev += ev_compensation;  // 应用 EV 补偿
+    ev -= ev_compensation;  // 应用 EV 补偿（正值增加曝光）
     return powf(aperture, 2) / exp2f(ev);
 }
 
@@ -49,7 +49,7 @@ float exposure_aperture_priority(float lux, float iso, float ev_compensation, fl
 float exposure_shutter_priority(float lux, float iso, float ev_compensation, float shutter) {
     float ev = exposure_lux_to_ev_incident(lux, iso);
     if (ev == -INFINITY || shutter <= 0.0f) return -1.0f;
-    ev += ev_compensation;  // 应用 EV 补偿
+    ev -= ev_compensation;  // 应用 EV 补偿（正值增加曝光）
     return sqrtf(exp2f(ev) * shutter);
 }
 
@@ -78,7 +78,7 @@ float* generate_aperture(float max_f, float min_f, float step_ev, int* out_count
     } else if (fabsf(step_ev - 1.0f) < 0.1f) {
         src_table = APERTURES_1_3;
         src_total_count = COUNT_APERTURES_1_3;
-        stride = 3; 
+        stride = 3;
     } else {
         src_table = APERTURES_1_3;
         src_total_count = COUNT_APERTURES_1_3;
@@ -130,7 +130,7 @@ float* generate_shutter(float max_s, float min_s, float step_ev, int* out_count)
     } else if (fabsf(step_ev - 1.0f) < 0.1f) {
         src_table = SHUTTERS_1_3;
         src_total_count = COUNT_SHUTTERS_1_3;
-        stride = 3; 
+        stride = 3;
     } else {
         src_table = SHUTTERS_1_3;
         src_total_count = COUNT_SHUTTERS_1_3;
@@ -216,7 +216,7 @@ float mapping_shutter(float calculated_s, const float* s_stop, int s_stop_count)
  * @param aperture 输出参数，返回计算的光圈值
  * @param shutter 输出参数，返回计算的快门值
  * @param flags 输出参数，返回曝光状态标志位
- * @note 
+ * @note
  * - 风光模式：优先使用小光圈(f/11)以获得大景深
  * - 人像模式：优先使用大光圈以获得浅景深
  * - 全自动模式：根据环境亮度自动选择合适的光圈
@@ -231,9 +231,9 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
 
     float len_f_max = (len.aperture_stops && len.aperture_stop_count > 0) ? len.aperture_stops[0] : 1.4f;
     float len_f_min = (len.aperture_stops && len.aperture_stop_count > 0) ? len.aperture_stops[len.aperture_stop_count - 1] : 22.0f;
-    
-    float cam_s_fastest = 0.001f; 
-    float cam_s_slowest = 1.0f;   
+
+    float cam_s_fastest = 0.001f;
+    float cam_s_slowest = 1.0f;
     if (cam.shutter_stops && cam.shutter_stop_count > 0) {
         float v1 = cam.shutter_stops[0];
         float v2 = cam.shutter_stops[cam.shutter_stop_count - 1];
@@ -246,7 +246,7 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
         case EXPOSURE_LANDSCAPE: target_f = 11.0f; break;
         case EXPOSURE_PORTRAIT:  target_f = (len_f_max < 2.0f) ? 2.0f : len_f_max; break;
         default: {
-            float ev = exposure_lux_to_ev_incident(lux, iso) + ev_compensation;
+            float ev = exposure_lux_to_ev_incident(lux, iso) - ev_compensation;  // 正值增加曝光
             if (ev >= 15.0f) target_f = 11.0f;
             else if (ev >= 12.0f) target_f = 8.0f;
             else if (ev >= 10.0f) target_f = 5.6f;
@@ -280,11 +280,11 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
         if (re_calculated_f > len_f_min) {
             target_f = len_f_min;
             flags->overexposure = 1;
-        } 
+        }
         else if (re_calculated_f < len_f_max) {
             target_f = len_f_max;
             flags->underexposure = 1;
-        } 
+        }
         else {
             target_f = re_calculated_f;
         }
@@ -300,10 +300,8 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
         flags->aperture_out_of_range = 1;
     }
 
-    *aperture = (len.aperture_stops) ? 
+    *aperture = (len.aperture_stops) ?
                 mapping_aperture(target_f, len.aperture_stops, len.aperture_stop_count) : target_f;
-    *shutter = (cam.shutter_stops) ? 
+    *shutter = (cam.shutter_stops) ?
                mapping_shutter(target_s, cam.shutter_stops, cam.shutter_stop_count) : target_s;
 }
-
-

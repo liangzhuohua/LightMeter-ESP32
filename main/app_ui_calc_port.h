@@ -209,7 +209,7 @@ void ui_calc_port_reset_manual_wheel_type(void);
  *   - aperture_out_of_range: 红色 #FF4444 (仅Av)
  *   - slow_shutter_warning: 黄色 #FFCC00 (仅Tv)
  *   - 正常: 白色 #FFFFFF
- */
+ **/
 void ui_calc_port_update_roller_warning_color(lv_obj_t* shutter_roller, lv_obj_t* aperture_roller, ExposureFlags flags);
 
 // ──────────────────────────────────────────────
