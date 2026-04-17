@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "ESP32S3-IDF_AMOLED_LVGL-V8",
-    "project_version":    "46da220-dirty",
+    "project_version":    "94e8687-dirty",
     "project_path":       "/home/ziyue/esp/esp32_my/esp32s3_project",
     "idf_path":           "/home/ziyue/esp/esp-idf",
     "build_dir":          "/home/ziyue/esp/esp32_my/esp32s3_project/build",

@@ -572,16 +572,18 @@ static void create_mode_selector(lv_obj_t * parent) {
     lv_obj_clear_flag(parent, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_clear_flag(parent, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_CHAIN);  // 额外清除链式滚动
 
-    lv_coord_t parent_w = lv_obj_get_width(parent);
-    lv_coord_t parent_h = lv_obj_get_height(parent);
+    lv_coord_t scr_w = lv_obj_get_width(lv_scr_act());
+    lv_coord_t scr_h = lv_obj_get_height(lv_scr_act());
+    lv_coord_t parent_w = scr_w * 96 / 100 / 2 - 28;
+    lv_coord_t parent_h = scr_h * 93 / 100 * 3 / 20 - 8;
 
     lv_coord_t ref_size = LV_MIN(
-        (lv_coord_t)(parent_w * 0.88f / 5.4f),
-        parent_h - 18
+        (lv_coord_t)(parent_w * 0.92f / 4.3f),
+        parent_h - 8
     );
 
     if (ref_size < 28) ref_size = 28;
-    if (ref_size > 68) ref_size = 68;
+    if (ref_size > 80) ref_size = 80;
 
     lv_coord_t btn_size = ref_size;
 
@@ -3566,7 +3568,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_layout(main_grid_layout, LV_LAYOUT_GRID);
 
     static const lv_coord_t col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static const lv_coord_t row_dsc[] = {LV_GRID_FR(2), LV_GRID_FR(5), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static const lv_coord_t row_dsc[] = {LV_GRID_FR(4), LV_GRID_FR(10), LV_GRID_FR(3), LV_GRID_FR(3), LV_GRID_TEMPLATE_LAST};
 
     lv_obj_set_style_grid_column_dsc_array(main_grid_layout, col_dsc, 0);
     lv_obj_set_style_grid_row_dsc_array(main_grid_layout, row_dsc, 0);
@@ -3684,7 +3686,9 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(main_obj_shutter, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(main_obj_shutter, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
 
-    lv_obj_set_style_pad_row(main_obj_shutter, 10, 0);
+    lv_obj_set_style_pad_row(main_obj_shutter, 4, 0);
+    lv_obj_set_scrollbar_mode(main_obj_shutter, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_clear_flag(main_obj_shutter, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t* main_label_shutter = lv_label_create(main_obj_shutter);
     lv_label_set_text(main_label_shutter, "Tv");
@@ -3708,7 +3712,9 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(main_obj_aperture, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(main_obj_aperture, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
 
-    lv_obj_set_style_pad_row(main_obj_aperture, 10, 0);
+    lv_obj_set_style_pad_row(main_obj_aperture, 4, 0);
+    lv_obj_set_scrollbar_mode(main_obj_aperture, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_clear_flag(main_obj_aperture, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t* main_label_aperture = lv_label_create(main_obj_aperture);
     lv_label_set_text(main_label_aperture, "Av");
@@ -3817,15 +3823,9 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_scrollbar_mode(main_obj_mode, LV_SCROLLBAR_MODE_OFF);
     lv_obj_clear_flag(main_obj_mode, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t* main_label_mode = lv_label_create(main_obj_mode);
-    lv_label_set_text(main_label_mode, "Mode");
-    lv_obj_set_style_text_font(main_label_mode, &lv_font_montserrat_20, LV_STATE_DEFAULT);
-    lv_obj_set_width(main_label_mode, LV_SIZE_CONTENT);
-    lv_obj_set_style_text_align(main_label_mode, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_style_align(main_label_mode, LV_ALIGN_CENTER, 0);
-
     main_obj_mode_select = lv_obj_create(main_obj_mode);
-    lv_obj_set_width(main_obj_mode_select, lv_pct(70));
+    lv_obj_remove_style_all(main_obj_mode_select);
+    lv_obj_set_width(main_obj_mode_select, lv_pct(100));
     lv_obj_set_height(main_obj_mode_select, lv_pct(100));
 
     create_mode_selector(main_obj_mode_select);
