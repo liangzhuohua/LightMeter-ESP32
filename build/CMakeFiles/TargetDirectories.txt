@@ -929,3 +929,10 @@
 /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_lcd_touch_cst820/CMakeFiles/install.dir
 /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_lcd_touch_cst820/CMakeFiles/install/local.dir
 /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_lcd_touch_cst820/CMakeFiles/install/strip.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/__idf_max17055.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/edit_cache.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/rebuild_cache.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/list_install_components.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/install.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/install/local.dir
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/CMakeFiles/install/strip.dir

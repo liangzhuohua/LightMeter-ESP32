@@ -15,6 +15,8 @@
 #include "hw_veml7700.h"
 #include "hw_oled.h"
 #include "hw_wifi.h"
+#include "hw_max17055.h"
+#include "app_ui_battery_port.h"
 #include "app_location.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
@@ -680,6 +682,23 @@ static void task_time_update_periodic(void* pvParameters) {
     }
 }
 
+static void task_battery_update(void* pvParameters) {
+    float soc = 0.0f;
+    float voltage = 0.0f;
+
+    while (1) {
+        hw_max17055_get_soc(&soc);
+        hw_max17055_get_vcell(&voltage);
+
+        if (example_lvgl_lock(-1)) {
+            app_ui_battery_update(soc, voltage);
+            example_lvgl_unlock();
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10000));
+    }
+}
+
 static void task_weather_update(void* pvParameters) {
     while (1) {
         if (xSemaphoreTake(weather_Sem, portMAX_DELAY) == pdTRUE) {
@@ -888,6 +907,9 @@ void app_controller_init(void)
     xTaskCreatePinnedToCore(task_time_sync_and_update, "task_time_sync", 6144, NULL, 5, NULL, 0);
     xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_weather_update, "task_weather", 16384, NULL, 5, NULL, 0);
+
+    hw_max17055_init();
+    xTaskCreate(task_battery_update, "task_battery", 3072, NULL, 5, NULL);
 }
 
 const char* app_controller_get_current_ssid(void) {

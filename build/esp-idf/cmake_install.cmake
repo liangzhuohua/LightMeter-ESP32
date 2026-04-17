@@ -607,3 +607,8 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_lcd_touch_cst820/cmake_install.cmake")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/cmake_install.cmake")
+endif()
+

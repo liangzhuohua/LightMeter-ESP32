@@ -173,3 +173,4 @@ $<TARGET_FILE:__idf_veml7700>
 $<TARGET_FILE:__idf_espressif__esp_lcd_touch>
 $<TARGET_FILE:idf::esp_lcd_qspi_amoled>
 $<TARGET_FILE:idf::esp_lcd_touch_cst820>
+$<TARGET_FILE:idf::max17055>

@@ -177,6 +177,7 @@ static lv_obj_t *connected_wifi_card = NULL;
 static char wifi_connected_ssid[33] = {0};
 static char wifi_connecting_ssid[33] = {0};
 static bool g_wifi_enabled = false;
+float g_battery_soc = 80.0f;
 
 lv_obj_t *time_time_label = NULL;
 lv_obj_t *time_date_label = NULL;
@@ -198,7 +199,22 @@ static void update_status_bar_wifi_icon(void) {
         wifi_icon = LV_SYMBOL_CLOSE;
     }
 
-    lv_label_set_text_fmt(main_table_status, "%s   80%% " LV_SYMBOL_BATTERY_3, wifi_icon);
+    const char *batt_icon;
+    if (g_battery_soc >= 87.5f)
+        batt_icon = LV_SYMBOL_BATTERY_FULL;
+    else if (g_battery_soc >= 62.5f)
+        batt_icon = LV_SYMBOL_BATTERY_3;
+    else if (g_battery_soc >= 37.5f)
+        batt_icon = LV_SYMBOL_BATTERY_2;
+    else if (g_battery_soc >= 12.5f)
+        batt_icon = LV_SYMBOL_BATTERY_1;
+    else
+        batt_icon = LV_SYMBOL_BATTERY_EMPTY;
+
+    uint8_t soc_int = (uint8_t)g_battery_soc;
+    if (soc_int > 100) soc_int = 100;
+
+    lv_label_set_text_fmt(main_table_status, "%s   %d%% %s", wifi_icon, soc_int, batt_icon);
 }
 
 
@@ -3523,7 +3539,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
 
     /* 右侧状态栏 */
     main_table_status = lv_label_create(main_flex_layout);
-    lv_label_set_text(main_table_status, LV_SYMBOL_CLOSE "   80% " LV_SYMBOL_BATTERY_3 );
+    lv_label_set_text(main_table_status, LV_SYMBOL_CLOSE "   --% " LV_SYMBOL_BATTERY_EMPTY );
     lv_obj_set_style_text_font(main_table_status, font, LV_STATE_DEFAULT);
 
     /* ────────────────────────────────────────────── */

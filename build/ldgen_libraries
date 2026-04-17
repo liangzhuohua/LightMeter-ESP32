@@ -173,3 +173,4 @@
 /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/espressif__esp_lcd_touch/libespressif__esp_lcd_touch.a
 /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_lcd_qspi_amoled/libesp_lcd_qspi_amoled.a
 /home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/esp_lcd_touch_cst820/libesp_lcd_touch_cst820.a
+/home/ziyue/esp/esp32_my/esp32s3_project/build/esp-idf/max17055/libmax17055.a

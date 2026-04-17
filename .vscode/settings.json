@@ -43,7 +43,8 @@
         "app_nvs_storage.h": "c",
         "functional": "c",
         "app_exposure_calc.h": "c",
-        "esp_sleep.h": "c"
+        "esp_sleep.h": "c",
+        "hw_max17055.h": "c"
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,

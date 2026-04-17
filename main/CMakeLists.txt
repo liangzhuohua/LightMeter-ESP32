@@ -28,6 +28,8 @@ idf_component_register(
     "qweather_icons.c"
     "app_nvs_storage.c"
     "hw_wakeup_key.c"
+    "hw_max17055.c"
+    "app_ui_battery_port.c"
 
     INCLUDE_DIRS ".")
 
