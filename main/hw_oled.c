@@ -1,6 +1,5 @@
 #include "hw_oled.h"
 
-
 static const char *TAG = "example";
 static SemaphoreHandle_t lvgl_mux = NULL;
 
@@ -27,12 +26,10 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     uint8_t temp = 0;
     uint16_t pixel_num = (offsetx2 - offsetx1 + 1) * (offsety2 - offsety1 + 1);
 
-    // Special dealing for first pixel
     temp = color_map[0].ch.blue;
     *to++ = color_map[0].ch.red;
     *to++ = color_map[0].ch.green;
     *to++ = temp;
-    // Normal dealing for other pixels
     for (int i = 1; i < pixel_num; i++) {
         *to++ = color_map[i].ch.red;
         *to++ = color_map[i].ch.green;
@@ -40,7 +37,6 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     }
 #endif
 
-    // copy a buffer's content to a specific area of the display
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 }
 
@@ -120,7 +116,11 @@ static void example_lvgl_port_task(void *arg)
         } else if (task_delay_ms < EXAMPLE_LVGL_TASK_MIN_DELAY_MS) {
             task_delay_ms = EXAMPLE_LVGL_TASK_MIN_DELAY_MS;
         }
-        vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+        if (task_delay_ms > 0) {
+            vTaskDelay(pdMS_TO_TICKS(task_delay_ms));
+        } else {
+            taskYIELD();
+        }
     }
 }
 
@@ -220,20 +220,12 @@ void oled_lvgl_init(void) {
 
     ESP_LOGI(TAG, "Initialize LVGL library");
     lv_init();
-    // alloc draw buffers used by LVGL
-    // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-    // Use PSRAM for larger buffer to improve performance
-    // lv_color_t *buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
-    // assert(buf1);
-    // lv_color_t *buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
-    // assert(buf2);
-    // // initialize LVGL draw buffers
-    // lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT);
 
-    lv_color_t *buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 40 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);  // 约 1/8 ~ 1/7 高度
-    lv_color_t *buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 40 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * 40);   // 双缓冲
+    lv_color_t *buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    assert(buf1);
+    lv_color_t *buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    assert(buf2);
+    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT);
 
 
     ESP_LOGI(TAG, "Register display driver to LVGL");
