@@ -23,5 +23,6 @@ void app_time_wait_sync(uint32_t timeout_ms);
 esp_err_t app_time_save_to_rtc(void);
 esp_err_t app_time_restore_from_rtc(void);
 bool app_time_has_rtc_backup(void);
+void app_time_set_timezone(double longitude);
 
 #endif

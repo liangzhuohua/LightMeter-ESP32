@@ -6,10 +6,13 @@
 #include "esp_timer.h"
 #include <time.h>
 #include <sys/time.h>
+#include <stdio.h>
+#include <math.h>
 
 static const char* TAG = "app_time";
 static bool s_time_synced = false;
 static bool s_sntp_initialized = false;
+static int s_timezone_offset = 8;
 
 typedef struct {
     int64_t timestamp_us;
@@ -18,6 +21,19 @@ typedef struct {
 } rtc_time_backup_t;
 
 static RTC_DATA_ATTR rtc_time_backup_t s_rtc_time_backup = {0};
+
+static void apply_timezone(void)
+{
+    char tz[32];
+    if (s_timezone_offset >= 0) {
+        snprintf(tz, sizeof(tz), "CST-%d", s_timezone_offset);
+    } else {
+        snprintf(tz, sizeof(tz), "CST%d", s_timezone_offset);
+    }
+    setenv("TZ", tz, 1);
+    tzset();
+    ESP_LOGI(TAG, "时区设置为 UTC%+d (TZ=%s)", s_timezone_offset, tz);
+}
 
 static void time_sync_notification_cb(struct timeval *tv) {
     s_time_synced = true;
@@ -41,8 +57,7 @@ esp_err_t app_time_sntp_init(void) {
 
     esp_sntp_init();
 
-    setenv("TZ", "CST-8", 1);
-    tzset();
+    apply_timezone();
 
     s_sntp_initialized = true;
 
@@ -83,7 +98,6 @@ esp_err_t app_time_get_now(app_time_t* time) {
 
     time->year = timeinfo.tm_year + 1900;
 
-    // 增加对未同步时间的判断（1970年左右）
     if (time->year < 2020) {
         return ESP_FAIL;
     }
@@ -115,17 +129,12 @@ void app_time_wait_sync(uint32_t timeout_ms) {
 }
 
 esp_err_t app_time_save_to_rtc(void) {
-    // ESP-IDF 会自动在 Deep Sleep 期间通过 RTC 定时器维护系统时间（UTC）
-    // 所以这里不需要手动保存时间到 RTC_DATA_ATTR
     ESP_LOGI(TAG, "系统时间将由底层 RTC 自动维护");
     return ESP_OK;
 }
 
 esp_err_t app_time_restore_from_rtc(void) {
-    // 从 Deep Sleep 唤醒后，系统时间（UTC）已经由底层自动恢复
-    // 但环境变量（如时区 TZ）在唤醒后会丢失，需要重新设置
-    setenv("TZ", "CST-8", 1);
-    tzset();
+    apply_timezone();
 
     app_time_t time;
     if (app_time_get_now(&time) == ESP_OK) {
@@ -138,4 +147,20 @@ esp_err_t app_time_restore_from_rtc(void) {
 
 bool app_time_has_rtc_backup(void) {
     return s_rtc_time_backup.valid;
+}
+
+void app_time_set_timezone(double longitude)
+{
+    int offset = (int)round(longitude / 15.0);
+    if (offset < -12) offset = -12;
+    if (offset > 14) offset = 14;
+
+    if (offset == s_timezone_offset) {
+        ESP_LOGI(TAG, "时区未变化: UTC%+d", offset);
+        return;
+    }
+
+    ESP_LOGI(TAG, "根据经度 %.2f 计算时区: UTC%+d", longitude, offset);
+    s_timezone_offset = offset;
+    apply_timezone();
 }

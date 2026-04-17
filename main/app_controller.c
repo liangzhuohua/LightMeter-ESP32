@@ -368,6 +368,7 @@ static void location_result_callback(const location_result_t* result) {
         g_longitude = result->longitude;
         g_location_ready = true;
         g_req_status.location_success = true;
+        app_time_set_timezone(result->longitude);
         app_nvs_update_location_sync_timestamp();
 
         char city[64] = {0};
