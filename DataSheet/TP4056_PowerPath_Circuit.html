@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TP4056 + Power Path 电路图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00d9ff;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .circuit-container {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .circuit-svg {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: block;
+        }
+        .section {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: #00d9ff;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #00d9ff;
+            padding-bottom: 10px;
+        }
+        .section h3 {
+            color: #ffd700;
+            margin: 15px 0 10px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #333;
+        }
+        th {
+            background: #0f3460;
+            color: #00d9ff;
+        }
+        tr:nth-child(even) {
+            background: #1a1a2e;
+        }
+        tr:hover {
+            background: #0f3460;
+        }
+        .status-table {
+            margin-top: 20px;
+        }
+        .status-running {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .status-finished {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .status-idle {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .highlight {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #00d9ff;
+            margin: 15px 0;
+        }
+        .formula {
+            background: #0f3460;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            color: #ffd700;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .note {
+            background: #2d132c;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+            margin: 15px 0;
+        }
+        .note strong {
+            color: #ff6b6b;
+        }
+        ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .gpio-info {
+            background: #1e3a5f;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .gpio-info code {
+            background: #0f3460;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TP4056 + Power Path 电路设计</h1>
+        <p class="subtitle">锂电池充电管理 + 边充边用电源路径切换方案</p>
+
+        <div class="circuit-container">
+            <svg class="circuit-svg" viewBox="0 0 1100 700" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#00d9ff"/>
+                    </marker>
+                    <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#ff6b6b"/>
+                    </marker>
+                    <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#4ecdc4"/>
+                    </marker>
+                    <linearGradient id="usbGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#4ecdc4;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#44a08d;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="batteryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff8c00;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="espGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+
+                <rect x="0" y="0" width="1100" height="700" fill="#16213e"/>
+
+                <text x="550" y="35" text-anchor="middle" fill="#00d9ff" font-size="24" font-weight="bold">TP4056 + Power Path 电路原理图</text>
+
+                <rect x="30" y="60" width="120" height="50" rx="8" fill="url(#usbGrad)" stroke="#4ecdc4" stroke-width="2"/>
+                <text x="90" y="90" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">USB 5V</text>
+                <text x="90" y="105" text-anchor="middle" fill="#fff" font-size="10">(Type-C)</text>
+
+                <line x1="150" y1="85" x2="220" y2="85" stroke="#4ecdc4" stroke-width="3"/>
+                <circle cx="220" cy="85" r="5" fill="#4ecdc4"/>
+
+                <line x1="220" y1="85" x2="220" y2="150" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="220" y1="85" x2="320" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+
+                <rect x="320" y="55" width="40" height="60" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="340" y="90" text-anchor="middle" fill="#fff" font-size="10">R3</text>
+                <text x="340" y="105" text-anchor="middle" fill="#ffd700" font-size="9">100Ω</text>
+
+                <line x1="360" y1="85" x2="420" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="420" y1="85" x2="420" y2="150" stroke="#4ecdc4" stroke-width="2"/>
+
+                <rect x="350" y="150" width="140" height="180" rx="10" fill="#1a1a2e" stroke="#00d9ff" stroke-width="2"/>
+                <text x="420" y="175" text-anchor="middle" fill="#00d9ff" font-size="16" font-weight="bold">TP4056</text>
+                
+                <text x="360" y="205" fill="#aaa" font-size="11">VCC</text>
+                <circle cx="350" cy="200" r="4" fill="#4ecdc4"/>
+                
+                <text x="360" y="235" fill="#aaa" font-size="11">BAT</text>
+                <circle cx="350" cy="230" r="4" fill="#ffd700"/>
+                
+                <text x="360" y="265" fill="#aaa" font-size="11">CHRG</text>
+                <circle cx="350" cy="260" r="4" fill="#ff6b6b"/>
+                
+                <text x="360" y="295" fill="#aaa" font-size="11">STDBY</text>
+                <circle cx="350" cy="290" r="4" fill="#4ecdc4"/>
+                
+                <text x="360" y="320" fill="#aaa" font-size="11">PROG</text>
+                <circle cx="350" cy="315" r="4" fill="#888"/>
+
+                <rect x="470" y="305" width="30" height="50" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="485" y="335" text-anchor="middle" fill="#fff" font-size="10">R1</text>
+                <text x="485" y="350" text-anchor="middle" fill="#ffd700" font-size="8">2.4kΩ</text>
+                <line x1="470" y1="315" x2="455" y2="315" stroke="#888" stroke-width="2"/>
+                <line x1="485" y1="355" x2="485" y2="380" stroke="#888" stroke-width="2"/>
+                <text x="485" y="395" text-anchor="middle" fill="#888" font-size="10">GND</text>
+
+                <line x1="350" y1="200" x2="220" y2="200" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="220" y1="150" x2="220" y2="200" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="220" y1="200" x2="220" y2="200" stroke="#4ecdc4" stroke-width="2"/>
+
+                <rect x="550" y="55" width="50" height="30" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="575" y="75" text-anchor="middle" fill="#fff" font-size="10">C1</text>
+                <text x="575" y="100" text-anchor="middle" fill="#ffd700" font-size="9">10μF</text>
+                <line x1="575" y1="85" x2="575" y2="110" stroke="#888" stroke-width="1"/>
+                <text x="575" y="125" text-anchor="middle" fill="#888" font-size="10">GND</text>
+                <line x1="420" y1="85" x2="550" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="575" y1="55" x2="575" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+
+                <line x1="220" y1="85" x2="220" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+
+                <polygon points="680,70 720,70 720,60 750,80 720,100 720,90 680,90" fill="#333" stroke="#ff6b6b" stroke-width="2"/>
+                <text x="715" y="85" text-anchor="middle" fill="#ff6b6b" font-size="10">D1</text>
+                <text x="715" y="115" text-anchor="middle" fill="#ffd700" font-size="9">SS34</text>
+                <line x1="575" y1="85" x2="680" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="750" y1="85" x2="850" y2="85" stroke="#4ecdc4" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <line x1="350" y1="230" x2="180" y2="230" stroke="#ffd700" stroke-width="2"/>
+                <line x1="180" y1="230" x2="180" y2="450" stroke="#ffd700" stroke-width="2"/>
+
+                <rect x="130" y="450" width="100" height="60" rx="8" fill="url(#batteryGrad)" stroke="#ffd700" stroke-width="2"/>
+                <text x="180" y="475" text-anchor="middle" fill="#000" font-size="12" font-weight="bold">锂电池</text>
+                <text x="180" y="495" text-anchor="middle" fill="#000" font-size="11">3.7V 300mAh</text>
+                <rect x="230" y="470" width="15" height="20" rx="2" fill="#ffd700" stroke="#ffd700"/>
+
+                <rect x="250" y="470" width="30" height="40" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="265" y="495" text-anchor="middle" fill="#fff" font-size="10">C2</text>
+                <text x="265" y="525" text-anchor="middle" fill="#ffd700" font-size="9">10μF</text>
+                <line x1="265" y1="510" x2="265" y2="540" stroke="#888" stroke-width="1"/>
+                <text x="265" y="555" text-anchor="middle" fill="#888" font-size="10">GND</text>
+                <line x1="230" y1="480" x2="250" y2="480" stroke="#ffd700" stroke-width="2"/>
+
+                <line x1="350" y1="260" x2="80" y2="260" stroke="#ff6b6b" stroke-width="2"/>
+                <text x="60" y="255" fill="#ff6b6b" font-size="11">CHRG</text>
+                <circle cx="80" cy="260" r="4" fill="#ff6b6b"/>
+                <line x1="80" y1="260" x2="80" y2="600" stroke="#ff6b6b" stroke-width="2"/>
+
+                <line x1="350" y1="290" x2="120" y2="290" stroke="#4ecdc4" stroke-width="2"/>
+                <text x="60" y="295" fill="#4ecdc4" font-size="11">STDBY</text>
+                <circle cx="120" cy="290" r="4" fill="#4ecdc4"/>
+                <line x1="120" y1="290" x2="120" y2="600" stroke="#4ecdc4" stroke-width="2"/>
+
+                <rect x="50" y="600" width="180" height="70" rx="10" fill="url(#espGrad)" stroke="#667eea" stroke-width="2"/>
+                <text x="140" y="630" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">ESP32-S3</text>
+                <text x="90" y="655" text-anchor="middle" fill="#fff" font-size="10">GPIO_4</text>
+                <circle cx="80" cy="650" r="4" fill="#ff6b6b"/>
+                <text x="160" y="655" text-anchor="middle" fill="#fff" font-size="10">GPIO_5</text>
+                <circle cx="120" cy="650" r="4" fill="#4ecdc4"/>
+
+                <rect x="550" y="430" width="120" height="100" rx="8" fill="#1a1a2e" stroke="#ffd700" stroke-width="2"/>
+                <text x="610" y="455" text-anchor="middle" fill="#ffd700" font-size="14" font-weight="bold">Q1</text>
+                <text x="610" y="475" text-anchor="middle" fill="#aaa" font-size="10">AO3401 (PMOS)</text>
+                
+                <circle cx="570" cy="500" r="5" fill="#888"/>
+                <text x="555" y="505" fill="#aaa" font-size="10">G</text>
+                
+                <circle cx="610" cy="500" r="5" fill="#ffd700"/>
+                <text x="610" y="520" fill="#aaa" font-size="10">S</text>
+                
+                <circle cx="650" cy="500" r="5" fill="#4ecdc4"/>
+                <text x="655" y="505" fill="#aaa" font-size="10">D</text>
+
+                <line x1="180" y1="480" x2="550" y2="480" stroke="#ffd700" stroke-width="2"/>
+                <line x1="550" y1="480" x2="550" y2="500" stroke="#ffd700" stroke-width="2"/>
+                <line x1="550" y1="500" x2="565" y2="500" stroke="#ffd700" stroke-width="2"/>
+                <line x1="570" y1="500" x2="610" y2="500" stroke="#ffd700" stroke-width="2"/>
+
+                <line x1="570" y1="505" x2="570" y2="560" stroke="#888" stroke-width="2"/>
+                <line x1="570" y1="560" x2="570" y2="580" stroke="#888" stroke-width="2"/>
+                
+                <rect x="555" y="560" width="30" height="40" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="570" y="585" text-anchor="middle" fill="#fff" font-size="10">R5</text>
+                <text x="570" y="615" text-anchor="middle" fill="#ffd700" font-size="9">10kΩ</text>
+                <line x1="570" y1="600" x2="570" y2="640" stroke="#888" stroke-width="1"/>
+                <text x="570" y="660" text-anchor="middle" fill="#888" font-size="10">GND</text>
+
+                <line x1="420" y1="85" x2="420" y2="430" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="420" y1="430" x2="500" y2="430" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="500" y1="430" x2="500" y2="560" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="500" y1="560" x2="555" y2="560" stroke="#4ecdc4" stroke-width="2"/>
+
+                <rect x="480" y="560" width="30" height="40" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="495" y="585" text-anchor="middle" fill="#fff" font-size="10">R4</text>
+                <text x="495" y="615" text-anchor="middle" fill="#ffd700" font-size="9">10kΩ</text>
+                <line x1="495" y1="600" x2="495" y2="640" stroke="#888" stroke-width="1"/>
+                <text x="495" y="660" text-anchor="middle" fill="#888" font-size="10">GND</text>
+
+                <line x1="650" y1="500" x2="750" y2="500" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="750" y1="85" x2="750" y2="500" stroke="#4ecdc4" stroke-width="2"/>
+
+                <line x1="750" y1="85" x2="850" y2="85" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="750" y1="500" x2="850" y2="500" stroke="#4ecdc4" stroke-width="2"/>
+                <line x1="850" y1="85" x2="850" y2="500" stroke="#4ecdc4" stroke-width="2"/>
+
+                <circle cx="850" cy="290" r="8" fill="#4ecdc4"/>
+                <text x="850" y="295" text-anchor="middle" fill="#000" font-size="12" font-weight="bold">+</text>
+
+                <line x1="850" y1="290" x2="950" y2="290" stroke="#4ecdc4" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <text x="900" y="280" fill="#4ecdc4" font-size="12">VOUT</text>
+                <text x="900" y="310" fill="#aaa" font-size="10">(3.7V - 5V)</text>
+
+                <rect x="950" y="250" width="120" height="80" rx="10" fill="url(#espGrad)" stroke="#667eea" stroke-width="2"/>
+                <text x="1010" y="285" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">ESP32-S3</text>
+                <text x="1010" y="310" text-anchor="middle" fill="#fff" font-size="11">供电输入</text>
+
+                <rect x="920" y="320" width="50" height="40" rx="3" fill="#333" stroke="#666" stroke-width="1"/>
+                <text x="945" y="345" text-anchor="middle" fill="#fff" font-size="10">C4</text>
+                <text x="945" y="375" text-anchor="middle" fill="#ffd700" font-size="9">100μF</text>
+                <line x1="945" y1="360" x2="945" y2="400" stroke="#888" stroke-width="1"/>
+                <text x="945" y="420" text-anchor="middle" fill="#888" font-size="10">GND</text>
+                <line x1="945" y1="320" x2="945" y2="290" stroke="#4ecdc4" stroke-width="2"/>
+
+                <rect x="800" y="530" width="80" height="40" rx="5" fill="#2d132c" stroke="#ff6b6b" stroke-width="1"/>
+                <text x="840" y="555" text-anchor="middle" fill="#ff6b6b" font-size="11">GND</text>
+
+                <line x1="180" y1="510" x2="180" y2="550" stroke="#888" stroke-width="2"/>
+                <line x1="180" y1="550" x2="840" y2="550" stroke="#888" stroke-width="2"/>
+                <line x1="840" y1="550" x2="840" y2="530" stroke="#888" stroke-width="2"/>
+
+                <text x="100" y="180" fill="#ff6b6b" font-size="11">充电电流路径</text>
+                <path d="M 200 185 Q 250 185 280 230" stroke="#ff6b6b" stroke-width="2" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowhead-red)"/>
+
+                <text x="780" y="150" fill="#4ecdc4" font-size="11">USB供电路径</text>
+                <path d="M 760 85 Q 800 85 820 200" stroke="#4ecdc4" stroke-width="2" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowhead-green)"/>
+
+                <text x="700" y="420" fill="#ffd700" font-size="11">电池供电路径</text>
+                <path d="M 280 480 Q 400 480 500 500" stroke="#ffd700" stroke-width="2" fill="none" stroke-dasharray="5,3"/>
+
+                <rect x="30" y="680" width="200" height="15" rx="3" fill="none"/>
+            </svg>
+        </div>
+
+        <div class="section">
+            <h2>工作原理</h2>
+            <h3>USB插入时（充电+供电）</h3>
+            <div class="highlight">
+                <ul>
+                    <li><strong>Q1栅极电压</strong> ≈ 5V（通过R4从USB获取）</li>
+                    <li><strong>Q1源极电压</strong> ≈ 3.7V（电池电压）</li>
+                    <li><strong>Vgs</strong> = 5V - 3.7V = 1.3V > 0 → <span class="status-running">Q1截止</span></li>
+                    <li><strong>供电路径</strong>：USB 5V → D1 → VOUT → ESP32</li>
+                    <li><strong>充电路径</strong>：USB 5V → TP4056 → 电池</li>
+                </ul>
+            </div>
+            
+            <h3>USB拔出时（电池供电）</h3>
+            <div class="highlight">
+                <ul>
+                    <li><strong>Q1栅极电压</strong> ≈ 0V（R5下拉到GND）</li>
+                    <li><strong>Q1源极电压</strong> ≈ 3.7V（电池电压）</li>
+                    <li><strong>Vgs</strong> = 0V - 3.7V = -3.7V < Vgs(th) → <span class="status-finished">Q1导通</span></li>
+                    <li><strong>供电路径</strong>：电池 → Q1 → VOUT → ESP32</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>元件清单 (BOM)</h2>
+            <table>
+                <tr>
+                    <th>元件</th>
+                    <th>型号/参数</th>
+                    <th>数量</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>U1</td>
+                    <td>TP4056</td>
+                    <td>1</td>
+                    <td>锂电池充电管理IC</td>
+                </tr>
+                <tr>
+                    <td>Q1</td>
+                    <td>AO3401 (PMOS)</td>
+                    <td>1</td>
+                    <td>Vgs(th) &lt; -1V, Rds &lt; 50mΩ</td>
+                </tr>
+                <tr>
+                    <td>D1</td>
+                    <td>SS34 / 1N5819</td>
+                    <td>1</td>
+                    <td>肖特基二极管，压降≤0.3V</td>
+                </tr>
+                <tr>
+                    <td>R1</td>
+                    <td>2.4kΩ (500mA充电)</td>
+                    <td>1</td>
+                    <td>设置充电电流</td>
+                </tr>
+                <tr>
+                    <td>R3</td>
+                    <td>100Ω</td>
+                    <td>1</td>
+                    <td>USB输入限流保护</td>
+                </tr>
+                <tr>
+                    <td>R4</td>
+                    <td>10kΩ</td>
+                    <td>1</td>
+                    <td>Q1栅极上拉（控制用）</td>
+                </tr>
+                <tr>
+                    <td>R5</td>
+                    <td>10kΩ</td>
+                    <td>1</td>
+                    <td>Q1栅极下拉</td>
+                </tr>
+                <tr>
+                    <td>C1, C2, C3</td>
+                    <td>10μF 陶瓷电容</td>
+                    <td>3</td>
+                    <td>滤波电容</td>
+                </tr>
+                <tr>
+                    <td>C4</td>
+                    <td>100μF 电解电容</td>
+                    <td>1</td>
+                    <td>输出稳压电容</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>充电电流设置</h2>
+            <p>充电电流由R1电阻决定，公式：</p>
+            <div class="formula">Icharge(mA) = 1200 / R1(kΩ)</div>
+            
+            <table>
+                <tr>
+                    <th>R1阻值</th>
+                    <th>充电电流</th>
+                    <th>适用场景</th>
+                    <th>推荐度</th>
+                </tr>
+                <tr>
+                    <td>1.2kΩ</td>
+                    <td>1000mA</td>
+                    <td>快充，发热大</td>
+                    <td>⚠️ 不推荐小电池</td>
+                </tr>
+                <tr>
+                    <td>2.4kΩ</td>
+                    <td>500mA</td>
+                    <td>平衡速度与安全</td>
+                    <td>✅ 推荐</td>
+                </tr>
+                <tr>
+                    <td>4.8kΩ</td>
+                    <td>250mA</td>
+                    <td>慢充，发热小</td>
+                    <td>✅ 推荐</td>
+                </tr>
+                <tr>
+                    <td>8kΩ</td>
+                    <td>150mA (0.5C)</td>
+                    <td>300mAh电池最佳</td>
+                    <td>⭐ 最推荐</td>
+                </tr>
+            </table>
+            
+            <div class="note">
+                <strong>注意：</strong>对于300mAh小容量电池，建议充电电流不超过0.5C（150mA），即R1 = 8kΩ
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>充电状态检测</h2>
+            <table class="status-table">
+                <tr>
+                    <th>CHRG (GPIO_4)</th>
+                    <th>STDBY (GPIO_5)</th>
+                    <th>状态</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td class="status-running">LOW (0)</td>
+                    <td>HIGH (1)</td>
+                    <td class="status-running">正在充电</td>
+                    <td>电池正在充电中</td>
+                </tr>
+                <tr>
+                    <td>HIGH (1)</td>
+                    <td class="status-finished">LOW (0)</td>
+                    <td class="status-finished">充电完成</td>
+                    <td>电池已充满</td>
+                </tr>
+                <tr>
+                    <td>HIGH (1)</td>
+                    <td>HIGH (1)</td>
+                    <td class="status-idle">空闲</td>
+                    <td>未插入USB或未接电池</td>
+                </tr>
+                <tr>
+                    <td>LOW (0)</td>
+                    <td>LOW (0)</td>
+                    <td>异常</td>
+                    <td>极少出现，检查电路</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>ESP32-S3 GPIO连接</h2>
+            <div class="gpio-info">
+                <table>
+                    <tr>
+                        <th>TP4056引脚</th>
+                        <th>ESP32-S3 GPIO</th>
+                        <th>功能</th>
+                    </tr>
+                    <tr>
+                        <td>CHRG</td>
+                        <td><code>GPIO_4</code></td>
+                        <td>充电状态检测（启用内部上拉）</td>
+                    </tr>
+                    <tr>
+                        <td>STDBY</td>
+                        <td><code>GPIO_5</code></td>
+                        <td>充满状态检测（启用内部上拉）</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>PMOS选型参考</h2>
+            <table>
+                <tr>
+                    <th>型号</th>
+                    <th>Vds</th>
+                    <th>Id</th>
+                    <th>Rds(on)</th>
+                    <th>Vgs(th)</th>
+                    <th>封装</th>
+                    <th>推荐</th>
+                </tr>
+                <tr>
+                    <td>AO3401</td>
+                    <td>-30V</td>
+                    <td>-4A</td>
+                    <td>48mΩ</td>
+                    <td>-1V</td>
+                    <td>SOT-23</td>
+                    <td>⭐ 推荐</td>
+                </tr>
+                <tr>
+                    <td>SI2301</td>
+                    <td>-20V</td>
+                    <td>-2.5A</td>
+                    <td>87mΩ</td>
+                    <td>-1V</td>
+                    <td>SOT-23</td>
+                    <td>✅ 可用</td>
+                </tr>
+                <tr>
+                    <td>AO4435</td>
+                    <td>-30V</td>
+                    <td>-6A</td>
+                    <td>28mΩ</td>
+                    <td>-1.5V</td>
+                    <td>SO-8</td>
+                    <td>✅ 大电流</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>注意事项</h2>
+            <div class="note">
+                <strong>重要提醒：</strong>
+                <ul>
+                    <li>CHRG和STDBY是<strong>开漏输出</strong>，必须启用ESP32内部上拉电阻</li>
+                    <li>D1必须使用<strong>肖特基二极管</strong>（压降小），不能用普通二极管</li>
+                    <li>Q1必须是<strong>P沟道MOSFET</strong>，N沟道不适用此电路</li>
+                    <li>小容量电池（300mAh）建议充电电流≤150mA</li>
+                    <li>TP4056在大电流充电时会发热，注意PCB散热设计</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-S3 引脚分配表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00d9ff;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: #16213e;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: #00d9ff;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #00d9ff;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        th {
+            background: #0f3460;
+            color: #00d9ff;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background: #1a1a2e;
+        }
+        tr:hover {
+            background: #0f3460;
+        }
+        .used {
+            background: #2d132c !important;
+        }
+        .used td {
+            color: #ff6b6b;
+        }
+        .available {
+            background: #1a3a2e !important;
+        }
+        .available td {
+            color: #4ecdc4;
+        }
+        .flash {
+            background: #2a2a1e !important;
+        }
+        .flash td {
+            color: #888;
+        }
+        .input-only {
+            background: #1e2a3a !important;
+        }
+        .input-only td {
+            color: #ffd700;
+        }
+        .new {
+            background: #1e3a1e !important;
+        }
+        .new td {
+            color: #90EE90;
+        }
+        .status-used {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .status-available {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        .status-flash {
+            color: #888;
+        }
+        .status-input {
+            color: #ffd700;
+        }
+        .status-new {
+            color: #90EE90;
+            font-weight: bold;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .legend-used { background: #2d132c; border: 1px solid #ff6b6b; }
+        .legend-available { background: #1a3a2e; border: 1px solid #4ecdc4; }
+        .legend-flash { background: #2a2a1e; border: 1px solid #888; }
+        .legend-input { background: #1e2a3a; border: 1px solid #ffd700; }
+        .legend-new { background: #1e3a1e; border: 1px solid #90EE90; }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .summary-card h3 {
+            color: #aaa;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .summary-card .number {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        .summary-card.used-card .number { color: #ff6b6b; }
+        .summary-card.available-card .number { color: #4ecdc4; }
+        .summary-card.new-card .number { color: #90EE90; }
+        .note {
+            background: #2d132c;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #ff6b6b;
+            margin: 15px 0;
+        }
+        .note strong {
+            color: #ff6b6b;
+        }
+        .highlight {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #00d9ff;
+            margin: 15px 0;
+        }
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ESP32-S3 引脚分配表</h1>
+        <p class="subtitle">项目: esp32s3_project | 更新时间: 2024</p>
+
+        <div class="summary">
+            <div class="summary-card used-card">
+                <h3>已使用引脚</h3>
+                <div class="number">14</div>
+            </div>
+            <div class="summary-card new-card">
+                <h3>新增引脚(TP4056)</h3>
+                <div class="number">2</div>
+            </div>
+            <div class="summary-card available-card">
+                <h3>可用引脚</h3>
+                <div class="number">17</div>
+            </div>
+            <div class="summary-card" style="background: #2a2a1e;">
+                <h3>Flash专用(不可用)</h3>
+                <div class="number" style="color: #888;">12</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>图例说明</h2>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color legend-used"></div>
+                    <span class="status-used">已使用</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-new"></div>
+                    <span class="status-new">新增(TP4056)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-available"></div>
+                    <span class="status-available">可用</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-input"></div>
+                    <span class="status-input">仅输入</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-flash"></div>
+                    <span class="status-flash">Flash专用</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>GPIO 0-21 (普通GPIO，可输入输出)</h2>
+            <table>
+                <tr>
+                    <th>GPIO</th>
+                    <th>功能</th>
+                    <th>连接设备</th>
+                    <th>方向</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+                <tr class="flash">
+                    <td>GPIO_0</td>
+                    <td>Strapping</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-flash">禁用</td>
+                    <td>启动模式选择，勿用</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_1</td>
+                    <td>I2C_SDA</td>
+                    <td>触摸屏 CST820</td>
+                    <td>双向</td>
+                    <td class="status-used">已用</td>
+                    <td>I2C数据线</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_2</td>
+                    <td>I2C_SCL</td>
+                    <td>触摸屏 CST820</td>
+                    <td>输出</td>
+                    <td class="status-used">已用</td>
+                    <td>I2C时钟线</td>
+                </tr>
+                <tr class="flash">
+                    <td>GPIO_3</td>
+                    <td>JTAG_TDO</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-flash">禁用</td>
+                    <td>JTAG调试，建议保留</td>
+                </tr>
+                <tr class="new">
+                    <td>GPIO_4</td>
+                    <td>CHRG</td>
+                    <td>TP4056</td>
+                    <td>输入</td>
+                    <td class="status-new">新增</td>
+                    <td>充电状态检测，启用内部上拉</td>
+                </tr>
+                <tr class="new">
+                    <td>GPIO_5</td>
+                    <td>STDBY</td>
+                    <td>TP4056</td>
+                    <td>输入</td>
+                    <td class="status-new">新增</td>
+                    <td>充满状态检测，启用内部上拉</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_6</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>原SD_CMD，已释放</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_7</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>原SD_D0，已释放</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_8</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_9</td>
+                    <td>WAKEUP_KEY</td>
+                    <td>唤醒按键</td>
+                    <td>输入</td>
+                    <td class="status-used">已用</td>
+                    <td>支持深度睡眠唤醒</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_10</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_11</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="flash">
+                    <td>GPIO_12</td>
+                    <td>JTAG_TDI</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-flash">禁用</td>
+                    <td>JTAG调试</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_13</td>
+                    <td>TOUCH_RST</td>
+                    <td>触摸屏 CST820</td>
+                    <td>输出</td>
+                    <td class="status-used">已用</td>
+                    <td>触摸屏复位</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_14</td>
+                    <td>TOUCH_INT</td>
+                    <td>触摸屏 CST820</td>
+                    <td>输入</td>
+                    <td class="status-used">已用</td>
+                    <td>触摸中断</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_15</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_16</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_17</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_18</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_19</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_20</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_21</td>
+                    <td>LCD_PCLK</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出</td>
+                    <td class="status-used">已用</td>
+                    <td>QSPI时钟</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>GPIO 22-33 (Flash专用，不可使用)</h2>
+            <table>
+                <tr>
+                    <th>GPIO</th>
+                    <th>功能</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+                <tr class="flash">
+                    <td>GPIO_22 - GPIO_33</td>
+                    <td>内部Flash</td>
+                    <td class="status-flash">不可用</td>
+                    <td>连接内部SPI Flash，禁止使用</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>GPIO 34-39 (仅输入)</h2>
+            <table>
+                <tr>
+                    <th>GPIO</th>
+                    <th>功能</th>
+                    <th>连接设备</th>
+                    <th>方向</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_34</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>无内部上拉/下拉</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_35</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>无内部上拉/下拉</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_36</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>无内部上拉/下拉</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_37</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>无内部上拉/下拉</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_38</td>
+                    <td>LCD_DATA2</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出*</td>
+                    <td class="status-used">已用</td>
+                    <td>QSPI数据线2</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_39</td>
+                    <td>LCD_DATA3</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出*</td>
+                    <td class="status-used">已用</td>
+                    <td>QSPI数据线3</td>
+                </tr>
+            </table>
+            <div class="note">
+                <strong>注意：</strong>GPIO 34-39 在ESP32-S3中实际上可以用作输出（与ESP32不同），但建议查阅具体芯片手册确认。
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>GPIO 40-48 (仅输入/特殊功能)</h2>
+            <table>
+                <tr>
+                    <th>GPIO</th>
+                    <th>功能</th>
+                    <th>连接设备</th>
+                    <th>方向</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_40</td>
+                    <td>LCD_CS</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出*</td>
+                    <td class="status-used">已用</td>
+                    <td>QSPI片选</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_41</td>
+                    <td>LCD_RST</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出*</td>
+                    <td class="status-used">已用</td>
+                    <td>屏幕复位</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_42</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_43</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_44</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_45</td>
+                    <td>LCD_DATA1</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出*</td>
+                    <td class="status-used">已用</td>
+                    <td>QSPI数据线1</td>
+                </tr>
+                <tr class="flash">
+                    <td>GPIO_46</td>
+                    <td>Strapping</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td class="status-flash">禁用</td>
+                    <td>启动模式选择，勿用</td>
+                </tr>
+                <tr class="used">
+                    <td>GPIO_47</td>
+                    <td>LCD_DATA0</td>
+                    <td>AMOLED屏幕</td>
+                    <td>输出*</td>
+                    <td class="status-used">已用</td>
+                    <td>QSPI数据线0</td>
+                </tr>
+                <tr class="available">
+                    <td>GPIO_48</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>仅输入</td>
+                    <td class="status-available">可用</td>
+                    <td>-</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="two-column">
+            <div class="section">
+                <h2>已使用引脚汇总</h2>
+                <table>
+                    <tr>
+                        <th>GPIO</th>
+                        <th>功能</th>
+                        <th>设备</th>
+                    </tr>
+                    <tr class="used"><td>GPIO_1</td><td>I2C_SDA</td><td>触摸屏</td></tr>
+                    <tr class="used"><td>GPIO_2</td><td>I2C_SCL</td><td>触摸屏</td></tr>
+                    <tr class="new"><td>GPIO_4</td><td>CHRG</td><td>TP4056</td></tr>
+                    <tr class="new"><td>GPIO_5</td><td>STDBY</td><td>TP4056</td></tr>
+                    <tr class="used"><td>GPIO_9</td><td>WAKEUP_KEY</td><td>按键</td></tr>
+                    <tr class="used"><td>GPIO_13</td><td>TOUCH_RST</td><td>触摸屏</td></tr>
+                    <tr class="used"><td>GPIO_14</td><td>TOUCH_INT</td><td>触摸屏</td></tr>
+                    <tr class="used"><td>GPIO_21</td><td>LCD_PCLK</td><td>AMOLED</td></tr>
+                    <tr class="used"><td>GPIO_38</td><td>LCD_DATA2</td><td>AMOLED</td></tr>
+                    <tr class="used"><td>GPIO_39</td><td>LCD_DATA3</td><td>AMOLED</td></tr>
+                    <tr class="used"><td>GPIO_40</td><td>LCD_CS</td><td>AMOLED</td></tr>
+                    <tr class="used"><td>GPIO_41</td><td>LCD_RST</td><td>AMOLED</td></tr>
+                    <tr class="used"><td>GPIO_45</td><td>LCD_DATA1</td><td>AMOLED</td></tr>
+                    <tr class="used"><td>GPIO_47</td><td>LCD_DATA0</td><td>AMOLED</td></tr>
+                </table>
+            </div>
+
+            <div class="section">
+                <h2>可用引脚汇总</h2>
+                <table>
+                    <tr>
+                        <th>GPIO</th>
+                        <th>类型</th>
+                        <th>推荐用途</th>
+                    </tr>
+                    <tr class="available"><td>GPIO_6</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_7</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_8</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_10</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_11</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_15</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_16</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_17</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_18</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_19</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_20</td><td>通用</td><td>-</td></tr>
+                    <tr class="available"><td>GPIO_34-37</td><td>仅输入</td><td>ADC采集</td></tr>
+                    <tr class="available"><td>GPIO_42-44</td><td>仅输入</td><td>ADC采集</td></tr>
+                    <tr class="available"><td>GPIO_48</td><td>仅输入</td><td>ADC采集</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>电源引脚</h2>
+            <table>
+                <tr>
+                    <th>引脚</th>
+                    <th>功能</th>
+                    <th>连接</th>
+                    <th>备注</th>
+                </tr>
+                <tr>
+                    <td>3V3</td>
+                    <td>3.3V电源</td>
+                    <td>LDO输出</td>
+                    <td>主控供电</td>
+                </tr>
+                <tr>
+                    <td>5V/VIN</td>
+                    <td>5V输入</td>
+                    <td>USB/Power Path</td>
+                    <td>外部供电输入</td>
+                </tr>
+                <tr>
+                    <td>GND</td>
+                    <td>地</td>
+                    <td>公共地</td>
+                    <td>所有GND连接在一起</td>
+                </tr>
+                <tr>
+                    <td>EN</td>
+                    <td>使能</td>
+                    <td>上拉到3.3V</td>
+                    <td>复位按钮可选</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>PCB布线建议</h2>
+            <div class="highlight">
+                <h3>电源部分</h3>
+                <ul>
+                    <li>TP4056输入端添加10μF电容靠近VCC引脚</li>
+                    <li>电池端添加10μF电容靠近BAT引脚</li>
+                    <li>Power Path输出端添加100μF电容稳压</li>
+                    <li>ESP32-S3电源端添加10μF + 100nF去耦电容</li>
+                    <li>电源走线加宽（≥20mil）</li>
+                </ul>
+            </div>
+            <div class="highlight">
+                <h3>信号部分</h3>
+                <ul>
+                    <li>I2C走线（GPIO_1, GPIO_2）尽量短且等长</li>
+                    <li>QSPI走线（GPIO_21, 38, 39, 40, 41, 45, 47）尽量等长</li>
+                    <li>CHRG/STDBY走线可较细，无高速信号</li>
+                    <li>触摸INT走线远离高频信号</li>
+                </ul>
+            </div>
+            <div class="highlight">
+                <h3>散热部分</h3>
+                <ul>
+                    <li>TP4056底部焊盘连接大面积GND铜皮散热</li>
+                    <li>AO3401 PMOS底部焊盘连接GND散热</li>
+                    <li>ESP32-S3底部焊盘连接GND散热</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>注意事项</h2>
+            <div class="note">
+                <strong>Strapping引脚：</strong>
+                <ul>
+                    <li>GPIO_0: 启动时低电平进入下载模式，需上拉</li>
+                    <li>GPIO_46: 启动时决定Flash电压，需根据Flash配置</li>
+                    <li>建议这两个引脚不要连接其他设备</li>
+                </ul>
+            </div>
+            <div class="note">
+                <strong>JTAG引脚：</strong>
+                <ul>
+                    <li>GPIO_3(TDO), GPIO_12(TDI) 用于调试</li>
+                    <li>如需使用JTAG调试，保留这些引脚</li>
+                    <li>如不需要调试，可作为普通GPIO使用</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

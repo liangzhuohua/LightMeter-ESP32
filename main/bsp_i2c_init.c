@@ -36,6 +36,14 @@ esp_err_t i2c_init(void) {
     s_bus_handle = i2cdev_get_bus_handle(I2C_HOST);
     ESP_LOGI(TAG, "I2C init OK, bus handle: %p", s_bus_handle);
 
+// 在 i2c_init() 之后添加
+    for (uint8_t addr = 1; addr < 127; addr++) {
+        s_temp_dev.addr = addr << 1;
+        if (i2c_dev_check_present(&s_temp_dev) == ESP_OK) {
+            ESP_LOGI(TAG, "Found I2C device at address: 0x%02X", addr);
+        }
+    }
+
     return ESP_OK;
 }
 

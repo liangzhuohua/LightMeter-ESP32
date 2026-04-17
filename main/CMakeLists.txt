@@ -2,7 +2,6 @@ idf_component_register(
     SRCS "main.c"
     "bsp_i2c_init.c"
     "hw_oled.c"
-    "hw_sdcard.c"
     "hw_veml7700.c"
     "app_exposure_calc.c"
     "app_ui.c"

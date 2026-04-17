@@ -33,7 +33,7 @@
 
 // 鱼鹰光电屏幕验证底板
 #define EXAMPLE_PIN_NUM_LCD_CS            (GPIO_NUM_40)
-#define EXAMPLE_PIN_NUM_LCD_PCLK          (GPIO_NUM_21)
+#define EXAMPLE_PIN_NUM_LCD_PCLK          (GPIO_NUM_12)
 #define EXAMPLE_PIN_NUM_LCD_DATA0         (GPIO_NUM_47)
 #define EXAMPLE_PIN_NUM_LCD_DATA1         (GPIO_NUM_45)
 #define EXAMPLE_PIN_NUM_LCD_DATA2         (GPIO_NUM_38)
@@ -62,6 +62,8 @@
 #define EXAMPLE_LCD_X_GAP              10
 #define EXAMPLE_LCD_Y_GAP              0
 #define AMOLED_QSPI_MAX_PCLK           40 * 1000 * 1000
+// #define AMOLED_QSPI_MAX_PCLK           5 * 1000 * 1000
+// #define AMOLED_QSPI_MAX_PCLK           1 * 1000
 
 static const qspi_amoled_lcd_init_cmd_t lcd_init_cmds[] = {
   {0xFE, (uint8_t []){0x00}, 1, 0},
