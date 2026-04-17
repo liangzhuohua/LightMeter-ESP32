@@ -464,6 +464,10 @@ static void weather_result_callback(const weather_data_t* data) {
         g_req_status.weather_success = false;
     } else {
         ESP_LOGI(TAG, "获取天气成功: %s, 温度: %d, 湿度: %d", data->desc, data->temp, data->humidity);
+        ESP_LOGI(TAG, "月出: %02d:%02d, 月落: %02d:%02d, 月相: %s",
+                 data->moonrise_hour, data->moonrise_minute,
+                 data->moonset_hour, data->moonset_minute,
+                 data->moon_phase);
 
         if (example_lvgl_lock(-1)) {
             app_ui_weather_update_all(data);
@@ -685,17 +689,31 @@ static void task_time_update_periodic(void* pvParameters) {
 static void task_battery_update(void* pvParameters) {
     float soc = 0.0f;
     float voltage = 0.0f;
+    float current = 0.0f;
+    uint16_t status = 0;
+    int log_counter = 0;
 
     while (1) {
         hw_max17055_get_soc(&soc);
         hw_max17055_get_vcell(&voltage);
+        hw_max17055_get_current(&current);
+        hw_max17055_get_status(&status);
+
+        bool charging = (current > 1.0f);
 
         if (example_lvgl_lock(-1)) {
-            app_ui_battery_update(soc, voltage);
+            app_ui_battery_update(soc, voltage, charging);
             example_lvgl_unlock();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        log_counter++;
+        if (log_counter >= 20) {
+            log_counter = 0;
+            ESP_LOGI(TAG, "Battery: SOC=%.1f%%, V=%.0fmV, I=%.1fmA, Status=0x%04X, BST=%d, Charging=%d",
+                     soc, voltage, current, status, (status >> 3) & 1, charging);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
 

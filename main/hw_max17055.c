@@ -123,3 +123,16 @@ void hw_max17055_get_age(uint8_t *age_pct)
 {
     max17055_get_age(&max17055_device, age_pct);
 }
+
+bool hw_max17055_is_charging(void)
+{
+    float current = 0.0f;
+    if (max17055_get_current(&max17055_device, &current) != ESP_OK)
+        return false;
+    return (current > 1.0f);
+}
+
+void hw_max17055_get_status(uint16_t *status)
+{
+    max17055_get_status(&max17055_device, status);
+}

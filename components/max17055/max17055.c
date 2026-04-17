@@ -164,7 +164,11 @@ esp_err_t max17055_init(i2c_dev_t *dev, const max17055_config_t *cfg)
 
     CHECK(read_reg(dev, MAX17055_REG_STATUS, &status_val));
     if (!(status_val & MAX17055_STATUS_POR_MASK)) {
-        ESP_LOGW(TAG, "POR bit not set, skipping full init");
+        ESP_LOGI(TAG, "POR bit not set, updating config without full init");
+        s_rsense_ohm = cfg->rsense_mohm / 1000.0f;
+        CHECK(write_reg(dev, MAX17055_REG_DESIGNCAP, cfg->design_cap));
+        CHECK(write_reg(dev, MAX17055_REG_ICHGTERM, cfg->ichg_term));
+        CHECK(write_reg(dev, MAX17055_REG_VEMPTY, cfg->vempty));
         I2C_DEV_GIVE_MUTEX(dev);
         return ESP_OK;
     }

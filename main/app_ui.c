@@ -178,6 +178,8 @@ static char wifi_connected_ssid[33] = {0};
 static char wifi_connecting_ssid[33] = {0};
 static bool g_wifi_enabled = false;
 float g_battery_soc = 80.0f;
+bool g_battery_charging = false;
+int g_wifi_state = 0;
 
 lv_obj_t *time_time_label = NULL;
 lv_obj_t *time_date_label = NULL;
@@ -193,10 +195,13 @@ static void update_status_bar_wifi_icon(void) {
     const char* wifi_icon;
     if (wifi_connected_ssid[0] != '\0') {
         wifi_icon = LV_SYMBOL_WIFI;
+        g_wifi_state = 2;
     } else if (wifi_connecting_ssid[0] != '\0') {
         wifi_icon = LV_SYMBOL_REFRESH;
+        g_wifi_state = 1;
     } else {
         wifi_icon = LV_SYMBOL_CLOSE;
+        g_wifi_state = 0;
     }
 
     const char *batt_icon;
@@ -214,7 +219,10 @@ static void update_status_bar_wifi_icon(void) {
     uint8_t soc_int = (uint8_t)g_battery_soc;
     if (soc_int > 100) soc_int = 100;
 
-    lv_label_set_text_fmt(main_table_status, "%s   %d%% %s", wifi_icon, soc_int, batt_icon);
+    if (g_battery_charging)
+        lv_label_set_text_fmt(main_table_status, "%s %d%% #00cc00 %s" LV_SYMBOL_CHARGE "#", wifi_icon, soc_int, batt_icon);
+    else
+        lv_label_set_text_fmt(main_table_status, "%s %d%% %s", wifi_icon, soc_int, batt_icon);
 }
 
 
@@ -3528,7 +3536,9 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_t* main_flex_layout = lv_obj_create(parent);
     lv_obj_remove_style_all(main_flex_layout);
     lv_obj_align(main_flex_layout, LV_ALIGN_TOP_MID, 0, 0);
-    lv_obj_set_size(main_flex_layout, lv_pct(96), lv_pct(5));
+    lv_obj_set_size(main_flex_layout, lv_pct(100), lv_pct(5));
+    lv_obj_set_style_pad_left(main_flex_layout, 16, 0);
+    lv_obj_set_style_pad_right(main_flex_layout, 16, 0);
     lv_obj_set_flex_flow(main_flex_layout, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(main_flex_layout, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
@@ -3539,7 +3549,8 @@ static void ui_main_page_init(lv_obj_t* parent) {
 
     /* 右侧状态栏 */
     main_table_status = lv_label_create(main_flex_layout);
-    lv_label_set_text(main_table_status, LV_SYMBOL_CLOSE "   --% " LV_SYMBOL_BATTERY_EMPTY );
+    lv_label_set_text(main_table_status, LV_SYMBOL_CLOSE " --% " LV_SYMBOL_BATTERY_EMPTY );
+    lv_label_set_recolor(main_table_status, true);
     lv_obj_set_style_text_font(main_table_status, font, LV_STATE_DEFAULT);
 
     /* ────────────────────────────────────────────── */

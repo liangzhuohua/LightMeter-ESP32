@@ -28,5 +28,7 @@ void hw_max17055_get_ttf(float *ttf_s);
 void hw_max17055_get_full_cap(float *cap_mah);
 void hw_max17055_get_cycles(uint16_t *cycles);
 void hw_max17055_get_age(uint8_t *age_pct);
+bool hw_max17055_is_charging(void);
+void hw_max17055_get_status(uint16_t *status);
 
 #endif

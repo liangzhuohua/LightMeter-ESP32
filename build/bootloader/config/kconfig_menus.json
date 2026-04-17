@@ -7770,7 +7770,7 @@
                                 "name": "RTC_CLK_CAL_CYCLES",
                                 "range": [
                                     0,
-                                    32766
+                                    8190
                                 ],
                                 "title": "Number of cycles for RTC_SLOW_CLK calibration",
                                 "type": "int"
@@ -8874,7 +8874,10 @@
                         "help": "To reduce the startup time of an external RTC crystal,\nwe bootstrap it with a 32kHz square wave for a fixed number of cycles.\nSetting 0 will disable bootstrapping (if disabled, the crystal may take\nlonger to start up or fail to oscillate under some conditions).\n\nIf this value is too high, a faulty crystal may initially start and then fail.\nIf this value is too low, an otherwise good crystal may not start.\n\nTo accurately determine if the crystal has started,\nset a larger \"Number of cycles for RTC_SLOW_CLK calibration\" (about 3000).",
                         "id": "ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES",
                         "name": "ESP_SYSTEM_RTC_EXT_XTAL_BOOTSTRAP_CYCLES",
-                        "range": null,
+                        "range": [
+                            0,
+                            32768
+                        ],
                         "title": "Bootstrap cycles for external 32kHz crystal",
                         "type": "int"
                     },
