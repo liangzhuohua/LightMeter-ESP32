@@ -5,26 +5,38 @@
 #include <stdio.h>
 
 extern lv_obj_t* ota_win;
+extern lv_obj_t* ota_mask;
 extern lv_obj_t* ota_progress_bar;
 extern lv_obj_t* ota_status_label;
-extern lv_obj_t* ota_ssid_label;
 extern lv_obj_t* ota_cancel_btn;
+extern lv_obj_t* ota_percent_label;
 
 void app_ui_ota_show_window(void) {
-    if (ota_win == NULL) return;
+    if (ota_mask == NULL) return;
+    lv_obj_clear_flag(ota_mask, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(ota_win, LV_OBJ_FLAG_HIDDEN);
 }
 
 void app_ui_ota_hide_window(void) {
-    if (ota_win == NULL) return;
+    if (ota_mask == NULL) return;
     lv_obj_add_flag(ota_win, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(ota_mask, LV_OBJ_FLAG_HIDDEN);
 }
 
 void app_ui_ota_set_state(int state, int progress) {
     if (ota_win == NULL) return;
 
-    if (ota_progress_bar) {
-        lv_bar_set_value(ota_progress_bar, progress, LV_ANIM_ON);
+    if (state >= 3) {
+        if (ota_progress_bar) {
+            lv_obj_clear_flag(ota_progress_bar, LV_OBJ_FLAG_HIDDEN);
+            lv_bar_set_value(ota_progress_bar, progress, LV_ANIM_ON);
+        }
+        if (ota_percent_label) {
+            lv_obj_clear_flag(ota_percent_label, LV_OBJ_FLAG_HIDDEN);
+            char buf[8];
+            snprintf(buf, sizeof(buf), "%d%%", progress);
+            lv_label_set_text(ota_percent_label, buf);
+        }
     }
 
     if (ota_status_label) {
@@ -36,25 +48,34 @@ void app_ui_ota_set_state(int state, int progress) {
                 lv_label_set_text(ota_status_label, "Starting AP...");
                 break;
             case 2:
-                lv_label_set_text(ota_status_label, "AP Ready\nConnect WiFi: ESP32S3_OTA\nPass: 12345678\nOpen: 192.168.4.1");
+                lv_label_set_text(ota_status_label, "AP Ready\nConnect phone to WiFi\nOpen 192.168.4.1 in browser");
                 break;
-            case 3: {
-                char buf[64];
-                snprintf(buf, sizeof(buf), "Uploading... %d%%", progress);
-                lv_label_set_text(ota_status_label, buf);
+            case 3:
+                lv_label_set_text(ota_status_label, "Uploading...");
                 break;
-            }
             case 4:
-                lv_label_set_text(ota_status_label, "Verifying...");
+                lv_label_set_text(ota_status_label, "Verifying firmware...");
                 break;
             case 5:
-                lv_label_set_text(ota_status_label, "Success! Rebooting...");
+                lv_label_set_text(ota_status_label, LV_SYMBOL_OK " Success! Rebooting...");
                 if (ota_cancel_btn) {
                     lv_obj_add_flag(ota_cancel_btn, LV_OBJ_FLAG_HIDDEN);
                 }
+                if (ota_percent_label) {
+                    lv_obj_set_style_text_color(ota_percent_label, lv_color_hex(0x87ceeb), 0);
+                }
+                if (ota_progress_bar) {
+                    lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x00ff00), LV_PART_INDICATOR);
+                }
                 break;
             case 6:
-                lv_label_set_text(ota_status_label, "Failed!");
+                lv_label_set_text(ota_status_label, LV_SYMBOL_CLOSE " Upgrade failed!");
+                if (ota_percent_label) {
+                    lv_obj_set_style_text_color(ota_percent_label, lv_color_hex(0xff6b6b), 0);
+                }
+                if (ota_progress_bar) {
+                    lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0xff6b6b), LV_PART_INDICATOR);
+                }
                 break;
             default:
                 break;

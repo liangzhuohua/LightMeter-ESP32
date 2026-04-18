@@ -194,10 +194,12 @@ lv_obj_t *location_status_dot = NULL;
 lv_obj_t *weather_status_dot = NULL;
 lv_obj_t *time_status_dot = NULL;
 lv_obj_t* ota_win = NULL;
+lv_obj_t* ota_mask = NULL;
 lv_obj_t* ota_progress_bar = NULL;
 lv_obj_t* ota_status_label = NULL;
 lv_obj_t* ota_ssid_label = NULL;
 lv_obj_t* ota_cancel_btn = NULL;
+lv_obj_t* ota_percent_label = NULL;
 
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
@@ -4056,6 +4058,18 @@ static void location_card_long_press_cb(lv_event_t* e) {
 
 static void ota_cancel_btn_cb(lv_event_t* e) {
     app_ui_ota_set_state(0, 0);
+    if (ota_percent_label) {
+        lv_label_set_text(ota_percent_label, "0%");
+        lv_obj_set_style_text_color(ota_percent_label, lv_color_hex(0x87ceeb), 0);
+        lv_obj_add_flag(ota_percent_label, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (ota_progress_bar) {
+        lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x87ceeb), LV_PART_INDICATOR);
+        lv_obj_add_flag(ota_progress_bar, LV_OBJ_FLAG_HIDDEN);
+    }
+    if (ota_cancel_btn) {
+        lv_obj_clear_flag(ota_cancel_btn, LV_OBJ_FLAG_HIDDEN);
+    }
     app_ui_ota_hide_window();
     app_ui_ota_request_cancel();
 }
@@ -4068,60 +4082,129 @@ static void about_card_long_press_cb(lv_event_t* e) {
 }
 
 static void create_ota_window(lv_obj_t* parent) {
-    ota_win = lv_obj_create(parent);
+    ota_mask = lv_obj_create(parent);
+    lv_obj_remove_style_all(ota_mask);
+    lv_obj_set_size(ota_mask, lv_pct(100), lv_pct(100));
+    lv_obj_set_style_bg_color(ota_mask, lv_color_black(), 0);
+    lv_obj_set_style_bg_opa(ota_mask, LV_OPA_80, 0);
+    lv_obj_add_flag(ota_mask, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(ota_mask, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_radius(ota_mask, 0, 0);
+
+    ota_win = lv_obj_create(ota_mask);
     lv_obj_remove_style_all(ota_win);
-    lv_obj_set_size(ota_win, 240, 280);
+    lv_obj_set_size(ota_win, 280, 280);
     lv_obj_align(ota_win, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_bg_color(ota_win, lv_color_hex(0x1a1a2e), 0);
+    lv_obj_set_style_bg_color(ota_win, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_bg_opa(ota_win, LV_OPA_COVER, 0);
     lv_obj_set_style_radius(ota_win, 15, 0);
-    lv_obj_set_style_border_width(ota_win, 2, 0);
-    lv_obj_set_style_border_color(ota_win, lv_color_hex(0x87ceeb), 0);
-    lv_obj_set_style_pad_all(ota_win, 15, 0);
+    lv_obj_set_style_border_width(ota_win, 1, 0);
+    lv_obj_set_style_border_color(ota_win, lv_color_hex(0x4a90e2), 0);
+    lv_obj_set_style_pad_all(ota_win, 0, 0);
     lv_obj_add_flag(ota_win, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_flex_flow(ota_win, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(ota_win, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_style_pad_row(ota_win, 10, 0);
+    lv_obj_set_flex_align(ota_win, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_add_flag(ota_win, LV_OBJ_FLAG_HIDDEN);
 
-    lv_obj_t* title = lv_label_create(ota_win);
-    lv_label_set_text(title, LV_SYMBOL_WIFI " OTA Upgrade");
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_text_color(title, lv_color_hex(0x87ceeb), 0);
+    lv_obj_t* title_area = lv_obj_create(ota_win);
+    lv_obj_remove_style_all(title_area);
+    lv_obj_set_size(title_area, lv_pct(100), 48);
+    lv_obj_set_style_bg_color(title_area, lv_color_hex(0x2a2a3e), 0);
+    lv_obj_set_style_bg_opa(title_area, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(title_area, 15, 0);
+    lv_obj_set_style_pad_all(title_area, 0, 0);
+    lv_obj_set_flex_flow(title_area, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(title_area, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(title_area, 8, 0);
 
-    ota_ssid_label = lv_label_create(ota_win);
-    lv_label_set_text(ota_ssid_label, "WiFi: ESP32S3_OTA\nPass: 12345678\nIP: 192.168.4.1");
-    lv_obj_set_style_text_font(ota_ssid_label, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(ota_ssid_label, lv_color_hex(0xaaaaaa), 0);
-    lv_obj_set_style_text_align(ota_ssid_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_t* title_icon = lv_label_create(title_area);
+    lv_label_set_text(title_icon, LV_SYMBOL_WIFI);
+    lv_obj_set_style_text_font(title_icon, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_color(title_icon, lv_color_hex(0x87ceeb), 0);
 
-    ota_progress_bar = lv_bar_create(ota_win);
-    lv_obj_set_width(ota_progress_bar, lv_pct(90));
-    lv_obj_set_height(ota_progress_bar, 12);
+    lv_obj_t* title_text = lv_label_create(title_area);
+    lv_label_set_text(title_text, "OTA Upgrade");
+    lv_obj_set_style_text_font(title_text, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(title_text, lv_color_hex(0x87ceeb), 0);
+
+    lv_obj_t* body = lv_obj_create(ota_win);
+    lv_obj_remove_style_all(body);
+    lv_obj_set_size(body, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_pad_all(body, 18, 0);
+    lv_obj_set_flex_flow(body, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(body, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(body, 12, 0);
+
+    lv_obj_t* info_card = lv_obj_create(body);
+    lv_obj_remove_style_all(info_card);
+    lv_obj_set_size(info_card, lv_pct(95), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_color(info_card, lv_color_hex(0x1a1a2e), 0);
+    lv_obj_set_style_bg_opa(info_card, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(info_card, 10, 0);
+    lv_obj_set_style_pad_all(info_card, 12, 0);
+    lv_obj_set_flex_flow(info_card, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_style_pad_row(info_card, 4, 0);
+
+    lv_obj_t* info1 = lv_label_create(info_card);
+    lv_label_set_text(info1, LV_SYMBOL_WIFI "  ESP32S3_OTA");
+    lv_obj_set_style_text_font(info1, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(info1, lv_color_white(), 0);
+
+    lv_obj_t* info2 = lv_label_create(info_card);
+    lv_label_set_text(info2, LV_SYMBOL_EYE_OPEN "  12345678");
+    lv_obj_set_style_text_font(info2, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(info2, lv_color_hex(0x888888), 0);
+
+    lv_obj_t* info3 = lv_label_create(info_card);
+    lv_label_set_text(info3, LV_SYMBOL_GPS "  192.168.4.1");
+    lv_obj_set_style_text_font(info3, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(info3, lv_color_hex(0x888888), 0);
+
+    lv_obj_t* progress_row = lv_obj_create(body);
+    lv_obj_remove_style_all(progress_row);
+    lv_obj_set_size(progress_row, lv_pct(95), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(progress_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(progress_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(progress_row, 8, 0);
+
+    ota_progress_bar = lv_bar_create(progress_row);
+    lv_obj_set_flex_grow(ota_progress_bar, 1);
+    lv_obj_set_height(ota_progress_bar, 14);
     lv_bar_set_range(ota_progress_bar, 0, 100);
     lv_bar_set_value(ota_progress_bar, 0, LV_ANIM_OFF);
     lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x2a2a3e), LV_PART_MAIN);
-    lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x00ff00), LV_PART_INDICATOR);
-    lv_obj_set_style_radius(ota_progress_bar, 6, LV_PART_MAIN);
-    lv_obj_set_style_radius(ota_progress_bar, 6, LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x87ceeb), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(ota_progress_bar, 7, LV_PART_MAIN);
+    lv_obj_set_style_radius(ota_progress_bar, 7, LV_PART_INDICATOR);
+    lv_obj_add_flag(ota_progress_bar, LV_OBJ_FLAG_HIDDEN);
 
-    ota_status_label = lv_label_create(ota_win);
+    ota_percent_label = lv_label_create(progress_row);
+    lv_label_set_text(ota_percent_label, "0%");
+    lv_obj_set_style_text_font(ota_percent_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(ota_percent_label, lv_color_hex(0x87ceeb), 0);
+    lv_obj_set_width(ota_percent_label, 35);
+    lv_obj_set_style_text_align(ota_percent_label, LV_TEXT_ALIGN_RIGHT, 0);
+    lv_obj_add_flag(ota_percent_label, LV_OBJ_FLAG_HIDDEN);
+
+    ota_status_label = lv_label_create(body);
     lv_label_set_text(ota_status_label, "Starting AP...");
     lv_obj_set_style_text_font(ota_status_label, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(ota_status_label, lv_color_white(), 0);
+    lv_obj_set_style_text_color(ota_status_label, lv_color_hex(0xcccccc), 0);
     lv_obj_set_style_text_align(ota_status_label, LV_TEXT_ALIGN_CENTER, 0);
 
-    ota_cancel_btn = lv_btn_create(ota_win);
-    lv_obj_set_size(ota_cancel_btn, 100, 35);
-    lv_obj_set_style_bg_color(ota_cancel_btn, lv_color_hex(0xff6b6b), 0);
-    lv_obj_set_style_bg_color(ota_cancel_btn, lv_color_hex(0xcc5555), LV_STATE_PRESSED);
+    ota_cancel_btn = lv_btn_create(body);
+    lv_obj_set_size(ota_cancel_btn, 120, 36);
+    lv_obj_set_style_bg_color(ota_cancel_btn, lv_color_hex(0x555555), 0);
+    lv_obj_set_style_bg_color(ota_cancel_btn, lv_color_hex(0x444444), LV_STATE_PRESSED);
     lv_obj_set_style_radius(ota_cancel_btn, 8, 0);
+    lv_obj_set_style_border_width(ota_cancel_btn, 1, 0);
+    lv_obj_set_style_border_color(ota_cancel_btn, lv_color_hex(0x444466), 0);
     lv_obj_add_event_cb(ota_cancel_btn, ota_cancel_btn_cb, LV_EVENT_CLICKED, NULL);
 
     lv_obj_t* cancel_label = lv_label_create(ota_cancel_btn);
     lv_label_set_text(cancel_label, "Cancel");
     lv_obj_set_style_text_font(cancel_label, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(cancel_label, lv_color_white(), 0);
+    lv_obj_set_style_text_color(cancel_label, lv_color_hex(0xcccccc), 0);
     lv_obj_center(cancel_label);
 }
 
