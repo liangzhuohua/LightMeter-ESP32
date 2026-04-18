@@ -880,6 +880,11 @@ void app_controller_enter_deep_sleep(void) {
 
     hw_wakeup_key_enable_sleep_wakeup();
 
+    oled_release_pins();
+    touch_release_pins();
+    i2c_release_pins();
+    hw_max17055_release_pins();
+
     ESP_LOGI(TAG, "Entering deep sleep now");
     vTaskDelay(pdMS_TO_TICKS(100));
     esp_deep_sleep_start();

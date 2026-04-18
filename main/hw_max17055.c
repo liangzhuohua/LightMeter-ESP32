@@ -1,6 +1,7 @@
 #include "hw_max17055.h"
 #include <string.h>
 #include <driver/gpio.h>
+#include <driver/rtc_io.h>
 #include "i2cdev.h"
 #include "max17055.h"
 
@@ -10,6 +11,8 @@ static i2c_dev_t max17055_device;
 
 static void alrt_gpio_init(void)
 {
+    rtc_gpio_deinit(HW_MAX17055_ALRT_GPIO);
+
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << HW_MAX17055_ALRT_GPIO),
         .mode = GPIO_MODE_INPUT,
@@ -146,4 +149,13 @@ void hw_max17055_sleep(void)
     i2c_dev_read_reg(&max17055_device, MAX17055_REG_HIBCFG, &hibcfg, 2);
     hibcfg |= (1 << 0);
     i2c_dev_write_reg(&max17055_device, MAX17055_REG_HIBCFG, &hibcfg, 2);
+}
+
+void hw_max17055_release_pins(void)
+{
+    ESP_LOGI(TAG, "Releasing ALRT pin for deep sleep");
+    rtc_gpio_init(HW_MAX17055_ALRT_GPIO);
+    rtc_gpio_set_direction(HW_MAX17055_ALRT_GPIO, RTC_GPIO_MODE_INPUT_ONLY);
+    rtc_gpio_pulldown_dis(HW_MAX17055_ALRT_GPIO);
+    rtc_gpio_pullup_dis(HW_MAX17055_ALRT_GPIO);
 }

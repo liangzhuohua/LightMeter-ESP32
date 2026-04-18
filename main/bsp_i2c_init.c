@@ -10,6 +10,9 @@ static i2c_dev_t s_temp_dev = {0};
 esp_err_t i2c_init(void) {
     ESP_LOGI(TAG, "Initialize I2C bus");
 
+    rtc_gpio_deinit(I2C_SDA);
+    rtc_gpio_deinit(I2C_SCL);
+
     esp_err_t ret = i2cdev_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "i2cdev_init FAIL: %s", esp_err_to_name(ret));

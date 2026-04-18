@@ -142,8 +142,23 @@ static void i2c_scan(void)
 }
 
 void oled_lvgl_init(void) {
-    static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
-    static lv_disp_drv_t disp_drv;      // contains callback functions
+    static lv_disp_draw_buf_t disp_buf;
+    static lv_disp_drv_t disp_drv;
+
+    gpio_num_t qspi_pins[] = {
+        EXAMPLE_PIN_NUM_LCD_CS,
+        EXAMPLE_PIN_NUM_LCD_PCLK,
+        EXAMPLE_PIN_NUM_LCD_DATA0,
+        EXAMPLE_PIN_NUM_LCD_DATA1,
+        EXAMPLE_PIN_NUM_LCD_DATA2,
+        EXAMPLE_PIN_NUM_LCD_DATA3,
+        EXAMPLE_PIN_NUM_LCD_RST,
+        EXAMPLE_PIN_NUM_TOUCH_RST,
+        EXAMPLE_PIN_NUM_TOUCH_INT,
+    };
+    for (int i = 0; i < sizeof(qspi_pins) / sizeof(qspi_pins[0]); i++) {
+        rtc_gpio_deinit(qspi_pins[i]);
+    }
 
     ESP_LOGI(TAG, "Initialize SPI bus");
     const spi_bus_config_t buscfg = QSPI_AMOLED_PANEL_BUS_QSPI_CONFIG(EXAMPLE_PIN_NUM_LCD_PCLK,

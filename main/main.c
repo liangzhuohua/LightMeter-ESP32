@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "hw_oled.h"
-#include "hw_sdcard.h"
 #include "bsp_i2c_init.h"
 #include "hw_veml7700.h"
 #include "app_ui.h"
@@ -24,8 +23,6 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     oled_lvgl_init();
-    // bsp_sd_init();
-    // Lock the mutex due to the LVGL APIs are not thread-safe
     if (example_lvgl_lock(-1)) {
 
         // lv_obj_t *label = lv_label_create(lv_scr_act());
