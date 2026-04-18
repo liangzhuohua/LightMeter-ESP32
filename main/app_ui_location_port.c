@@ -1,4 +1,5 @@
 #include "app_ui_location_port.h"
+#include "app_controller.h"
 #include "lvgl.h"
 
 extern lv_obj_t *location_city_label;
@@ -91,4 +92,8 @@ void app_ui_location_set_unknown(void) {
     if (location_detail_label != NULL) {
         lv_label_set_text(location_detail_label, "未定位");
     }
+}
+
+bool app_ui_location_request_refresh(void) {
+    return app_controller_request_location();
 }

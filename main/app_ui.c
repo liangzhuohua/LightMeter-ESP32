@@ -1,6 +1,9 @@
 #include "app_ui.h"
 #include "app_ui_wifi_port.h"
 #include "app_ui_calc_port.h"
+#include "app_ui_location_port.h"
+#include "app_ui_time_port.h"
+#include "app_ui_weather_port.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -4017,6 +4020,26 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(len_btn_win_add, btn_add_len_event_cb, LV_EVENT_CLICKED, NULL);
 }
 
+static void weather_card_long_press_cb(lv_event_t* e) {
+    if (app_ui_weather_request_refresh()) {
+        app_ui_weather_set_loading();
+    } else {
+        app_ui_weather_set_fail();
+    }
+}
+
+static void time_card_long_press_cb(lv_event_t* e) {
+    app_ui_time_request_sync();
+}
+
+static void location_card_long_press_cb(lv_event_t* e) {
+    if (app_ui_location_request_refresh()) {
+        app_ui_location_set_loading();
+    } else {
+        app_ui_location_set_fail();
+    }
+}
+
 static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_bg_color(parent, lv_color_black(), 0);
     lv_obj_set_style_pad_all(parent, 10, 0);
@@ -4039,6 +4062,9 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(weather_card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(weather_card, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_row(weather_card, 8, 0);
+    lv_obj_add_flag(weather_card, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(weather_card, weather_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
+    lv_obj_set_style_bg_color(weather_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
     lv_obj_t* weather_row1 = lv_obj_create(weather_card);
     lv_obj_remove_style_all(weather_row1);
@@ -4384,6 +4410,9 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_width(time_card, 0, 0);
     lv_obj_set_flex_flow(time_card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(time_card, 6, 0);
+    lv_obj_add_flag(time_card, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(time_card, time_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
+    lv_obj_set_style_bg_color(time_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
     // 第一行：图标 + 标题
     lv_obj_t* time_header = lv_obj_create(time_card);
@@ -4431,6 +4460,9 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_width(location_card, 0, 0);
     lv_obj_set_flex_flow(location_card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(location_card, 6, 0);
+    lv_obj_add_flag(location_card, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(location_card, location_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
+    lv_obj_set_style_bg_color(location_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
     // 第一行：图标 + 标题
     lv_obj_t* location_header = lv_obj_create(location_card);

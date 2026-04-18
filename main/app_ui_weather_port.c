@@ -1,4 +1,5 @@
 #include "app_ui_weather_port.h"
+#include "app_controller.h"
 #include "app_time.h"
 #include "lvgl.h"
 #include <stdio.h>
@@ -371,6 +372,10 @@ void app_ui_weather_set_success(void) {
     lv_anim_set_delay(&fade, 2000);
     lv_anim_set_repeat_count(&fade, 0);
     lv_anim_start(&fade);
+}
+
+bool app_ui_weather_request_refresh(void) {
+    return app_controller_request_weather();
 }
 
 void app_ui_weather_set_fail(void) {

@@ -51,6 +51,15 @@ typedef struct {
 
 static request_status_t g_req_status = {0};
 
+typedef enum {
+    REFRESH_MODE_FULL_CHAIN,
+    REFRESH_MODE_LOCATION_ONLY,
+    REFRESH_MODE_TIME_ONLY,
+    REFRESH_MODE_WEATHER_ONLY,
+} refresh_mode_t;
+
+static refresh_mode_t g_refresh_mode = REFRESH_MODE_FULL_CHAIN;
+
 static void log_memory(const char* stage) {
     ESP_LOGI(TAG, "[MEM-%s] Free: %lu, Largest: %lu",
              stage,
@@ -452,8 +461,16 @@ static void location_result_callback(const location_result_t* result) {
         app_nvs_save_location();
     }
 
-    ESP_LOGI(TAG, "定位完成(%s)，触发时间同步", g_req_status.location_success ? "成功" : "失败");
+    ESP_LOGI(TAG, "定位完成(%s)", g_req_status.location_success ? "成功" : "失败");
     g_req_status.location_done = true;
+
+    if (g_refresh_mode == REFRESH_MODE_LOCATION_ONLY) {
+        ESP_LOGI(TAG, "仅刷新定位模式，跳过时间和天气");
+        app_nvs_update_location_sync_timestamp();
+        g_refresh_mode = REFRESH_MODE_FULL_CHAIN;
+        return;
+    }
+
     app_time_sntp_init();
     if (example_lvgl_lock(-1)) {
         app_ui_weather_set_loading();
@@ -637,6 +654,10 @@ static void task_time_sync_and_update(void* pvParameters) {
             if (g_periodic_sync_mode) {
                 ESP_LOGI(TAG, "时间同步完成(%s)，定时同步模式不触发天气", g_req_status.time_success ? "成功" : "失败");
                 g_periodic_sync_mode = false;
+            } else if (g_refresh_mode == REFRESH_MODE_TIME_ONLY) {
+                ESP_LOGI(TAG, "仅同步时间模式，跳过天气");
+                app_time_save_to_rtc();
+                g_refresh_mode = REFRESH_MODE_FULL_CHAIN;
             } else {
                 ESP_LOGI(TAG, "时间同步完成(%s)，触发天气请求", g_req_status.time_success ? "成功" : "失败");
                 xSemaphoreGive(weather_Sem);
@@ -990,4 +1011,41 @@ double app_controller_get_longitude(void) {
 
 bool app_controller_get_location_valid(void) {
     return g_location_ready;
+}
+
+bool app_controller_request_location(void) {
+    if (!g_wifi_connected) {
+        ESP_LOGW(TAG, "WiFi未连接，无法刷新定位");
+        return false;
+    }
+    ESP_LOGI(TAG, "手动刷新定位");
+    reset_request_status();
+    g_refresh_mode = REFRESH_MODE_LOCATION_ONLY;
+    xSemaphoreGive(location_Sem);
+    return true;
+}
+
+bool app_controller_request_time_sync(void) {
+    if (!g_wifi_connected) {
+        ESP_LOGW(TAG, "WiFi未连接，无法同步时间");
+        return false;
+    }
+    ESP_LOGI(TAG, "手动同步时间");
+    reset_request_status();
+    g_refresh_mode = REFRESH_MODE_TIME_ONLY;
+    app_time_sntp_sync();
+    xSemaphoreGive(time_sync_Sem);
+    return true;
+}
+
+bool app_controller_request_weather(void) {
+    if (!g_wifi_connected) {
+        ESP_LOGW(TAG, "WiFi未连接，无法获取天气");
+        return false;
+    }
+    ESP_LOGI(TAG, "手动刷新天气");
+    reset_request_status();
+    g_refresh_mode = REFRESH_MODE_WEATHER_ONLY;
+    xSemaphoreGive(weather_Sem);
+    return true;
 }

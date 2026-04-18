@@ -2,6 +2,7 @@
 #define APP_UI_WEATHER_PORT_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "app_weather.h"
 
 void app_ui_weather_set_temp(int temp);
@@ -20,5 +21,6 @@ void app_ui_weather_update_all(const weather_data_t* data);
 void app_ui_weather_set_loading(void);
 void app_ui_weather_set_success(void);
 void app_ui_weather_set_fail(void);
+bool app_ui_weather_request_refresh(void);
 
 #endif

@@ -1,4 +1,5 @@
 #include "app_ui_time_port.h"
+#include "app_controller.h"
 #include "lvgl.h"
 #include <stdio.h>
 
@@ -31,4 +32,8 @@ void app_ui_time_set_main_table_time(int hour, int minute) {
     char buf[16];
     snprintf(buf, sizeof(buf), "%s %d:%02d", ampm, display_hour, minute);
     lv_label_set_text(main_table_time, buf);
+}
+
+void app_ui_time_request_sync(void) {
+    app_controller_request_time_sync();
 }
