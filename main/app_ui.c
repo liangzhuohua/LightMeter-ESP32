@@ -186,6 +186,8 @@ lv_obj_t *time_date_label = NULL;
 
 lv_obj_t *location_city_label = NULL;
 lv_obj_t *location_detail_label = NULL;
+lv_obj_t *location_status_dot = NULL;
+lv_obj_t *weather_status_dot = NULL;
 
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
@@ -4049,6 +4051,14 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(weather_icon, &lv_font_montserrat_28, 0);
     lv_obj_set_style_text_color(weather_icon, lv_color_hex(0xffd700), 0);
 
+    weather_status_dot = lv_obj_create(weather_row1);
+    lv_obj_set_size(weather_status_dot, 8, 8);
+    lv_obj_set_style_bg_color(weather_status_dot, lv_color_hex(0xffd700), 0);
+    lv_obj_set_style_bg_opa(weather_status_dot, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(weather_status_dot, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(weather_status_dot, 0, 0);
+    lv_obj_add_flag(weather_status_dot, LV_OBJ_FLAG_HIDDEN);
+
     weather_temp_label = lv_label_create(weather_row1);
     lv_label_set_text(weather_temp_label, "26" "\xC2\xB0" "C");
     lv_obj_set_style_text_font(weather_temp_label, &lv_font_montserrat_28, 0);
@@ -4439,6 +4449,14 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_label_set_text(location_title, "Location");
     lv_obj_set_style_text_font(location_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(location_title, lv_color_white(), 0);
+
+    location_status_dot = lv_obj_create(location_header);
+    lv_obj_set_size(location_status_dot, 8, 8);
+    lv_obj_set_style_bg_color(location_status_dot, lv_color_hex(0xffd700), 0);
+    lv_obj_set_style_bg_opa(location_status_dot, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(location_status_dot, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(location_status_dot, 0, 0);
+    lv_obj_add_flag(location_status_dot, LV_OBJ_FLAG_HIDDEN);
 
     // 第二行：城市
     location_city_label = lv_label_create(location_card);

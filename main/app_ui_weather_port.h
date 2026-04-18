@@ -17,4 +17,8 @@ void app_ui_sunrise_sunset_set_indicator(int position_percent);
 
 void app_ui_weather_update_all(const weather_data_t* data);
 
+void app_ui_weather_set_loading(void);
+void app_ui_weather_set_success(void);
+void app_ui_weather_set_fail(void);
+
 #endif

@@ -144,6 +144,10 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
         ESP_LOGI(TAG, "WiFi已连接，开始串行请求：1.定位 -> 2.时间 -> 3.天气");
         reset_request_status();
         log_memory("WiFi连接后");
+        if (example_lvgl_lock(-1)) {
+            app_ui_location_set_loading();
+            example_lvgl_unlock();
+        }
         xSemaphoreGive(location_Sem);
     }
 }
@@ -355,6 +359,7 @@ static void location_result_callback(const location_result_t* result) {
         ESP_LOGE(TAG, "定位失败，已达到最大重试次数");
         if (example_lvgl_lock(-1)) {
             app_ui_location_set_unknown();
+            app_ui_location_set_fail();
             example_lvgl_unlock();
         }
         g_location_ready = false;
@@ -416,11 +421,13 @@ static void location_result_callback(const location_result_t* result) {
         if (city[0] != '\0') {
             if (example_lvgl_lock(-1)) {
                 app_ui_location_set_city(city);
+                app_ui_location_set_success();
                 example_lvgl_unlock();
             }
         } else {
             if (example_lvgl_lock(-1)) {
                 app_ui_location_set_city("Unknown");
+                app_ui_location_set_success();
                 example_lvgl_unlock();
             }
             strncpy(city, "Unknown", sizeof(city) - 1);
@@ -448,6 +455,10 @@ static void location_result_callback(const location_result_t* result) {
     ESP_LOGI(TAG, "定位完成(%s)，触发时间同步", g_req_status.location_success ? "成功" : "失败");
     g_req_status.location_done = true;
     app_time_sntp_init();
+    if (example_lvgl_lock(-1)) {
+        app_ui_weather_set_loading();
+        example_lvgl_unlock();
+    }
     xSemaphoreGive(time_sync_Sem);
 }
 
@@ -465,6 +476,10 @@ static void weather_result_callback(const weather_data_t* data) {
 
         ESP_LOGE(TAG, "天气获取失败，已达到最大重试次数");
         g_req_status.weather_success = false;
+        if (example_lvgl_lock(-1)) {
+            app_ui_weather_set_fail();
+            example_lvgl_unlock();
+        }
     } else {
         ESP_LOGI(TAG, "获取天气成功: %s, 温度: %d, 湿度: %d", data->desc, data->temp, data->humidity);
         ESP_LOGI(TAG, "月出: %02d:%02d, 月落: %02d:%02d, 月相: %s",
@@ -474,6 +489,7 @@ static void weather_result_callback(const weather_data_t* data) {
 
         if (example_lvgl_lock(-1)) {
             app_ui_weather_update_all(data);
+            app_ui_weather_set_success();
             example_lvgl_unlock();
         }
 
@@ -505,6 +521,11 @@ static void task_get_location(void* pvParameters) {
                 ESP_LOGW(TAG, "定位失败：未扫描WiFi，跳过继续时间同步");
                 g_req_status.location_done = true;
                 g_req_status.location_success = false;
+                if (example_lvgl_lock(-1)) {
+                    app_ui_location_set_fail();
+                    app_ui_weather_set_loading();
+                    example_lvgl_unlock();
+                }
                 app_time_sntp_init();
                 xSemaphoreGive(time_sync_Sem);
                 continue;
@@ -514,6 +535,11 @@ static void task_get_location(void* pvParameters) {
                 ESP_LOGW(TAG, "定位失败：未连接WiFi，跳过继续时间同步");
                 g_req_status.location_done = true;
                 g_req_status.location_success = false;
+                if (example_lvgl_lock(-1)) {
+                    app_ui_location_set_fail();
+                    app_ui_weather_set_loading();
+                    example_lvgl_unlock();
+                }
                 app_time_sntp_init();
                 xSemaphoreGive(time_sync_Sem);
                 continue;
@@ -523,6 +549,11 @@ static void task_get_location(void* pvParameters) {
                 ESP_LOGW(TAG, "定位失败：扫描结果为空，跳过继续时间同步");
                 g_req_status.location_done = true;
                 g_req_status.location_success = false;
+                if (example_lvgl_lock(-1)) {
+                    app_ui_location_set_fail();
+                    app_ui_weather_set_loading();
+                    example_lvgl_unlock();
+                }
                 app_time_sntp_init();
                 xSemaphoreGive(time_sync_Sem);
                 continue;
@@ -730,6 +761,10 @@ static void task_weather_update(void* pvParameters) {
                 ESP_LOGW(TAG, "天气获取失败：未连接WiFi");
                 g_req_status.weather_done = true;
                 g_req_status.weather_success = false;
+                if (example_lvgl_lock(-1)) {
+                    app_ui_weather_set_fail();
+                    example_lvgl_unlock();
+                }
                 ESP_LOGI(TAG, "========== 请求完成 ==========");
                 ESP_LOGI(TAG, "定位: %s", g_req_status.location_success ? "成功" : "失败");
                 ESP_LOGI(TAG, "时间: %s", g_req_status.time_success ? "成功" : "失败");

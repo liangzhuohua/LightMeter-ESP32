@@ -4,5 +4,8 @@
 void app_ui_location_set_city(const char* city);
 void app_ui_location_set_detail(const char* detail);
 void app_ui_location_set_unknown(void);
+void app_ui_location_set_loading(void);
+void app_ui_location_set_success(void);
+void app_ui_location_set_fail(void);
 
 #endif
