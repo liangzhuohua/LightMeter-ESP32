@@ -4,6 +4,7 @@
 #include "app_ui_location_port.h"
 #include "app_ui_time_port.h"
 #include "app_ui_weather_port.h"
+#include "app_ui_ota_port.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -192,6 +193,11 @@ lv_obj_t *location_detail_label = NULL;
 lv_obj_t *location_status_dot = NULL;
 lv_obj_t *weather_status_dot = NULL;
 lv_obj_t *time_status_dot = NULL;
+lv_obj_t* ota_win = NULL;
+lv_obj_t* ota_progress_bar = NULL;
+lv_obj_t* ota_status_label = NULL;
+lv_obj_t* ota_ssid_label = NULL;
+lv_obj_t* ota_cancel_btn = NULL;
 
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
@@ -2421,6 +2427,7 @@ static void btn_add_cam_event_cb(lv_event_t * e)
 // ──────────────────────────────────────────────
 // UI 初始化主函数
 // ──────────────────────────────────────────────
+static void create_ota_window(lv_obj_t* parent);
 void ui_exposure_init(void) {
 
     /* 根据屏幕宽度设置字体 */
@@ -2444,6 +2451,8 @@ void ui_exposure_init(void) {
     ui_main_page_init(tile_main);
     ui_setting_page_init(tile_setting);
     //--------------------------------------------------------+
+
+    create_ota_window(lv_scr_act());
 }
 
 // ──────────────────────────────────────────────
@@ -4045,6 +4054,75 @@ static void location_card_long_press_cb(lv_event_t* e) {
     }
 }
 
+static void ota_cancel_btn_cb(lv_event_t* e) {
+    app_ui_ota_request_cancel();
+    app_ui_ota_hide_window();
+}
+
+static void about_card_long_press_cb(lv_event_t* e) {
+    if (ota_win == NULL) return;
+    if (app_ui_ota_request_start()) {
+        app_ui_ota_show_window();
+    }
+}
+
+static void create_ota_window(lv_obj_t* parent) {
+    ota_win = lv_obj_create(parent);
+    lv_obj_remove_style_all(ota_win);
+    lv_obj_set_size(ota_win, 240, 280);
+    lv_obj_align(ota_win, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(ota_win, lv_color_hex(0x1a1a2e), 0);
+    lv_obj_set_style_bg_opa(ota_win, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(ota_win, 15, 0);
+    lv_obj_set_style_border_width(ota_win, 2, 0);
+    lv_obj_set_style_border_color(ota_win, lv_color_hex(0x87ceeb), 0);
+    lv_obj_set_style_pad_all(ota_win, 15, 0);
+    lv_obj_set_flex_flow(ota_win, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(ota_win, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(ota_win, 10, 0);
+    lv_obj_add_flag(ota_win, LV_OBJ_FLAG_HIDDEN);
+
+    lv_obj_t* title = lv_label_create(ota_win);
+    lv_label_set_text(title, LV_SYMBOL_WIFI " OTA Upgrade");
+    lv_obj_set_style_text_font(title, &lv_font_montserrat_16, 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0x87ceeb), 0);
+
+    ota_ssid_label = lv_label_create(ota_win);
+    lv_label_set_text(ota_ssid_label, "WiFi: ESP32S3_OTA\nPass: 12345678\nIP: 192.168.4.1");
+    lv_obj_set_style_text_font(ota_ssid_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(ota_ssid_label, lv_color_hex(0xaaaaaa), 0);
+    lv_obj_set_style_text_align(ota_ssid_label, LV_TEXT_ALIGN_CENTER, 0);
+
+    ota_progress_bar = lv_bar_create(ota_win);
+    lv_obj_set_width(ota_progress_bar, lv_pct(90));
+    lv_obj_set_height(ota_progress_bar, 12);
+    lv_bar_set_range(ota_progress_bar, 0, 100);
+    lv_bar_set_value(ota_progress_bar, 0, LV_ANIM_OFF);
+    lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x2a2a3e), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ota_progress_bar, lv_color_hex(0x00ff00), LV_PART_INDICATOR);
+    lv_obj_set_style_radius(ota_progress_bar, 6, LV_PART_MAIN);
+    lv_obj_set_style_radius(ota_progress_bar, 6, LV_PART_INDICATOR);
+
+    ota_status_label = lv_label_create(ota_win);
+    lv_label_set_text(ota_status_label, "Starting AP...");
+    lv_obj_set_style_text_font(ota_status_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(ota_status_label, lv_color_white(), 0);
+    lv_obj_set_style_text_align(ota_status_label, LV_TEXT_ALIGN_CENTER, 0);
+
+    ota_cancel_btn = lv_btn_create(ota_win);
+    lv_obj_set_size(ota_cancel_btn, 100, 35);
+    lv_obj_set_style_bg_color(ota_cancel_btn, lv_color_hex(0xff6b6b), 0);
+    lv_obj_set_style_bg_color(ota_cancel_btn, lv_color_hex(0xcc5555), LV_STATE_PRESSED);
+    lv_obj_set_style_radius(ota_cancel_btn, 8, 0);
+    lv_obj_add_event_cb(ota_cancel_btn, ota_cancel_btn_cb, LV_EVENT_CLICKED, NULL);
+
+    lv_obj_t* cancel_label = lv_label_create(ota_cancel_btn);
+    lv_label_set_text(cancel_label, "Cancel");
+    lv_obj_set_style_text_font(cancel_label, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(cancel_label, lv_color_white(), 0);
+    lv_obj_center(cancel_label);
+}
+
 static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_bg_color(parent, lv_color_black(), 0);
     lv_obj_set_style_pad_all(parent, 10, 0);
@@ -4524,6 +4602,9 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_width(about_card, 0, 0);
     lv_obj_set_flex_flow(about_card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(about_card, 6, 0);
+    lv_obj_add_flag(about_card, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(about_card, about_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
+    lv_obj_set_style_bg_color(about_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
     // 第一行：图标 + 标题
     lv_obj_t* about_header = lv_obj_create(about_card);

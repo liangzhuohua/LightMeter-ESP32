@@ -30,6 +30,8 @@ idf_component_register(
     "hw_wakeup_key.c"
     "hw_max17055.c"
     "app_ui_battery_port.c"
+    "hw_ota.c"
+    "app_ui_ota_port.c"
 
     INCLUDE_DIRS ".")
 

@@ -3,6 +3,7 @@
 #include "app_ui.h"
 #include "app_ui_wifi_port.h"
 #include "app_ui_location_port.h"
+#include "app_ui_ota_port.h"
 #include "app_ui_time_port.h"
 #include "app_ui_weather_port.h"
 #include "app_exposure_calc.h"
@@ -16,6 +17,7 @@
 #include "hw_oled.h"
 #include "hw_wifi.h"
 #include "hw_max17055.h"
+#include "hw_ota.h"
 #include "app_ui_battery_port.h"
 #include "app_location.h"
 #include "esp_heap_caps.h"
@@ -1053,4 +1055,44 @@ bool app_controller_request_weather(void) {
     g_refresh_mode = REFRESH_MODE_WEATHER_ONLY;
     xSemaphoreGive(weather_Sem);
     return true;
+}
+
+static void ota_progress_callback(hw_ota_state_t state, int progress) {
+    ESP_LOGI(TAG, "OTA state: %d, progress: %d%%", state, progress);
+    if (example_lvgl_lock(-1)) {
+        app_ui_ota_set_state((int)state, progress);
+        example_lvgl_unlock();
+    }
+}
+
+static void ota_start_task(void* arg) {
+    esp_err_t err = hw_ota_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "OTA启动失败: %s", esp_err_to_name(err));
+        if (example_lvgl_lock(-1)) {
+            app_ui_ota_set_state((int)HW_OTA_FAIL, 0);
+            example_lvgl_unlock();
+        }
+    }
+    vTaskDelete(NULL);
+}
+
+bool app_controller_request_ota(void) {
+    if (hw_ota_get_state() != HW_OTA_IDLE) {
+        ESP_LOGW(TAG, "OTA already in progress");
+        return false;
+    }
+    ESP_LOGI(TAG, "启动OTA升级模式");
+    hw_ota_register_progress_cb(ota_progress_callback);
+    xTaskCreate(ota_start_task, "ota_start", 4096, NULL, 5, NULL);
+    return true;
+}
+
+void app_controller_cancel_ota(void) {
+    ESP_LOGI(TAG, "取消OTA升级");
+    hw_ota_stop();
+    if (example_lvgl_lock(-1)) {
+        app_ui_ota_set_state((int)HW_OTA_IDLE, 0);
+        example_lvgl_unlock();
+    }
 }

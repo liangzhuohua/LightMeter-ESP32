@@ -30,6 +30,8 @@ void app_controller_init(void);
 bool app_controller_request_location(void);
 bool app_controller_request_time_sync(void);
 bool app_controller_request_weather(void);
+bool app_controller_request_ota(void);
+void app_controller_cancel_ota(void);
 void app_controller_enter_deep_sleep(void);
 void app_controller_wakeup_key_init(void);
 
