@@ -877,6 +877,7 @@ void app_controller_enter_deep_sleep(void) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
     esp_wifi_stop();
+    esp_wifi_deinit();
 
     hw_wakeup_key_enable_sleep_wakeup();
 

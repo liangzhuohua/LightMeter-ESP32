@@ -298,6 +298,7 @@ void oled_enter_sleep(void) {
 
 void oled_release_pins(void) {
     ESP_LOGI(TAG, "Releasing QSPI pins for deep sleep");
+    spi_bus_free(LCD_HOST);
     gpio_num_t qspi_pins[] = {
         EXAMPLE_PIN_NUM_LCD_CS,
         EXAMPLE_PIN_NUM_LCD_PCLK,
