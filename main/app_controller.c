@@ -21,6 +21,8 @@
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+#include "esp_wifi.h"
+#include "bsp_i2c_init.h"
 
 static const char* TAG = "app_controller";
 
@@ -798,12 +800,20 @@ void app_controller_enter_deep_sleep(void) {
 
     app_time_save_to_rtc();
 
-    oled_set_brightness(0);
+    oled_enter_sleep();
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    touch_enter_sleep();
+
+    hw_veml7700_shutdown();
+
+    hw_max17055_sleep();
 
     if (g_wifi_connected) {
-        WifiOperationMsg msg = { .op = WIFI_OP_DISCONNECT };
-        xQueueSend(wifi_operation_queue, &msg, 0);
+        hw_wifi_disconnect();
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
+    esp_wifi_stop();
 
     hw_wakeup_key_enable_sleep_wakeup();
 

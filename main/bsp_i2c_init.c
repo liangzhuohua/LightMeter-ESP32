@@ -1,5 +1,6 @@
 #include "bsp_i2c_init.h"
 #include "i2cdev.h"
+#include "driver/rtc_io.h"
 
 static const char* TAG = "I2C_INIT";
 
@@ -52,4 +53,15 @@ i2c_master_bus_handle_t i2c_get_bus_handle(void) {
         s_bus_handle = i2cdev_get_bus_handle(I2C_HOST);
     }
     return s_bus_handle;
+}
+
+void i2c_release_pins(void) {
+    ESP_LOGI(TAG, "Releasing I2C pins for deep sleep");
+    gpio_num_t i2c_pins[] = { I2C_SDA, I2C_SCL };
+    for (int i = 0; i < sizeof(i2c_pins) / sizeof(i2c_pins[0]); i++) {
+        rtc_gpio_init(i2c_pins[i]);
+        rtc_gpio_set_direction(i2c_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
+        rtc_gpio_pulldown_dis(i2c_pins[i]);
+        rtc_gpio_pullup_dis(i2c_pins[i]);
+    }
 }

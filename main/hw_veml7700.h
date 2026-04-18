@@ -11,5 +11,6 @@
 void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_saving_mode);
 void hw_veml7700_get_ambient_light(uint32_t* als);
 void hw_veml7700_get_white_channel(uint32_t* white);
+void hw_veml7700_shutdown(void);
 
 #endif

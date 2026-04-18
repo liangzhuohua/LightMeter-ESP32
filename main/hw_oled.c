@@ -1,10 +1,13 @@
 #include "hw_oled.h"
+#include "driver/rtc_io.h"
 
 static const char *TAG = "example";
 static SemaphoreHandle_t lvgl_mux = NULL;
 
 esp_lcd_touch_handle_t tp = NULL;
 esp_lcd_panel_handle_t panel_handle = NULL;
+static esp_lcd_panel_io_handle_t io_handle = NULL;
+static esp_lcd_panel_io_handle_t tp_io_handle = NULL;
 
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
@@ -152,7 +155,6 @@ void oled_lvgl_init(void) {
     ESP_ERROR_CHECK(spi_bus_initialize(LCD_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
     ESP_LOGI(TAG, "Install panel IO");
-    esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_spi_config_t io_config = QSPI_AMOLED_PANEL_IO_QSPI_CONFIG(EXAMPLE_PIN_NUM_LCD_CS,
                                                                                 example_notify_lvgl_flush_ready,
                                                                                 &disp_drv);
@@ -190,9 +192,7 @@ void oled_lvgl_init(void) {
     // i2c_scan();
     // vTaskDelay(pdMS_TO_TICKS(1000));
 
-    esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    // const esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_CST820_CONFIG();
-    const esp_lcd_panel_io_i2c_config_t tp_io_config = TOUCH_IO_I2C_CONFIG();
+    esp_lcd_panel_io_i2c_config_t tp_io_config = TOUCH_IO_I2C_CONFIG();
     // Attach the TOUCH to the I2C bus (use bus handle for new driver)
     i2c_master_bus_handle_t bus_handle = i2c_get_bus_handle();
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(bus_handle, &tp_io_config, &tp_io_handle));
@@ -268,5 +268,55 @@ void oled_lvgl_init(void) {
 }
 
 void oled_set_brightness(uint8_t brightness) {
-    ESP_ERROR_CHECK(panel_qspi_amoled_set_brightness(panel_handle, brightness)); // 设置亮度为 15
+    ESP_ERROR_CHECK(panel_qspi_amoled_set_brightness(panel_handle, brightness));
+}
+
+void oled_enter_sleep(void) {
+    ESP_LOGI(TAG, "AMOLED entering sleep mode");
+    esp_lcd_panel_disp_on_off(panel_handle, false);
+    vTaskDelay(pdMS_TO_TICKS(20));
+    panel_qspi_amoled_set_brightness(panel_handle, 0);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    esp_lcd_panel_io_tx_param(io_handle, 0x10, NULL, 0);
+    vTaskDelay(pdMS_TO_TICKS(120));
+}
+
+void oled_release_pins(void) {
+    ESP_LOGI(TAG, "Releasing QSPI pins for deep sleep");
+    gpio_num_t qspi_pins[] = {
+        EXAMPLE_PIN_NUM_LCD_CS,
+        EXAMPLE_PIN_NUM_LCD_PCLK,
+        EXAMPLE_PIN_NUM_LCD_DATA0,
+        EXAMPLE_PIN_NUM_LCD_DATA1,
+        EXAMPLE_PIN_NUM_LCD_DATA2,
+        EXAMPLE_PIN_NUM_LCD_DATA3,
+        EXAMPLE_PIN_NUM_LCD_RST,
+    };
+    for (int i = 0; i < sizeof(qspi_pins) / sizeof(qspi_pins[0]); i++) {
+        rtc_gpio_init(qspi_pins[i]);
+        rtc_gpio_set_direction(qspi_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
+        rtc_gpio_pulldown_dis(qspi_pins[i]);
+        rtc_gpio_pullup_dis(qspi_pins[i]);
+    }
+}
+
+void touch_enter_sleep(void) {
+    ESP_LOGI(TAG, "Touch IC entering sleep mode");
+    uint8_t sleep_cmd = 0x03;
+    esp_lcd_panel_io_tx_param(tp_io_handle, 0xE5, &sleep_cmd, 1);
+    vTaskDelay(pdMS_TO_TICKS(50));
+}
+
+void touch_release_pins(void) {
+    ESP_LOGI(TAG, "Releasing touch pins for deep sleep");
+    gpio_num_t touch_pins[] = {
+        EXAMPLE_PIN_NUM_TOUCH_RST,
+        EXAMPLE_PIN_NUM_TOUCH_INT,
+    };
+    for (int i = 0; i < sizeof(touch_pins) / sizeof(touch_pins[0]); i++) {
+        rtc_gpio_init(touch_pins[i]);
+        rtc_gpio_set_direction(touch_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
+        rtc_gpio_pulldown_dis(touch_pins[i]);
+        rtc_gpio_pullup_dis(touch_pins[i]);
+    }
 }

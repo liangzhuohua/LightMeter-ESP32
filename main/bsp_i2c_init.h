@@ -13,5 +13,6 @@
 
 esp_err_t i2c_init(void);
 i2c_master_bus_handle_t i2c_get_bus_handle(void);
+void i2c_release_pins(void);
 
 #endif

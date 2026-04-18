@@ -1,6 +1,8 @@
 #include "hw_max17055.h"
 #include <string.h>
 #include <driver/gpio.h>
+#include "i2cdev.h"
+#include "max17055.h"
 
 static const char *TAG = "hw_max17055";
 
@@ -135,4 +137,13 @@ bool hw_max17055_is_charging(void)
 void hw_max17055_get_status(uint16_t *status)
 {
     max17055_get_status(&max17055_device, status);
+}
+
+void hw_max17055_sleep(void)
+{
+    ESP_LOGI(TAG, "Putting MAX17055 into hibernate mode");
+    uint16_t hibcfg;
+    i2c_dev_read_reg(&max17055_device, MAX17055_REG_HIBCFG, &hibcfg, 2);
+    hibcfg |= (1 << 0);
+    i2c_dev_write_reg(&max17055_device, MAX17055_REG_HIBCFG, &hibcfg, 2);
 }

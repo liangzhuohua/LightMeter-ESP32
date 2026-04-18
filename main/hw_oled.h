@@ -90,5 +90,9 @@ void oled_lvgl_init(void);
 bool example_lvgl_lock(int timeout_ms);
 void example_lvgl_unlock(void);
 void oled_set_brightness(uint8_t brightness);
+void oled_enter_sleep(void);
+void oled_release_pins(void);
+void touch_enter_sleep(void);
+void touch_release_pins(void);
 
 #endif // !__BSP_OLED_H__

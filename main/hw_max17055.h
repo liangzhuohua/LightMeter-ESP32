@@ -30,5 +30,6 @@ void hw_max17055_get_cycles(uint16_t *cycles);
 void hw_max17055_get_age(uint8_t *age_pct);
 bool hw_max17055_is_charging(void);
 void hw_max17055_get_status(uint16_t *status);
+void hw_max17055_sleep(void);
 
 #endif

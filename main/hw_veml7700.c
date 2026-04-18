@@ -1,5 +1,6 @@
 #include "hw_veml7700.h"
 #include <string.h>
+#include "esp_log.h"
 
 static const char *TAG = "hw_veml7700";
 
@@ -98,4 +99,10 @@ void hw_veml7700_get_ambient_light(uint32_t* als) {
 
 void hw_veml7700_get_white_channel(uint32_t* white) {
     veml7700_get_white_channel(&veml7700_device, &veml7700_configuration, white);
+}
+
+void hw_veml7700_shutdown(void) {
+    ESP_LOGI(TAG, "Shutting down VEML7700");
+    veml7700_configuration.shutdown = 1;
+    veml7700_set_config(&veml7700_device, &veml7700_configuration);
 }
