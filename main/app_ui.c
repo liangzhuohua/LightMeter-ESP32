@@ -4055,8 +4055,9 @@ static void location_card_long_press_cb(lv_event_t* e) {
 }
 
 static void ota_cancel_btn_cb(lv_event_t* e) {
-    app_ui_ota_request_cancel();
+    app_ui_ota_set_state(0, 0);
     app_ui_ota_hide_window();
+    app_ui_ota_request_cancel();
 }
 
 static void about_card_long_press_cb(lv_event_t* e) {
@@ -4077,6 +4078,7 @@ static void create_ota_window(lv_obj_t* parent) {
     lv_obj_set_style_border_width(ota_win, 2, 0);
     lv_obj_set_style_border_color(ota_win, lv_color_hex(0x87ceeb), 0);
     lv_obj_set_style_pad_all(ota_win, 15, 0);
+    lv_obj_add_flag(ota_win, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_flex_flow(ota_win, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(ota_win, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_row(ota_win, 10, 0);

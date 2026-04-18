@@ -23,6 +23,7 @@ static const esp_partition_t* g_update_partition = NULL;
 static int g_ota_total_written = 0;
 static int g_ota_total_size = 0;
 static bool g_ap_started = false;
+static esp_netif_t* g_ap_netif = NULL;
 
 static const char HTML_UPLOAD_PAGE[] =
 "<!DOCTYPE html>"
@@ -252,7 +253,7 @@ esp_err_t hw_ota_start(void) {
 
     notify_state(HW_OTA_AP_STARTING, 0);
 
-    esp_netif_create_default_wifi_ap();
+    g_ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_config_t ap_config = {0};
     strncpy((char*)ap_config.ap.ssid, OTA_AP_SSID, sizeof(ap_config.ap.ssid) - 1);
@@ -283,6 +284,11 @@ void hw_ota_stop(void) {
         esp_wifi_start();
         g_ap_started = false;
         ESP_LOGI(TAG, "AP stopped, restored STA mode");
+    }
+
+    if (g_ap_netif) {
+        esp_netif_destroy(g_ap_netif);
+        g_ap_netif = NULL;
     }
 
     g_ota_state = HW_OTA_IDLE;

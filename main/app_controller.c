@@ -1088,11 +1088,16 @@ bool app_controller_request_ota(void) {
     return true;
 }
 
-void app_controller_cancel_ota(void) {
-    ESP_LOGI(TAG, "取消OTA升级");
+static void ota_stop_task(void* arg) {
     hw_ota_stop();
     if (example_lvgl_lock(-1)) {
         app_ui_ota_set_state((int)HW_OTA_IDLE, 0);
         example_lvgl_unlock();
     }
+    vTaskDelete(NULL);
+}
+
+void app_controller_cancel_ota(void) {
+    ESP_LOGI(TAG, "取消OTA升级");
+    xTaskCreate(ota_stop_task, "ota_stop", 4096, NULL, 5, NULL);
 }
