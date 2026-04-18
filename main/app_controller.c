@@ -632,6 +632,7 @@ static void task_time_sync_and_update(void* pvParameters) {
                         app_ui_time_set_time(current_time.hour, current_time.minute);
                         app_ui_time_set_date(current_time.year, current_time.month, current_time.day);
                         app_ui_time_set_main_table_time(current_time.hour, current_time.minute);
+                        app_ui_time_set_success();
                         example_lvgl_unlock();
                     }
                 }
@@ -647,6 +648,10 @@ static void task_time_sync_and_update(void* pvParameters) {
                 }
 
                 ESP_LOGW(TAG, "时间同步失败，已达到最大重试次数");
+                if (example_lvgl_lock(-1)) {
+                    app_ui_time_set_fail();
+                    example_lvgl_unlock();
+                }
             }
 
             g_req_status.time_done = true;

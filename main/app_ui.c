@@ -191,6 +191,7 @@ lv_obj_t *location_city_label = NULL;
 lv_obj_t *location_detail_label = NULL;
 lv_obj_t *location_status_dot = NULL;
 lv_obj_t *weather_status_dot = NULL;
+lv_obj_t *time_status_dot = NULL;
 
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
@@ -4029,7 +4030,11 @@ static void weather_card_long_press_cb(lv_event_t* e) {
 }
 
 static void time_card_long_press_cb(lv_event_t* e) {
-    app_ui_time_request_sync();
+    if (app_ui_time_request_sync()) {
+        app_ui_time_set_loading();
+    } else {
+        app_ui_time_set_fail();
+    }
 }
 
 static void location_card_long_press_cb(lv_event_t* e) {
@@ -4431,6 +4436,14 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_label_set_text(time_title, "Time");
     lv_obj_set_style_text_font(time_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(time_title, lv_color_white(), 0);
+
+    time_status_dot = lv_obj_create(time_header);
+    lv_obj_set_size(time_status_dot, 8, 8);
+    lv_obj_set_style_bg_color(time_status_dot, lv_color_hex(0xffd700), 0);
+    lv_obj_set_style_bg_opa(time_status_dot, LV_OPA_COVER, 0);
+    lv_obj_set_style_radius(time_status_dot, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_border_width(time_status_dot, 0, 0);
+    lv_obj_add_flag(time_status_dot, LV_OBJ_FLAG_HIDDEN);
 
     // 第二行：时间
     time_time_label = lv_label_create(time_card);
