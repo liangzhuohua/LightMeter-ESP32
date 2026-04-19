@@ -343,17 +343,10 @@ static void weather_dot_anim_cb(void* var, int32_t v) {
 void app_ui_weather_set_loading(void) {
     if (weather_status_dot == NULL) return;
 
+    lv_anim_del(weather_status_dot, weather_dot_anim_cb);
     lv_obj_clear_flag(weather_status_dot, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_bg_opa(weather_status_dot, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(weather_status_dot, lv_color_hex(0xffd700), 0);
-
-    lv_anim_init(&weather_blink_anim);
-    lv_anim_set_var(&weather_blink_anim, weather_status_dot);
-    lv_anim_set_exec_cb(&weather_blink_anim, weather_dot_anim_cb);
-    lv_anim_set_values(&weather_blink_anim, 0, 1);
-    lv_anim_set_time(&weather_blink_anim, 500);
-    lv_anim_set_playback_time(&weather_blink_anim, 500);
-    lv_anim_set_repeat_count(&weather_blink_anim, LV_ANIM_REPEAT_INFINITE);
-    lv_anim_start(&weather_blink_anim);
 }
 
 void app_ui_weather_set_success(void) {
@@ -368,8 +361,8 @@ void app_ui_weather_set_success(void) {
     lv_anim_set_var(&fade, weather_status_dot);
     lv_anim_set_exec_cb(&fade, weather_dot_anim_cb);
     lv_anim_set_values(&fade, 1, 0);
-    lv_anim_set_time(&fade, 3000);
-    lv_anim_set_delay(&fade, 2000);
+    lv_anim_set_time(&fade, 800);
+    lv_anim_set_delay(&fade, 1500);
     lv_anim_set_repeat_count(&fade, 0);
     lv_anim_start(&fade);
 }
@@ -383,15 +376,6 @@ void app_ui_weather_set_fail(void) {
 
     lv_anim_del(weather_status_dot, weather_dot_anim_cb);
     lv_obj_clear_flag(weather_status_dot, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_bg_opa(weather_status_dot, LV_OPA_COVER, 0);
     lv_obj_set_style_bg_color(weather_status_dot, lv_color_hex(0xff6b6b), 0);
-
-    lv_anim_t fade;
-    lv_anim_init(&fade);
-    lv_anim_set_var(&fade, weather_status_dot);
-    lv_anim_set_exec_cb(&fade, weather_dot_anim_cb);
-    lv_anim_set_values(&fade, 1, 0);
-    lv_anim_set_time(&fade, 3000);
-    lv_anim_set_delay(&fade, 3000);
-    lv_anim_set_repeat_count(&fade, 0);
-    lv_anim_start(&fade);
 }
