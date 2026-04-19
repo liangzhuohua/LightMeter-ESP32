@@ -3807,6 +3807,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_align(main_grid_layout, LV_ALIGN_BOTTOM_MID, 0, -10);
     lv_obj_set_size(main_grid_layout, LV_PCT(96), LV_PCT(93));
     lv_obj_set_style_border_width(main_grid_layout, 0, 0);
+    lv_obj_set_style_outline_width(main_grid_layout, 0, 0);
     lv_obj_set_style_pad_all(main_grid_layout, 0, 0);
 
     lv_obj_set_layout(main_grid_layout, LV_LAYOUT_GRID);
