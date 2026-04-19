@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_log.h"
+#include "esp_ota_ops.h"
 #include "app_exposure_calc.h"
 
 // ──────────────────────────────────────────────
@@ -74,8 +75,234 @@ lv_obj_t* main_obj_mode_select;         // 模式选择容器
 
 lv_obj_t* cam_win_select;               // cam选择
 lv_obj_t* wifi_config_win;              // wifi配置
-static lv_obj_t* cam_keyboard;        // 相机参数键盘
+static lv_obj_t* cam_keyboard;        // T9九键键盘
 static lv_obj_t* num_keyboard;        // 数字键盘（用于焦距、闪光同步、自定义光圈）
+
+static void update_main_ui_from_cam_card(void);
+static void update_main_ui_from_len_card(void);
+
+// ──────────────────────────────────────────────
+// T9 九键键盘实现
+// ──────────────────────────────────────────────
+static lv_obj_t* t9_textarea = NULL;          // T9键盘关联的文本框
+static lv_timer_t* t9_timer = NULL;           // T9多击确认定时器
+static uint16_t t9_current_key = LV_BTNMATRIX_BTN_NONE;  // 当前按下的T9键索引
+static uint8_t t9_char_index = 0;             // 当前字符在按键字符集中的索引
+static bool t9_uppercase = false;             // 大写模式
+static bool t9_num_mode = false;              // 数字/符号模式
+
+#define T9_CONFIRM_TIMEOUT 800
+#define T9_ROW_COUNT       5
+#define T9_KEY_HEIGHT      55
+#define T9_GAP             6
+
+static const char* t9_key_chars[] = {
+    "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv", "wxyz", ".,!?",
+    "!?", "-_", "-_@#"
+};
+
+static const char* t9_text_kb_map[] = {
+    "1\nabc", "2\ndef", "3\nghi", "\n",
+    "4\njkl", "5\nmno", "6\npqrs", "\n",
+    "7\ntuv", "8\nwxyz", "9\n.,!?", "\n",
+    LV_SYMBOL_UP, "0", LV_SYMBOL_BACKSPACE, "\n",
+    "123", "-_@#", LV_SYMBOL_OK, "",
+    NULL
+};
+
+static const lv_btnmatrix_ctrl_t t9_text_kb_ctrl[] = {
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1,
+};
+
+static const char* t9_num_kb_map[] = {
+    "1", "2", "3", "\n",
+    "4", "5", "6", "\n",
+    "7", "8", "9", "\n",
+    "!?", "0", "-_", "\n",
+    ".", LV_SYMBOL_BACKSPACE, "abc", "",
+    NULL
+};
+
+static const lv_btnmatrix_ctrl_t t9_num_kb_ctrl[] = {
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1,
+    1, 1, 1,
+};
+
+static void t9_confirm_char(void)
+{
+    t9_current_key = LV_BTNMATRIX_BTN_NONE;
+    t9_char_index = 0;
+    if (t9_timer) {
+        lv_timer_del(t9_timer);
+        t9_timer = NULL;
+    }
+}
+
+static void t9_timer_cb(lv_timer_t* timer)
+{
+    t9_timer = NULL;
+    t9_current_key = LV_BTNMATRIX_BTN_NONE;
+    t9_char_index = 0;
+}
+
+static void t9_insert_char(char c)
+{
+    if (t9_textarea == NULL) return;
+    lv_textarea_add_char(t9_textarea, c);
+}
+
+static void t9_handle_text_key(uint16_t btn_id)
+{
+    if (t9_textarea == NULL) return;
+
+    uint16_t char_key_index;
+    if (btn_id <= 8) {
+        char_key_index = btn_id;
+    } else if (btn_id == 9) {
+        char_key_index = 9;
+    } else if (btn_id == 11) {
+        char_key_index = 10;
+    } else if (btn_id == 13) {
+        char_key_index = 11;
+    } else {
+        return;
+    }
+
+    if (t9_current_key == btn_id && t9_timer != NULL) {
+        lv_textarea_del_char(t9_textarea);
+        t9_char_index++;
+        if (t9_char_index >= strlen(t9_key_chars[char_key_index])) {
+            t9_char_index = 0;
+        }
+    } else {
+        t9_confirm_char();
+        t9_current_key = btn_id;
+        t9_char_index = 0;
+    }
+
+    char c = t9_key_chars[char_key_index][t9_char_index];
+    if (t9_uppercase && c >= 'a' && c <= 'z') {
+        c = c - 'a' + 'A';
+    }
+    t9_insert_char(c);
+
+    if (t9_timer == NULL) {
+        t9_timer = lv_timer_create(t9_timer_cb, T9_CONFIRM_TIMEOUT, NULL);
+        lv_timer_set_repeat_count(t9_timer, 1);
+    } else {
+        lv_timer_reset(t9_timer);
+        lv_timer_set_repeat_count(t9_timer, 1);
+    }
+}
+
+static void t9_kb_event_cb(lv_event_t* e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t* btnm = lv_event_get_target(e);
+
+    if (code != LV_EVENT_VALUE_CHANGED) return;
+
+    uint16_t btn_id = lv_btnmatrix_get_selected_btn(btnm);
+    if (btn_id == LV_BTNMATRIX_BTN_NONE) return;
+
+    const char* txt = lv_btnmatrix_get_btn_text(btnm, btn_id);
+    if (txt == NULL) return;
+
+    if (!t9_num_mode) {
+        switch (btn_id) {
+        case 0: case 1: case 2:
+        case 3: case 4: case 5:
+        case 6: case 7: case 8:
+            t9_handle_text_key(btn_id);
+            break;
+        case 9:
+            t9_confirm_char();
+            t9_uppercase = !t9_uppercase;
+            break;
+        case 10:
+            t9_confirm_char();
+            t9_insert_char('0');
+            break;
+        case 11:
+            t9_confirm_char();
+            if (t9_textarea) lv_textarea_del_char(t9_textarea);
+            break;
+        case 12:
+            t9_confirm_char();
+            t9_num_mode = true;
+            lv_btnmatrix_set_map(btnm, t9_num_kb_map);
+            lv_btnmatrix_set_ctrl_map(btnm, t9_num_kb_ctrl);
+            break;
+        case 13:
+            t9_handle_text_key(btn_id);
+            break;
+        case 14:
+            t9_confirm_char();
+            lv_obj_add_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
+            update_main_ui_from_cam_card();
+            update_main_ui_from_len_card();
+            ui_calc_port_save_config();
+            break;
+        }
+    } else {
+        switch (btn_id) {
+        case 0: case 1: case 2:
+        case 3: case 4: case 5:
+        case 6: case 7: case 8:
+            t9_confirm_char();
+            t9_insert_char(txt[0]);
+            break;
+        case 9:
+            t9_handle_text_key(btn_id);
+            break;
+        case 10:
+            t9_confirm_char();
+            t9_insert_char('0');
+            break;
+        case 11:
+            t9_handle_text_key(btn_id);
+            break;
+        case 12:
+            t9_confirm_char();
+            t9_insert_char('.');
+            break;
+        case 13:
+            t9_confirm_char();
+            if (t9_textarea) lv_textarea_del_char(t9_textarea);
+            break;
+        case 14:
+            t9_confirm_char();
+            t9_num_mode = false;
+            lv_btnmatrix_set_map(btnm, t9_text_kb_map);
+            lv_btnmatrix_set_ctrl_map(btnm, t9_text_kb_ctrl);
+            break;
+        }
+    }
+}
+
+static void t9_kb_set_textarea(lv_obj_t* ta)
+{
+    t9_confirm_char();
+    t9_textarea = ta;
+    if (ta) {
+        t9_uppercase = false;
+        t9_num_mode = false;
+        lv_btnmatrix_set_map(cam_keyboard, t9_text_kb_map);
+        lv_btnmatrix_set_ctrl_map(cam_keyboard, t9_text_kb_ctrl);
+    }
+}
+
+static lv_obj_t* t9_kb_get_textarea(void)
+{
+    return t9_textarea;
+}
 
 lv_obj_t* weather_temp_label;           // 天气温度
 lv_obj_t* weather_temp_range_label;     // 温度范围
@@ -845,7 +1072,7 @@ static void cam_delete_confirm_event_cb(lv_event_t * e)
 
                     // 隐藏键盘并清除焦点
                     lv_obj_add_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
-                    lv_keyboard_set_textarea(cam_keyboard, NULL);
+                    t9_kb_set_textarea(NULL);
 
                     // 清除被删除卡片上所有输入框的焦点
                     lv_obj_t *card_content = lv_obj_get_child(cam_pending_delete_card, 0);
@@ -1030,7 +1257,7 @@ static void cam_ta_name_event_cb(lv_event_t * e)
     if(code == LV_EVENT_CLICKED) {
         /*只在点击时弹出键盘，避免自动聚焦时弹出*/
         if(cam_keyboard != NULL) {
-            lv_keyboard_set_textarea(cam_keyboard, ta);
+            t9_kb_set_textarea(ta);
             lv_obj_clear_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
             lv_obj_move_foreground(cam_keyboard);
             // 防止输入框自动获得焦点
@@ -1439,7 +1666,7 @@ static void len_ta_name_event_cb(lv_event_t * e)
 
         // 只在点击时弹出键盘，避免自动聚焦时弹出
         if(cam_keyboard != NULL) {
-            lv_keyboard_set_textarea(cam_keyboard, ta);
+            t9_kb_set_textarea(ta);
             lv_obj_clear_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
             lv_obj_move_foreground(cam_keyboard);
             // 防止输入框自动获得焦点
@@ -1753,7 +1980,7 @@ static void len_delete_confirm_event_cb(lv_event_t * e)
 
                     // 隐藏键盘并清除焦点
                     lv_obj_add_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
-                    lv_keyboard_set_textarea(cam_keyboard, NULL);
+                    t9_kb_set_textarea(NULL);
 
                     // 清除被删除卡片上所有输入框的焦点
                     lv_obj_t *card_content = lv_obj_get_child(len_pending_delete_card, 0);
@@ -1910,7 +2137,7 @@ static void btn_add_len_event_cb(lv_event_t * e)
     lv_obj_set_style_text_font(len_ta_name, &lv_font_montserrat_14, 0);
 
     // 关联键盘
-    lv_keyboard_set_textarea(cam_keyboard, len_ta_name);
+    t9_kb_set_textarea(len_ta_name);
     lv_obj_set_style_bg_color(len_ta_name, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(len_ta_name, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(len_ta_name, 1, 0);
@@ -2331,7 +2558,7 @@ static void btn_add_cam_event_cb(lv_event_t * e)
     lv_obj_set_style_text_font(cam_ta_name, &lv_font_montserrat_14, 0);
 
     // 关联键盘
-    lv_keyboard_set_textarea(cam_keyboard, cam_ta_name);
+    t9_kb_set_textarea(cam_ta_name);
     lv_obj_set_style_bg_color(cam_ta_name, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(cam_ta_name, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(cam_ta_name, 1, 0);
@@ -2705,8 +2932,8 @@ static void wifi_scan_press_cb(lv_event_t* e) {
  */
 static void wifi_hide_password_keyboard(void)
 {
-    if (cam_keyboard != NULL && lv_keyboard_get_textarea(cam_keyboard) == wifi_connect_pwd_ta) {
-        lv_keyboard_set_textarea(cam_keyboard, NULL);
+    if (cam_keyboard != NULL && t9_kb_get_textarea() == wifi_connect_pwd_ta) {
+        t9_kb_set_textarea(NULL);
         lv_obj_add_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
         lv_obj_center(wifi_connect_win);
     }
@@ -2954,7 +3181,7 @@ static void wifi_pwd_ta_event_cb(lv_event_t * e)
 
     if(code == LV_EVENT_CLICKED) {
         if(cam_keyboard != NULL) {
-            lv_keyboard_set_textarea(cam_keyboard, ta);
+            t9_kb_set_textarea(ta);
             lv_obj_clear_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
             lv_obj_move_foreground(cam_keyboard);
             lv_obj_align(wifi_connect_win, LV_ALIGN_TOP_MID, 0, 20);
@@ -3040,7 +3267,7 @@ void app_ui_create_cam_card(const char* name, int step_type, int min_idx, int ma
     lv_textarea_set_placeholder_text(cam_ta_name, "Cam Name");
     lv_textarea_set_one_line(cam_ta_name, true);
     lv_obj_set_style_text_font(cam_ta_name, &lv_font_montserrat_14, 0);
-    lv_keyboard_set_textarea(cam_keyboard, cam_ta_name);
+    t9_kb_set_textarea(cam_ta_name);
     lv_obj_set_style_bg_color(cam_ta_name, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(cam_ta_name, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(cam_ta_name, 1, 0);
@@ -3174,7 +3401,7 @@ void app_ui_create_len_card(const char* name, int step_type, int min_idx, int ma
     lv_textarea_set_placeholder_text(len_ta_name, "Len Name");
     lv_textarea_set_one_line(len_ta_name, true);
     lv_obj_set_style_text_font(len_ta_name, &lv_font_montserrat_14, 0);
-    lv_keyboard_set_textarea(cam_keyboard, len_ta_name);
+    t9_kb_set_textarea(len_ta_name);
     lv_obj_set_style_bg_color(len_ta_name, lv_color_hex(0x2a2a3e), 0);
     lv_obj_set_style_border_color(len_ta_name, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(len_ta_name, 1, 0);
@@ -3940,18 +4167,14 @@ static void ui_main_page_init(lv_obj_t* parent) {
 
     lv_obj_add_event_cb(cam_btn_win_add, btn_add_cam_event_cb, LV_EVENT_CLICKED, NULL);
 
-    /* 创建键盘对象 */
+    /* ==================== T9九键键盘（仿照num_keyboard写法，修复map末尾空行） ==================== */
     cam_keyboard = lv_keyboard_create(lv_scr_act());
     lv_obj_add_flag(cam_keyboard, LV_OBJ_FLAG_HIDDEN);
-    lv_keyboard_set_mode(cam_keyboard, LV_KEYBOARD_MODE_TEXT_LOWER);
+    lv_obj_remove_event_cb(cam_keyboard, lv_keyboard_def_event_cb);
 
-    lv_obj_set_style_width(cam_keyboard, 60, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_height(cam_keyboard, 50, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_all(cam_keyboard, 8, LV_PART_ITEMS | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(cam_keyboard, &lv_font_montserrat_20, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(cam_keyboard, LV_TEXT_ALIGN_CENTER, LV_PART_ITEMS | LV_STATE_DEFAULT);
 
-    lv_obj_add_event_cb(cam_keyboard, keyboard_done_cancel_cb, LV_EVENT_READY, NULL);
-    lv_obj_add_event_cb(cam_keyboard, keyboard_done_cancel_cb, LV_EVENT_CANCEL, NULL);
+    lv_obj_add_event_cb(cam_keyboard, t9_kb_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* 创建数字键盘 */
     num_keyboard = lv_keyboard_create(lv_scr_act());
@@ -4717,7 +4940,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
 
     // 第三行：版本号
     lv_obj_t* about_version_value = lv_label_create(about_card);
-    lv_label_set_text(about_version_value, "v1.0.0");
+    const esp_app_desc_t* app_desc = esp_app_get_description();
+    char ver_buf[64];
+    snprintf(ver_buf, sizeof(ver_buf), "v%s", app_desc->version);
+    lv_label_set_text(about_version_value, ver_buf);
     lv_obj_set_style_text_font(about_version_value, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(about_version_value, lv_color_white(), 0);
 }

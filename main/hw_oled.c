@@ -202,7 +202,6 @@ void oled_lvgl_init(void) {
     // 设置屏幕亮度
     ESP_ERROR_CHECK(panel_qspi_amoled_set_brightness(panel_handle, 255)); // 设置亮度为 15
 
-
     // Scan I2C devices
     // i2c_scan();
     // vTaskDelay(pdMS_TO_TICKS(1000));

@@ -5,4 +5,4 @@
 cmake_minimum_required(VERSION 3.5)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 add_compile_options("-Wno-format")
-project(ESP32S3-IDF_AMOLED_LVGL-V8)
+project(ESP32S3-IDF_AMOLED_LVGL-V8 VERSION 1.1.1)
