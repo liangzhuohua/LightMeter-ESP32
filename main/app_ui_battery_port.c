@@ -1,12 +1,11 @@
 #include "app_ui_battery_port.h"
 #include "lvgl.h"
 #include <stdio.h>
-#include <stdbool.h>
 
 extern lv_obj_t *main_table_status;
 extern float g_battery_soc;
-extern bool g_battery_charging;
 extern int g_wifi_state;
+extern battery_status_t g_battery_status;
 
 static const char *get_wifi_icon(void)
 {
@@ -39,15 +38,17 @@ static void update_status_bar(void)
     uint8_t soc_int = (uint8_t)g_battery_soc;
     if (soc_int > 100) soc_int = 100;
 
-    if (g_battery_charging)
+    if (g_battery_status == BATTERY_STATUS_CHARGING)
         lv_label_set_text_fmt(main_table_status, "%s %d%% #00cc00 %s" LV_SYMBOL_CHARGE "#", wifi_icon, soc_int, batt_icon);
+    else if (g_battery_status == BATTERY_STATUS_FULL)
+        lv_label_set_text_fmt(main_table_status, "%s %d%% #00cc00 " LV_SYMBOL_BATTERY_FULL "#", wifi_icon, soc_int);
     else
         lv_label_set_text_fmt(main_table_status, "%s %d%% %s", wifi_icon, soc_int, batt_icon);
 }
 
-void app_ui_battery_update(float soc_pct, float voltage_mv, bool charging)
+void app_ui_battery_update(float soc_pct, float voltage_mv, battery_status_t status)
 {
     g_battery_soc = soc_pct;
-    g_battery_charging = charging;
+    g_battery_status = status;
     update_status_bar();
 }

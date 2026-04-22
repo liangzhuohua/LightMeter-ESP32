@@ -10,13 +10,13 @@
 #include "app_time.h"
 #include "app_weather.h"
 #include "app_nvs_storage.h"
+#include "app_battery.h"
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "hw_veml7700.h"
 #include "hw_oled.h"
 #include "hw_wifi.h"
-#include "hw_max17055.h"
 #include "hw_ota.h"
 #include "app_ui_battery_port.h"
 #include "app_location.h"
@@ -751,28 +751,27 @@ static void task_time_update_periodic(void* pvParameters) {
 static void task_battery_update(void* pvParameters) {
     float soc = 0.0f;
     float voltage = 0.0f;
-    float current = 0.0f;
-    uint16_t status = 0;
+    battery_status_t batt_status = BATTERY_STATUS_DISCHARGING;
     int log_counter = 0;
 
     while (1) {
-        hw_max17055_get_soc(&soc);
-        hw_max17055_get_vcell(&voltage);
-        hw_max17055_get_current(&current);
-        hw_max17055_get_status(&status);
-
-        bool charging = (current > 1.0f);
+        app_battery_get_info(&soc, &voltage, &batt_status);
 
         if (example_lvgl_lock(-1)) {
-            app_ui_battery_update(soc, voltage, charging);
+            app_ui_battery_update(soc, voltage, batt_status);
             example_lvgl_unlock();
         }
 
         log_counter++;
         if (log_counter >= 20) {
             log_counter = 0;
-            ESP_LOGI(TAG, "Battery: SOC=%.1f%%, V=%.0fmV, I=%.1fmA, Status=0x%04X, BST=%d, Charging=%d",
-                     soc, voltage, current, status, (status >> 3) & 1, charging);
+            const char *status_str;
+            switch (batt_status) {
+                case BATTERY_STATUS_CHARGING: status_str = "Charging"; break;
+                case BATTERY_STATUS_FULL: status_str = "Full"; break;
+                default: status_str = "Discharging"; break;
+            }
+            ESP_LOGI(TAG, "Battery: SOC=%.1f%%, V=%.0fmV, Status=%s", soc, voltage, status_str);
         }
 
         vTaskDelay(pdMS_TO_TICKS(3000));
@@ -870,7 +869,7 @@ void app_controller_enter_deep_sleep(void) {
 
     hw_veml7700_shutdown();
 
-    hw_max17055_sleep();
+    app_battery_sleep();
 
     if (g_wifi_connected) {
         hw_wifi_disconnect();
@@ -884,7 +883,6 @@ void app_controller_enter_deep_sleep(void) {
     oled_release_pins();
     touch_release_pins();
     i2c_release_pins();
-    hw_max17055_release_pins();
 
     ESP_LOGI(TAG, "Entering deep sleep now");
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -1006,7 +1004,7 @@ void app_controller_init(void)
     xTaskCreate(task_time_update_periodic, "task_time_update", 2048, NULL, 5, NULL);
     xTaskCreatePinnedToCore(task_weather_update, "task_weather", 16384, NULL, 5, NULL, 0);
 
-    hw_max17055_init();
+    app_battery_init();
     xTaskCreate(task_battery_update, "task_battery", 3072, NULL, 5, NULL);
 }
 

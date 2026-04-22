@@ -5,6 +5,7 @@
 #include "app_ui_time_port.h"
 #include "app_ui_weather_port.h"
 #include "app_ui_ota_port.h"
+#include "app_ui_battery_port.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -409,7 +410,7 @@ static char wifi_connected_ssid[33] = {0};
 static char wifi_connecting_ssid[33] = {0};
 static bool g_wifi_enabled = false;
 float g_battery_soc = 80.0f;
-bool g_battery_charging = false;
+battery_status_t g_battery_status = BATTERY_STATUS_DISCHARGING;
 int g_wifi_state = 0;
 
 lv_obj_t *time_time_label = NULL;
@@ -460,8 +461,10 @@ static void update_status_bar_wifi_icon(void) {
     uint8_t soc_int = (uint8_t)g_battery_soc;
     if (soc_int > 100) soc_int = 100;
 
-    if (g_battery_charging)
+    if (g_battery_status == BATTERY_STATUS_CHARGING)
         lv_label_set_text_fmt(main_table_status, "%s %d%% #00cc00 %s" LV_SYMBOL_CHARGE "#", wifi_icon, soc_int, batt_icon);
+    else if (g_battery_status == BATTERY_STATUS_FULL)
+        lv_label_set_text_fmt(main_table_status, "%s %d%% #00cc00 " LV_SYMBOL_BATTERY_FULL "#", wifi_icon, soc_int);
     else
         lv_label_set_text_fmt(main_table_status, "%s %d%% %s", wifi_icon, soc_int, batt_icon);
 }

@@ -29,6 +29,8 @@ idf_component_register(
     "app_nvs_storage.c"
     "hw_wakeup_key.c"
     "hw_max17055.c"
+    "hw_tp4056.c"
+    "app_battery.c"
     "app_ui_battery_port.c"
     "hw_ota.c"
     "app_ui_ota_port.c"
