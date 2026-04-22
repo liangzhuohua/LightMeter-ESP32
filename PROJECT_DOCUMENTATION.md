@@ -31,7 +31,8 @@
 - **OTA升级**：AP热点模式支持浏览器上传固件升级
 
 ### 1.4 电源管理
-- **电池监测**：MAX17055电量计实时监测电池电量、电压、电流
+- **电池监测**：MAX17055电量计实时监测电池电量、电压
+- **充电检测**：TP4056充电芯片通过GPIO检测充电状态（充电中/充电完成/未充电）
 - **深度休眠**：长按按键3秒进入深度休眠，释放所有外设引脚防止漏电
 - **RTC时间保持**：休眠时时间保存在RTC中，唤醒后恢复
 
@@ -90,6 +91,12 @@ INT:  GPIO_14
 ALRT: GPIO_6
 ```
 
+#### 充电检测 (TP4056)
+```
+CHRG#:  GPIO_4 (低电平 = 正在充电)
+STDBY#: GPIO_5 (低电平 = 充电完成)
+```
+
 #### 唤醒按键
 ```
 KEY:  GPIO_9 (低电平有效)
@@ -106,17 +113,44 @@ KEY:  GPIO_9 (低电平有效)
 │  app_controller.c (任务调度器)                                    │
 │  app_exposure_calc.c (曝光算法)                                   │
 │  app_time.c / app_weather.c / app_location.c                     │
+│  app_battery.c (电池管理统一接口)                                  │
 │  app_nvs_storage.c / app_http_requests.c                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                      Hardware Layer                              │
 │  hw_oled.c (AMOLED)    hw_veml7700.c (光照传感器)                │
-│  hw_max17055.c (电量计) hw_wifi.c (WiFi)                         │
-│  hw_wakeup_key.c (按键) hw_ota.c (OTA)                           │
-│  bsp_i2c_init.c (I2C)  hw_nvs.c (存储)                           │
+│  hw_max17055.c (电量计) hw_tp4056.c (充电检测)                   │
+│  hw_wifi.c (WiFi)      hw_wakeup_key.c (按键)                    │
+│  hw_ota.c (OTA)        bsp_i2c_init.c (I2C)                      │
+│  hw_nvs.c (存储)                                               │
 ├─────────────────────────────────────────────────────────────────┤
 │                      ESP-IDF Framework                           │
 │  FreeRTOS / NVS / WiFi / SNTP / HTTP Server                      │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+#### 电池管理架构 (三层设计)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    app_battery.c/h (应用层)                      │
+│                          统一电池管理接口                         │
+│          app_battery_init() / app_battery_get_info()            │
+│                   app_battery_sleep()                           │
+├──────────────────────────────┬──────────────────────────────────┤
+│    hw_max17055.c/h           │      hw_tp4056.c/h               │
+│    (MAX17055驱动)             │      (TP4056驱动)                │
+│  - 电池电量(SOC)              │  - 充电状态检测                   │
+│  - 电压、电流                 │  - CHRG#/STDBY# GPIO读取         │
+└──────────────────────────────┴──────────────────────────────────┘
+```
+
+电池状态枚举:
+```c
+typedef enum {
+    BATTERY_STATUS_DISCHARGING = 0,  // 未充电
+    BATTERY_STATUS_CHARGING,         // 充电中
+    BATTERY_STATUS_FULL,             // 充电完成
+} battery_status_t;
 ```
 
 ### 2.4 FreeRTOS任务列表
@@ -404,7 +438,9 @@ typedef struct {
 │                              │                                  │
 │                              ▼                                  │
 │              hw_veml7700_shutdown()                             │
-│              hw_max17055_sleep()                                │
+│              app_battery_sleep()                                │
+│              (hw_max17055_sleep + hw_max17055_release_pins +    │
+│               hw_tp4056_release_pins)                           │
 │              hw_wifi_disconnect()                               │
 │              esp_wifi_stop() / esp_wifi_deinit()                │
 │                              │                                  │
@@ -413,7 +449,6 @@ typedef struct {
 │               - oled_release_pins()                             │
 │               - touch_release_pins()                            │
 │               - i2c_release_pins()                              │
-│               - hw_max17055_release_pins()                      │
 │                              │                                  │
 │                              ▼                                  │
 │              hw_wakeup_key_enable_sleep_wakeup()                │
@@ -502,22 +537,34 @@ typedef struct {
 ┌─────────────────────────────────────────────────────────────────┐
 │                     电池状态监测                                 │
 │                                                                 │
-│              task_battery_update (周期5秒)                       │
+│              task_battery_update (周期3秒)                       │
 │                              │                                  │
 │                              ▼                                  │
-│              hw_max17055_get_status()                           │
-│              (读取电量%、电压、电流、充放电状态)                   │
+│              app_battery_get_info()                             │
+│              ├── hw_max17055_get_soc() → 电量百分比              │
+│              ├── hw_max17055_get_vcell() → 电压                  │
+│              └── hw_tp4056_get_charge_status() → 充电状态        │
 │                              │                                  │
 │                              ▼                                  │
 │              更新UI状态栏电池图标                                 │
 │                              │                                  │
-│               ┌──────────────┴──────────────┐                   │
-│               │                             │                   │
-│               ▼                             ▼                   │
-│          正常显示                      低电量警告                │
-│      (电量、充放电图标)              (电量<10%时警告)            │
+│               ┌──────────────┼──────────────┐                   │
+│               │              │              │                   │
+│               ▼              ▼              ▼                   │
+│          放电状态         充电中          充电完成                │
+│       (普通电池图标)    (绿色⚡图标)    (绿色满电图标)            │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
+```
+
+#### TP4056充电检测逻辑
+
+```
+GPIO_4 (CHRG#)  GPIO_5 (STDBY#)  │  状态
+────────────────────────────────┼──────────────
+    低              高           │  正在充电
+    高              低           │  充电完成
+    高              高           │  未充电(放电)
 ```
 
 ---
@@ -541,10 +588,12 @@ typedef struct {
 | `main/app_time.c` | SNTP时间同步 |
 | `main/app_weather.c` | 和风天气API调用 |
 | `main/app_location.c` | WiFi定位实现 |
+| `main/app_battery.c` | 电池管理统一接口层 |
 | `main/app_http_requests.c` | HTTP请求封装 |
 | `main/hw_oled.c` | AMOLED显示驱动 (QSPI) |
 | `main/hw_veml7700.c` | VEML7700光照传感器驱动 |
 | `main/hw_max17055.c` | MAX17055电量计驱动 |
+| `main/hw_tp4056.c` | TP4056充电状态检测驱动 |
 | `main/hw_wifi.c` | WiFi功能封装 |
 | `main/hw_wakeup_key.c` | 唤醒按键驱动 |
 | `main/hw_ota.c` | OTA升级HTTP服务器 |
@@ -580,8 +629,9 @@ idf.py -p /dev/ttyUSB0 monitor
 
 | 版本 | 日期 | 更新内容 |
 |------|------|----------|
-| - | - | 初始版本 |
+| 1.1 | 2026-04-23 | 新增TP4056充电检测，重构电池管理架构为三层设计 |
+| 1.0 | 2026-04-20 | 初始版本 |
 
 ---
 
-*文档生成日期: 2026年4月20日*
+*文档生成日期: 2026年4月23日*

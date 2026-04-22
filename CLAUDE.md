@@ -81,8 +81,28 @@ components/             # External/hardware drivers
 - Display: 460x460 QSPI AMOLED (SPI3_HOST)
 - Touch: CST820 I2C touch controller
 - Light Sensor: VEML7700 (ambient light for exposure)
-- Battery: MAX17055 fuel gauge
+- Battery: MAX17055 fuel gauge + TP4056 charge detector
 - Wake-up Key: GPIO9 (long press = 3s)
+
+### Battery Management Architecture
+
+Three-layer architecture for battery management:
+
+```
+┌─────────────────────────────────────────┐
+│         app_battery.c/h                 │  ← Application layer (unified API)
+│   app_battery_get_info()                │
+│   app_battery_init() / app_battery_sleep()│
+├─────────────────────────────────────────┤
+│  hw_max17055.c/h    │  hw_tp4056.c/h    │  ← Hardware drivers
+│  (SOC, voltage)     │  (charge status)  │
+└─────────────────────────────────────────┘
+```
+
+Battery status enum:
+- `BATTERY_STATUS_DISCHARGING` - Not charging
+- `BATTERY_STATUS_CHARGING` - Charging in progress
+- `BATTERY_STATUS_FULL` - Charge complete
 
 ### Exposure Calculator Core
 
