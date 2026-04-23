@@ -159,3 +159,39 @@ void hw_max17055_release_pins(void)
     rtc_gpio_pulldown_dis(HW_MAX17055_ALRT_GPIO);
     rtc_gpio_pullup_dis(HW_MAX17055_ALRT_GPIO);
 }
+
+void hw_max17055_force_full(float full_capacity_mah)
+{
+    ESP_LOGI(TAG, "Force full charge calibration");
+
+    // 读取当前SOC和电压
+    float soc, voltage;
+    max17055_get_soc(&max17055_device, &soc);
+    max17055_get_vcell(&max17055_device, &voltage);
+    ESP_LOGI(TAG, "Before calibration: SOC=%.1f%%, Vcell=%.2fmV", soc, voltage);
+
+    // 设置满充状态：将REPSOC设置为100%
+    // 同时更新REPCAP以匹配满充容量
+    float rsense_ohm = HW_MAX17055_RSENSE_MOHM / 1000.0f;
+    float cap_lsb_mah = MAX17055_CAPACITY_LSB_UVH / rsense_ohm / 1000.0f;
+
+    uint16_t full_cap_reg;
+    if (full_capacity_mah > 0) {
+        full_cap_reg = (uint16_t)(full_capacity_mah / cap_lsb_mah);
+    } else {
+        // 读取当前学习的满充容量
+        max17055_get_full_cap(&max17055_device, &full_capacity_mah);
+        full_cap_reg = (uint16_t)(full_capacity_mah / cap_lsb_mah);
+    }
+
+    // 写入REPSOC = 100% (256 * 100% = 0x6400)
+    i2c_dev_write_reg(&max17055_device, MAX17055_REG_REPSOC, &(uint16_t){0x6400}, 2);
+
+    // 更新REPCAP以匹配满充容量
+    i2c_dev_write_reg(&max17055_device, MAX17055_REG_REPCAP, &full_cap_reg, 2);
+
+    // 验证结果
+    max17055_get_soc(&max17055_device, &soc);
+    max17055_get_vcell(&max17055_device, &voltage);
+    ESP_LOGI(TAG, "After calibration: SOC=%.1f%%, Vcell=%.2fmV", soc, voltage);
+}

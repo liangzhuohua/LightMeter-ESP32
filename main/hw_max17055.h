@@ -33,4 +33,14 @@ void hw_max17055_get_status(uint16_t *status);
 void hw_max17055_sleep(void);
 void hw_max17055_release_pins(void);
 
+/**
+ * @brief 强制设置满充状态
+ *
+ * 当外部充电器确认电池已充满时调用此函数。
+ * 这会触发MAX17055更新其满充容量学习算法。
+ *
+ * @param full_capacity_mah 当前电池满充容量(mAh)，如果<=0则使用设计容量
+ */
+void hw_max17055_force_full(float full_capacity_mah);
+
 #endif
