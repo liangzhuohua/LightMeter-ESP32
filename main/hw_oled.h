@@ -60,7 +60,7 @@
 #define EXAMPLE_LCD_V_RES              460
 #define EXAMPLE_LCD_X_GAP              10
 #define EXAMPLE_LCD_Y_GAP              0
-#define AMOLED_QSPI_MAX_PCLK           40 * 1000 * 1000
+#define AMOLED_QSPI_MAX_PCLK           50 * 1000 * 1000
 // #define AMOLED_QSPI_MAX_PCLK           5 * 1000 * 1000
 // #define AMOLED_QSPI_MAX_PCLK           1 * 1000
 

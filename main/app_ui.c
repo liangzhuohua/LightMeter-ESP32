@@ -229,7 +229,7 @@ static void t9_kb_event_cb(lv_event_t* e)
             break;
         case 10:
             t9_confirm_char();
-            t9_insert_char('0');
+            t9_insert_char(' ');
             break;
         case 11:
             t9_confirm_char();
@@ -265,7 +265,7 @@ static void t9_kb_event_cb(lv_event_t* e)
             break;
         case 10:
             t9_confirm_char();
-            t9_insert_char('0');
+            t9_insert_char(' ');
             break;
         case 11:
             t9_handle_text_key(btn_id);
