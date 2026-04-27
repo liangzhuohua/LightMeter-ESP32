@@ -136,6 +136,15 @@ esp_err_t veml7700_get_config(i2c_dev_t *dev, veml7700_config_t *config);
 esp_err_t veml7700_get_ambient_light(i2c_dev_t *dev, veml7700_config_t *config, uint32_t *value_lux);
 
 /**
+ * @brief Read raw ALS count from the device (no lux conversion)
+ *
+ * @param dev Pointer to I2C device descriptor
+ * @param raw_value Pointer to return raw 16-bit ALS count
+ * @return `ESP_OK` on success
+ */
+esp_err_t veml7700_get_als_raw(i2c_dev_t *dev, uint16_t *raw_value);
+
+/**
  * @brief Read white channel value from the device
  *
  * @param dev Pointer to I2C device descriptor

@@ -235,6 +235,17 @@ esp_err_t veml7700_get_config(i2c_dev_t *dev, veml7700_config_t *config)
     return ESP_OK;
 }
 
+esp_err_t veml7700_get_als_raw(i2c_dev_t *dev, uint16_t *raw_value)
+{
+    CHECK_ARG(dev);
+    CHECK_ARG(raw_value);
+
+    I2C_DEV_TAKE_MUTEX(dev);
+    I2C_DEV_CHECK(dev, read_port(dev, VEML7700_COMMAND_CODE_ALS, raw_value));
+    I2C_DEV_GIVE_MUTEX(dev);
+    return ESP_OK;
+}
+
 esp_err_t veml7700_get_ambient_light(i2c_dev_t *dev, veml7700_config_t *config, uint32_t *value)
 {
     CHECK_ARG(dev);

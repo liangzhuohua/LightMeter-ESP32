@@ -269,6 +269,10 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
             flags->overexposure = 1;
         } else {
             target_f = new_f;
+            if (target_f < len_f_max) {
+                target_f = len_f_max;
+                flags->overexposure = 1;
+            }
             target_s = cam_s_fastest;
         }
         flags->shutter_out_of_range = 1;
@@ -289,6 +293,23 @@ void exposure_auto(uint32_t lux, float iso, uint8_t auto_mode, LEN len, CAM cam,
             target_f = re_calculated_f;
         }
         flags->shutter_out_of_range = 1;
+    }
+
+    /* 自动模式精炼：当光圈顶到镜头极限但快门有余量时，逐步收光圈
+     * 以离开镜头极限，获得更合理的曝光组合 */
+    if (auto_mode == EXPOSURE_AUTO && target_f == len_f_max && target_s < cam_s_slowest) {
+        if (len.aperture_stops && len.aperture_stop_count > 0) {
+            for (int i = 0; i < len.aperture_stop_count; i++) {
+                float try_f = len.aperture_stops[i];
+                if (try_f <= len_f_max) continue;
+                float try_s = exposure_aperture_priority(lux, iso, ev_compensation, try_f);
+                if (try_s > 0 && try_s <= cam_s_slowest) {
+                    target_f = try_f;
+                    target_s = try_s;
+                    break;
+                }
+            }
+        }
     }
 
     float safe_shutter = 1.0f / fmaxf(len.focal_length, 50.0f);
