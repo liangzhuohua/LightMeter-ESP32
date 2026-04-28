@@ -28,6 +28,10 @@
 
 static const char* TAG = "app_controller";
 
+static TaskHandle_t g_task_get_lux_value_handle = NULL;
+static TaskHandle_t g_task_calc_exposure_handle = NULL;
+static TaskHandle_t g_task_battery_update_handle = NULL;
+
 #define MAX_RETRIES 3
 
 #define TIME_SYNC_THRESHOLD_US    (6LL * 60 * 60 * 1000000)         // 6小时
@@ -860,6 +864,17 @@ void app_controller_wakeup_key_init(void) {
 void app_controller_enter_deep_sleep(void) {
     ESP_LOGI(TAG, "Preparing to enter deep sleep...");
 
+    // 先挂起所有会访问I2C外设的任务，避免后续关闭外设时产生I2C错误
+    oled_disable_touch_cb();
+    vTaskSuspend(g_task_get_lux_value_handle);
+    vTaskSuspend(g_task_calc_exposure_handle);
+    vTaskSuspend(g_task_battery_update_handle);
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    // 挂起LVGL任务，避免oled_enter_sleep时发生SPI总线冲突
+    oled_lvgl_suspend();
+    vTaskDelay(pdMS_TO_TICKS(50));
+
     app_time_save_to_rtc();
 
     oled_enter_sleep();
@@ -996,8 +1011,8 @@ void app_controller_init(void)
         ESP_LOGI(TAG, "定时同步定时器已创建，间隔: %d ms", WEATHER_SYNC_INTERVAL_MS);
     }
 
-    xTaskCreate(task_get_lux_value, "task_get_lux_value", 4096, NULL, 5, NULL);
-    xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, NULL);
+    xTaskCreate(task_get_lux_value, "task_get_lux_value", 4096, NULL, 5, &g_task_get_lux_value_handle);
+    xTaskCreate(task_calc_exposure, "task_calc_exposure", 4096, NULL, 5, &g_task_calc_exposure_handle);
     xTaskCreatePinnedToCore(task_wifi_operation, "task_wifi_operation", 4096, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(task_get_location, "task_get_location", 8192, NULL, 5, NULL, 0);
     xTaskCreatePinnedToCore(task_time_sync_and_update, "task_time_sync", 6144, NULL, 5, NULL, 0);
@@ -1005,7 +1020,7 @@ void app_controller_init(void)
     xTaskCreatePinnedToCore(task_weather_update, "task_weather", 16384, NULL, 5, NULL, 0);
 
     app_battery_init();
-    xTaskCreate(task_battery_update, "task_battery", 3072, NULL, 5, NULL);
+    xTaskCreate(task_battery_update, "task_battery", 3072, NULL, 5, &g_task_battery_update_handle);
 }
 
 const char* app_controller_get_current_ssid(void) {

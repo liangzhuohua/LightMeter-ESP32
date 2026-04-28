@@ -8,6 +8,7 @@ esp_lcd_touch_handle_t tp = NULL;
 esp_lcd_panel_handle_t panel_handle = NULL;
 static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_io_handle_t tp_io_handle = NULL;
+static TaskHandle_t g_lvgl_task_handle = NULL;
 
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
@@ -60,8 +61,25 @@ void example_lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area)
 }
 
 
+static bool g_touch_cb_disabled = false;
+
+void oled_disable_touch_cb(void) {
+    g_touch_cb_disabled = true;
+}
+
+void oled_lvgl_suspend(void) {
+    if (g_lvgl_task_handle != NULL) {
+        vTaskSuspend(g_lvgl_task_handle);
+    }
+}
+
 static void example_lvgl_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
+    if (g_touch_cb_disabled) {
+        data->state = LV_INDEV_STATE_RELEASED;
+        return;
+    }
+
     esp_lcd_touch_handle_t tp = (esp_lcd_touch_handle_t)drv->user_data;
     assert(tp);
 
@@ -157,7 +175,9 @@ void oled_lvgl_init(void) {
         EXAMPLE_PIN_NUM_TOUCH_INT,
     };
     for (int i = 0; i < sizeof(qspi_pins) / sizeof(qspi_pins[0]); i++) {
-        rtc_gpio_deinit(qspi_pins[i]);
+        if (rtc_gpio_is_valid_gpio(qspi_pins[i])) {
+            rtc_gpio_deinit(qspi_pins[i]);
+        }
     }
 
     ESP_LOGI(TAG, "Initialize SPI bus");
@@ -278,7 +298,7 @@ void oled_lvgl_init(void) {
 
     lvgl_mux = xSemaphoreCreateMutex();
     assert(lvgl_mux);
-    xTaskCreatePinnedToCore(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, NULL, 1);
+    xTaskCreatePinnedToCore(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, &g_lvgl_task_handle, 1);
 }
 
 void oled_set_brightness(uint8_t brightness) {
@@ -298,6 +318,7 @@ void oled_enter_sleep(void) {
 void oled_release_pins(void) {
     ESP_LOGI(TAG, "Releasing QSPI pins for deep sleep");
     spi_bus_free(LCD_HOST);
+
     gpio_num_t qspi_pins[] = {
         EXAMPLE_PIN_NUM_LCD_CS,
         EXAMPLE_PIN_NUM_LCD_PCLK,
@@ -308,10 +329,14 @@ void oled_release_pins(void) {
         EXAMPLE_PIN_NUM_LCD_RST,
     };
     for (int i = 0; i < sizeof(qspi_pins) / sizeof(qspi_pins[0]); i++) {
-        rtc_gpio_init(qspi_pins[i]);
-        rtc_gpio_set_direction(qspi_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
-        rtc_gpio_pulldown_dis(qspi_pins[i]);
-        rtc_gpio_pullup_dis(qspi_pins[i]);
+        if (rtc_gpio_is_valid_gpio(qspi_pins[i])) {
+            rtc_gpio_init(qspi_pins[i]);
+            rtc_gpio_set_direction(qspi_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
+            rtc_gpio_pulldown_dis(qspi_pins[i]);
+            rtc_gpio_pullup_dis(qspi_pins[i]);
+        } else {
+            gpio_reset_pin(qspi_pins[i]);
+        }
     }
 }
 
@@ -329,9 +354,13 @@ void touch_release_pins(void) {
         EXAMPLE_PIN_NUM_TOUCH_INT,
     };
     for (int i = 0; i < sizeof(touch_pins) / sizeof(touch_pins[0]); i++) {
-        rtc_gpio_init(touch_pins[i]);
-        rtc_gpio_set_direction(touch_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
-        rtc_gpio_pulldown_dis(touch_pins[i]);
-        rtc_gpio_pullup_dis(touch_pins[i]);
+        if (rtc_gpio_is_valid_gpio(touch_pins[i])) {
+            rtc_gpio_init(touch_pins[i]);
+            rtc_gpio_set_direction(touch_pins[i], RTC_GPIO_MODE_INPUT_ONLY);
+            rtc_gpio_pulldown_dis(touch_pins[i]);
+            rtc_gpio_pullup_dis(touch_pins[i]);
+        } else {
+            gpio_reset_pin(touch_pins[i]);
+        }
     }
 }
