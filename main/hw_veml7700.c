@@ -34,9 +34,9 @@ static veml7700_level_t current_level = VEML7700_LEVEL_1;
 
 /* 逐级校准系数: calibrated = a * raw_lux^b */
 static veml7700_calib_t calibration[VEML7700_LEVEL_COUNT] = {
-    [VEML7700_LEVEL_0] = {0.8307f, 1.0753f},  /* GAIN_2,   100ms — 暗光 */
-    [VEML7700_LEVEL_1] = {0.5615f, 1.1460f},  /* GAIN_1,   100ms — 室内 */
-    [VEML7700_LEVEL_2] = {0.0613f, 1.3340f},  /* GAIN_1/8, 100ms — 户外 */
+    [VEML7700_LEVEL_0] = {0.7598f, 1.0936f},  /* GAIN_2,   100ms — 暗光 */
+    [VEML7700_LEVEL_1] = {4.5582f, 0.8143f},  /* GAIN_1,   100ms — 室内 */
+    [VEML7700_LEVEL_2] = {0.0275f, 1.4197f},  /* GAIN_1/8, 100ms — 户外 */
 };
 
 veml7700_level_t hw_veml7700_get_level(void)

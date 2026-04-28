@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ESP32-S3 AMOLED smart device with LVGL UI - a photography exposure calculator with weather display, WiFi connectivity, OTA updates, and deep sleep support.
+ESP32-S3 AMOLED smart device with LVGL UI — a photography exposure calculator with weather display, WiFi connectivity, OTA updates, and deep sleep support.
 
 ## Build Commands
 
@@ -33,7 +33,22 @@ idf.py clean
 idf.py set-target esp32s3
 ```
 
-Shortcut script available: `./idf.sh B` (build+flash), `./idf.sh BM` (build+flash+monitor), `./idf.sh M` (menuconfig).
+Shortcut script: `./idf.sh B` (build+flash), `./idf.sh BM` (build+flash+monitor), `./idf.sh M` (menuconfig), `./idf.sh C <name> <path>` (create component), `./idf.sh H` (help).
+
+## External Dependencies (idf_component.yml)
+
+- `lvgl/lvgl` ^8 — LVGL graphics library
+- `espressif/esp_lcd_touch` ^1.1.2 — touch controller driver
+- `esp-idf-lib/veml7700` ^1.0.7 — VEML7700 ambient light sensor driver
+
+## Key sdkconfig.defaults Settings
+
+- Flash: QIO mode, 16MB, custom partition table
+- PSRAM: Octal, 80MHz, instruction fetch + rodata in PSRAM
+- CPU: 240MHz, FreeRTOS 1000Hz tick
+- mbedTLS: dynamic buffers + peer cert in PSRAM
+- LVGL: color 16-bit swap, custom memory allocator, perf monitor enabled
+- Optimization: `-O2` (CONFIG_COMPILER_OPTIMIZATION_PERF)
 
 ## Architecture
 
@@ -41,52 +56,109 @@ Shortcut script available: `./idf.sh B` (build+flash), `./idf.sh BM` (build+flas
 
 ```
 main/
-├── main.c              # Entry point - initializes all subsystems
-├── app_controller.c    # Central orchestrator - coordinates all app logic
-├── app_ui.c            # LVGL UI implementation (large file - main UI)
-├── app_*_port.c        # UI port layers (bridge UI to business logic)
-├── app_*.c             # Application logic (exposure calc, weather, time, location)
-├── hw_*.c              # Hardware abstraction (OLED, WiFi, sensors, OTA)
-├── bsp_*.c             # Board support (I2C init)
-└── app_nvs_storage.c   # Non-volatile storage persistence
-
-components/             # External/hardware drivers
-├── esp_lcd_qspi_amoled/    # QSPI AMOLED display driver (460x460)
-├── esp_lcd_touch_cst820/   # CST820 touch controller
-├── max17055/               # Battery fuel gauge
-├── veml7700/               # Ambient light sensor (for exposure calculation)
-├── i2cdev/                 # I2C device helpers
-└── esp_idf_lib_helpers/    # ESP-IDF library helpers
+├── main.c                  # Entry point — I2C, VEML7700, NVS, OLED, LVGL init
+├── app_controller.c/h      # Central orchestrator — all tasks, queues, semaphores
+├── app_ui.c/h              # LVGL UI implementation (large file — main UI)
+├── app_ui_*_port.c/h       # UI port layers (bridge LVGL callbacks to business logic)
+├── app_exposure_calc.c/h   # Photography exposure calculation engine
+├── app_location.c/h        # Location via Google Geolocation API (WiFi AP scan)
+├── app_weather.c/h         # Weather via QWeather API
+├── app_time.c/h            # SNTP time sync + RTC persistence
+├── app_http_requests.c/h   # HTTP client helpers
+├── app_nvs_storage.c/h     # NVS persistence (WiFi, location, weather, sync timestamps)
+├── app_battery.c/h         # Unified battery API (orchestrates MAX17055 + TP4056)
+├── hw_oled.c/h             # QSPI AMOLED display driver (460x460)
+├── hw_wifi.c/h             # WiFi init, scan, connect, state machine
+├── hw_veml7700.c/h         # VEML7700 ambient light sensor
+├── hw_max17055.c/h         # MAX17055 battery fuel gauge (SOC, voltage)
+├── hw_tp4056.c/h           # TP4056 charge detector (CHRG/STDBY pins)
+├── hw_ota.c/h              # OTA firmware update over HTTPS
+├── hw_wakeup_key.c/h       # GPIO9 wake-up key (long press = 3s deep sleep)
+├── hw_nvs.c/h              # Low-level NVS helpers (WiFi config CRUD)
+├── bsp_i2c_init.c/h        # I2C bus initialization
+├── img_*.c                 # LVGL image assets (embedded C arrays)
+├── clock_icon.c            # Analog clock face icon
+├── qweather_icons.c        # Weather condition icons
+└── SourceHanSansCN_Regular.c  # Chinese font (思源黑体)
 ```
+
+### Application Startup Flow (app_controller_init)
+
+1. Create queues/semaphores (lux_value_queue, wifi_operation_queue, location_Sem, time_sync_Sem, weather_Sem)
+2. Register WiFi state callback
+3. Load all NVS data (WiFi config, cached location, cached weather)
+4. Restore time from RTC memory (survives deep sleep)
+5. Display cached location, weather on UI
+6. If WiFi was enabled at last shutdown: init WiFi, scan, auto-connect to saved SSID (up to 3 retries)
+7. Create LVGL periodic sync timer (every 30 min) — checks if time/weather thresholds exceeded
+8. Create FreeRTOS tasks (see Tasks section below)
+
+### Serial Request Chain
+
+WiFi connection triggers a serial chain (location → time → weather) via semaphores:
+
+```
+WiFi Connected
+  → give(location_Sem)
+    → task_get_location: Google Geolocation API (WiFi AP scan)
+    → On result: init SNTP, give(time_sync_Sem)
+      → task_time_sync_and_update: SNTP sync, update RTC
+      → On success: give(weather_Sem)
+        → task_weather_update: QWeather API (7-day forecast + moon phase)
+```
+
+Each step retries up to 3 times on failure. Cached data is displayed immediately on boot so the UI is never blank.
+
+### Tasks (FreeRTOS)
+
+| Task | Stack | Core | Purpose |
+|------|-------|------|---------|
+| task_get_lux_value | 4KB | any | Read VEML7700 ALS every 1s, push to queue |
+| task_calc_exposure | 4KB | any | Consume lux, run exposure calc, update UI rollers |
+| task_wifi_operation | 4KB | 0 | Process WiFi command queue (scan/connect/disconnect) |
+| task_get_location | 8KB | 0 | Wait on location_Sem, call Google Geolocation API |
+| task_time_sync | 6KB | 0 | Wait on time_sync_Sem, SNTP sync, update RTC |
+| task_time_update | 2KB | any | Update UI clock display every minute |
+| task_weather | 16KB | 0 | Wait on weather_Sem, call QWeather API |
+| task_battery | 3KB | any | Read battery SOC/voltage/status every 3s |
+| task_power_manage | 4KB | any | Wait on sleep_sem, trigger deep sleep on long press |
+
+### Deep Sleep Sequence (app_controller_enter_deep_sleep)
+
+1. Save current time to RTC memory
+2. OLED enter sleep mode → touch enter sleep mode
+3. Shut down VEML7700 light sensor
+4. Put MAX17055/TP4056 to sleep
+5. Disconnect WiFi, stop and deinit WiFi driver
+6. Configure GPIO9 as wake-up source
+7. Release OLED, touch, I2C pins (prevent leakage)
+8. `esp_deep_sleep_start()`
+
+On wake: `main.c` re-initializes everything. `app_controller_init` restores time from RTC.
 
 ### Key Design Patterns
 
-1. **Controller Pattern**: `app_controller.c` is the central coordinator using FreeRTOS queues/semaphores for inter-task communication.
+1. **Controller Pattern**: `app_controller.c` is the central orchestrator — all inter-task communication goes through its queues/semaphores.
 
-2. **Port Layer**: `app_ui_*_port.c` files bridge LVGL UI to business logic - use these to access functionality from UI callbacks.
+2. **Port Layer**: `app_ui_*_port.c` files bridge LVGL UI to business logic. UI callbacks call port functions, which call app_controller public API.
 
 3. **Hardware Abstraction**: `hw_*.c` files encapsulate hardware details. Each has a corresponding header with public API.
 
-4. **NVS Persistence**: `app_nvs_storage.c` handles all persistent storage with typed structures (`camera_data_t`, `lens_data_t`, `wifi_data_t`, etc.).
+4. **NVS Persistence**: `app_nvs_storage.c` handles all persistent storage with typed structures (`camera_data_t`, `lens_data_t`, `wifi_data_t`, `weather_data_t`, `location_data_t`, `sync_timestamp_t`).
 
-### FreeRTOS Resources
-
-- `wifi_operation_queue` - WiFi commands (scan, connect, disconnect)
-- `lux_value_queue` - Ambient light sensor readings
-- `calc_data_queue` - Exposure calculation results
-- `location_Sem`, `time_sync_Sem`, `weather_Sem` - Synchronization semaphores
+5. **LVGL Thread Safety**: All UI updates from non-LVGL tasks MUST wrap in `example_lvgl_lock(-1)` / `example_lvgl_unlock()`.
 
 ### Hardware Configuration
 
-- Display: 460x460 QSPI AMOLED (SPI3_HOST)
+- Display: 460×460 QSPI AMOLED (SPI3_HOST)
 - Touch: CST820 I2C touch controller
-- Light Sensor: VEML7700 (ambient light for exposure)
-- Battery: MAX17055 fuel gauge + TP4056 charge detector
-- Wake-up Key: GPIO9 (long press = 3s)
+- Light Sensor: VEML7700 (ambient light for exposure calculation)
+- Battery: MAX17055 fuel gauge + TP4056 charge detector (pins CHRG/STDBY)
+- Wake-up Key: GPIO9 (long press = 3s to enter deep sleep)
 
 ### Battery Management Architecture
 
-Three-layer architecture for battery management:
+Three-layer architecture:
 
 ```
 ┌─────────────────────────────────────────┐
@@ -99,29 +171,36 @@ Three-layer architecture for battery management:
 └─────────────────────────────────────────┘
 ```
 
-Battery status enum:
-- `BATTERY_STATUS_DISCHARGING` - Not charging
-- `BATTERY_STATUS_CHARGING` - Charging in progress
-- `BATTERY_STATUS_FULL` - Charge complete
+Battery status enum: `BATTERY_STATUS_DISCHARGING`, `BATTERY_STATUS_CHARGING`, `BATTERY_STATUS_FULL`.
+
+When TP4056 detects charge complete, it recalibrates MAX17055 SOC to 100% to resolve drift between the two detection mechanisms.
 
 ### Exposure Calculator Core
 
-`app_exposure_calc.c` implements the photography exposure logic:
+`app_exposure_calc.c` implements photography exposure logic:
 - Supports 1/3 EV and 1/2 EV step increments
 - Modes: Manual, Auto, Landscape, Portrait
 - Uses standard shutter/aperture tables
 - `exposure_auto()` calculates aperture/shutter based on lux, ISO, and mode
 
-## Partition Table
+### OTA Updates
 
-Custom partitions with OTA support:
-- `ota_0`: 3MB
-- `ota_1`: 3MB
-- NVS: 24KB
+`hw_ota.c` handles HTTPS firmware download. `app_controller_request_ota()` registers a progress callback and starts the OTA task. Progress is forwarded to `app_ui_ota_port.c` for UI display. `app_controller_cancel_ota()` aborts an in-progress update.
 
-## LVGL Configuration
+## Partition Table (partitions.csv)
 
-- Color depth: 16-bit with swap
-- Double-buffered with PSRAM
-- Task priority: 7, stack: 6KB
-- Use `example_lvgl_lock()` / `example_lvgl_unlock()` for thread-safe UI access
+| Name | Type | Size |
+|------|------|------|
+| nvs | data, nvs | 24KB |
+| phy_init | data, phy | 4KB |
+| ota_0 | app, ota_0 | 3MB |
+| ota_1 | app, ota_1 | 3MB |
+| ota_data | data, ota | 8KB |
+
+## Calibration
+
+`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration against reference values (`docs/lux对照值.csv`).
+
+## Commit Style
+
+Chinese commit messages, focused on what changed and why. No conventional commit format enforced.
