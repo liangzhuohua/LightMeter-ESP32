@@ -231,15 +231,17 @@ static void wifi_scan_done_callback(wifi_scan_result_t* result) {
 static void task_get_lux_value(void* pvParameters) {
     uint32_t als = 0;
     uint32_t white = 0;
+    TickType_t delay;
     while (1)
     {
-
         hw_veml7700_get_ambient_light(&als);
         hw_veml7700_get_white_channel(&white);
         xQueueSend(lux_value_queue, &als, pdMS_TO_TICKS(1000));
-        // ESP_LOGI(TAG, "ALS: %u lx", als);
-        // ESP_LOGI(TAG, "WHITE: %u lx", white);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        /* 动态延迟: 根据当前积分时间决定，最低100ms */
+        delay = pdMS_TO_TICKS(hw_veml7700_get_it_ms() + 100);
+        if (delay < pdMS_TO_TICKS(100)) delay = pdMS_TO_TICKS(100);
+        vTaskDelay(delay);
     }
 }
 
@@ -263,10 +265,9 @@ static void task_calc_exposure(void* pvParameters) {
         if (example_lvgl_lock(-1))
         {
             ui_calc_port_update_lux_label(main_label_lux_value, lux);
+            ui_calc_port_update_level_indicator(main_led_level, (int)hw_veml7700_get_level());
             example_lvgl_unlock();
         }
-
-        // 更新 lux 显示
 
         // 获取其他参数
         iso = ui_calc_port_get_iso_from_roller(main_roller_iso);

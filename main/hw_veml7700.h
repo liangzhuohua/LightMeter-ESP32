@@ -8,11 +8,11 @@
 #define HW_VEML7700_SCL         I2C_SCL
 #define HW_VEML7700_I2C_NUM     I2C_HOST
 
-/* 自适应量程级别 */
+/* 自适应量程级别（自上而下试探法） */
 typedef enum {
-    VEML7700_LEVEL_0 = 0,  /* GAIN_2,   100ms — 暗光室内, max ~1887 lux */
-    VEML7700_LEVEL_1,      /* GAIN_1,   100ms — 中等亮度,  max ~3775 lux */
-    VEML7700_LEVEL_2,      /* GAIN_1/8, 100ms — 户外强光,  max ~30199 lux */
+    VEML7700_LEVEL_0 = 0,  /* GAIN_2,   800ms — 弱光, max ~236 lx,   分辨率 0.0036 lx/bit */
+    VEML7700_LEVEL_1,      /* GAIN_1,   100ms — 常规, max ~3775 lx,  分辨率 0.0576 lx/bit */
+    VEML7700_LEVEL_2,      /* GAIN_1/8, 25ms  — 强光, max ~120800 lx, 分辨率 1.8432 lx/bit */
     VEML7700_LEVEL_COUNT
 } veml7700_level_t;
 
@@ -29,6 +29,7 @@ void hw_veml7700_shutdown(void);
 
 /* 获取/设置当前量程级别 */
 veml7700_level_t hw_veml7700_get_level(void);
+uint16_t hw_veml7700_get_it_ms(void);
 
 /* 设置某级别的校准系数（运行时标定，掉电丢失，后续可加NVS持久化） */
 void hw_veml7700_set_calibration(veml7700_level_t level, float a, float b);

@@ -16,6 +16,7 @@ extern lv_obj_t* main_roller_aperture;         // 光圈滚轮
 extern lv_obj_t* main_roller_iso;              // ISO 值
 extern lv_obj_t* main_roller_ev;               // EV 值
 extern lv_obj_t* main_label_lux_value;         // 光照强度数值显示
+extern lv_obj_t* main_led_level;               // 量程级别指示点
 extern lv_obj_t* main_obj_mode_select;         // 模式选择容器
 
 extern lv_obj_t* weather_icon;                 // 天气图标

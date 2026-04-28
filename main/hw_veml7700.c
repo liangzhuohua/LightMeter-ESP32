@@ -10,38 +10,58 @@ static const char *TAG = "hw_veml7700";
 i2c_dev_t veml7700_device;
 veml7700_config_t veml7700_configuration;
 
-/* ── 自适应量程 ─────────────────────────────────── */
+/* ── 自适应量程（lux为主 raw为辅 + 趋势确认）────── */
 
-/* 各级别对应的增益和积分时间 */
+/* 各级别对应的增益、积分时间和分辨率
+ *   弱光档: GAIN_2, 800ms — 0.0036 lx/bit, 最大 236 lx
+ *   常规档: GAIN_1, 100ms — 0.0576 lx/bit, 最大 3775 lx
+ *   强光档: GAIN_DIV_8, 25ms — 1.8432 lx/bit, 最大 120800 lx
+ */
 static const struct {
     uint16_t gain;
     uint16_t integration_time;
+    uint16_t it_ms;
+    float lux_per_count;      /* 分辨率 (lx/bit) */
     const char *name;
 } level_config[VEML7700_LEVEL_COUNT] = {
-    [VEML7700_LEVEL_0] = {VEML7700_GAIN_2,     VEML7700_INTEGRATION_TIME_100MS, "DIM"},
-    [VEML7700_LEVEL_1] = {VEML7700_GAIN_1,     VEML7700_INTEGRATION_TIME_100MS, "INDOOR"},
-    [VEML7700_LEVEL_2] = {VEML7700_GAIN_DIV_8, VEML7700_INTEGRATION_TIME_100MS, "OUTDOOR"},
+    [VEML7700_LEVEL_0] = {VEML7700_GAIN_2,     VEML7700_INTEGRATION_TIME_800MS, 800, 0.0036f,  "WEAK"},
+    [VEML7700_LEVEL_1] = {VEML7700_GAIN_1,     VEML7700_INTEGRATION_TIME_100MS, 100, 0.0576f,  "NORMAL"},
+    [VEML7700_LEVEL_2] = {VEML7700_GAIN_DIV_8, VEML7700_INTEGRATION_TIME_25MS,   25, 1.8432f, "STRONG"},
 };
 
-/* 切换阈值 */
-#define RAW_HIGH_THRESHOLD  55000  /* 升档: raw 接近饱和 */
-#define RAW_LOW_THRESHOLD   2000   /* 降档: raw 太低，分辨率不足 */
+/* ── 切换阈值 ──
+ * 每个档位的推荐 lux 工作区间（与 raw 阈值不同，lux 跨档位可比）
+ *   LEVEL_0:   0 ~ 200 lx   (max 236)
+ *   LEVEL_1:  80 ~ 3200 lx  (max 3775)
+ *   LEVEL_2: 2500 ~ 100000 lx (max 120800)
+ * 滞回间隙: L0↔L1 的 80~200, L1↔L2 的 2500~3200
+ */
+#define L0_LUX_CEILING   200.0f
+#define L1_LUX_FLOOR     80.0f
+#define L1_LUX_CEILING   1200.0f  /* 传感器欠读，实际约对应照度计~2500+ lx */
+#define L2_LUX_FLOOR     800.0f   /* 滞回间隙 800~1200 */
 
-/* 切换稳定等待(ms) */
-#define LEVEL_SWITCH_DELAY_MS  250
+/* raw 饱和安全网: 任何档位超过此值立即升档 */
+#define RAW_SATURATION   55000
 
-static veml7700_level_t current_level = VEML7700_LEVEL_1;
+static veml7700_level_t current_level = VEML7700_LEVEL_2;
+static int switch_cooldown = 0;  /* 换挡冷却计数，防震荡 */
 
 /* 逐级校准系数: calibrated = a * raw_lux^b */
 static veml7700_calib_t calibration[VEML7700_LEVEL_COUNT] = {
-    [VEML7700_LEVEL_0] = {0.7598f, 1.0936f},  /* GAIN_2,   100ms — 暗光 */
-    [VEML7700_LEVEL_1] = {4.5582f, 0.8143f},  /* GAIN_1,   100ms — 室内 */
-    [VEML7700_LEVEL_2] = {0.0275f, 1.4197f},  /* GAIN_1/8, 100ms — 户外 */
+    [VEML7700_LEVEL_0] = {1.0f, 1.0f},  /* GAIN_2,   800ms — 弱光 */
+    [VEML7700_LEVEL_1] = {1.0f, 1.0f},  /* GAIN_1,   100ms — 常规 */
+    [VEML7700_LEVEL_2] = {1.0f, 1.0f},  /* GAIN_DIV_8, 25ms — 强光 */
 };
 
 veml7700_level_t hw_veml7700_get_level(void)
 {
     return current_level;
+}
+
+uint16_t hw_veml7700_get_it_ms(void)
+{
+    return level_config[current_level].it_ms;
 }
 
 void hw_veml7700_set_calibration(veml7700_level_t level, float a, float b)
@@ -109,8 +129,8 @@ void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_s
 
     ESP_ERROR_CHECK(veml7700_probe(&veml7700_device));
 
-    /* 用 Level 1 (中等增益) 作为初始配置 */
-    current_level = VEML7700_LEVEL_1;
+    /* 用 Level 2 (最低灵敏度) 作为初始配置，避免上电饱和 */
+    current_level = VEML7700_LEVEL_2;
     veml7700_configuration.gain = level_config[current_level].gain;
     veml7700_configuration.integration_time = level_config[current_level].integration_time;
 
@@ -139,49 +159,71 @@ void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_s
 
 void hw_veml7700_get_ambient_light(uint32_t* als) {
     uint16_t raw;
-    veml7700_level_t target_level = current_level;
+    float lux;
+    bool switched;
+    int max_iter = 3;
 
-    /* 1. 读当前量程下的 raw count */
-    if (veml7700_get_als_raw(&veml7700_device, &raw) != ESP_OK) {
-        *als = 0;
-        return;
-    }
+    do {
+        switched = false;
 
-    /* 2. 判断是否需要切换量程 */
-    if (raw > RAW_HIGH_THRESHOLD && current_level < VEML7700_LEVEL_COUNT - 1) {
-        target_level = current_level + 1;
-    } else if (raw < RAW_LOW_THRESHOLD && current_level > 0) {
-        target_level = current_level - 1;
-    }
-
-    /* 3. 如需切换，重配传感器并等待稳定 */
-    if (target_level != current_level) {
-        ESP_LOGI(TAG, "Level switch: %s -> %s (raw=%u)",
-                 level_config[current_level].name,
-                 level_config[target_level].name, raw);
-
-        current_level = target_level;
-        apply_level_config(current_level);
-        vTaskDelay(pdMS_TO_TICKS(LEVEL_SWITCH_DELAY_MS));
-
-        /* 用新配置重读 */
+        /* 1. 读当前量程下的 raw count */
         if (veml7700_get_als_raw(&veml7700_device, &raw) != ESP_OK) {
             *als = 0;
             return;
         }
-    }
 
-    /* 4. 用现有驱动做 lux 换算 */
+        /* 2. 换算 lux */
+        lux = (float)raw * level_config[current_level].lux_per_count;
+
+        /* 3. lux + raw 判断换挡（冷却期内禁止换挡） */
+        if (switch_cooldown > 0) {
+            switch_cooldown--;
+        } else {
+            if (current_level == VEML7700_LEVEL_0) {
+                if (raw > RAW_SATURATION || lux > L0_LUX_CEILING) {
+                    ESP_LOGI(TAG, "L0->L1 lux=%.0f raw=%u", lux, raw);
+                    current_level = VEML7700_LEVEL_1;
+                    switched = true;
+                }
+            } else if (current_level == VEML7700_LEVEL_1) {
+                if (raw > RAW_SATURATION || lux > L1_LUX_CEILING) {
+                    ESP_LOGI(TAG, "L1->L2 lux=%.0f raw=%u", lux, raw);
+                    current_level = VEML7700_LEVEL_2;
+                    switched = true;
+                } else if (lux < L1_LUX_FLOOR) {
+                    ESP_LOGI(TAG, "L1->L0 lux=%.0f raw=%u", lux, raw);
+                    current_level = VEML7700_LEVEL_0;
+                    switched = true;
+                }
+            } else { /* LEVEL_2 */
+                if (lux < L2_LUX_FLOOR) {
+                    ESP_LOGI(TAG, "L2->L1 lux=%.0f raw=%u", lux, raw);
+                    current_level = VEML7700_LEVEL_1;
+                    switched = true;
+                }
+            }
+        }
+
+        /* 4. 如切换，重配传感器，设冷却期，等待新积分时间 */
+        if (switched) {
+            apply_level_config(current_level);
+            switch_cooldown = 2;  /* 换挡后冷却2次读数 */
+            vTaskDelay(pdMS_TO_TICKS(level_config[current_level].it_ms + 50));
+        }
+    } while (switched && --max_iter > 0);
+
+    /* 5. 用现有驱动做 lux 换算（内部自己读raw，数据来自当前量程） */
     if (veml7700_get_ambient_light(&veml7700_device, &veml7700_configuration, als) != ESP_OK) {
         *als = 0;
         return;
     }
 
-    /* 5. 应用本级别幂律校准: cal = a * lux^b */
-    veml7700_calib_t *cal = &calibration[current_level];
-    float cal_lux = cal->a * powf((float)(*als), cal->b);
-    if (cal_lux < 0.0f) cal_lux = 0.0f;
-    *als = (uint32_t)(cal_lux + 0.5f);
+    /* 6. 应用本级别幂律校准: cal = a * lux^b */
+    // TODO: 暂时注释掉校准，显示原始lux值用于重新采集数据
+    // veml7700_calib_t *cal = &calibration[current_level];
+    // float cal_lux = cal->a * powf((float)(*als), cal->b);
+    // if (cal_lux < 0.0f) cal_lux = 0.0f;
+    // *als = (uint32_t)(cal_lux + 0.5f);
 }
 
 void hw_veml7700_get_white_channel(uint32_t* white) {

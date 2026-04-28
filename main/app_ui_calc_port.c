@@ -345,6 +345,19 @@ void ui_calc_port_update_lux_label(lv_obj_t* label, int lux)
     lv_label_set_text_fmt(label, "%d", lux);
 }
 
+void ui_calc_port_update_level_indicator(lv_obj_t* led, int level)
+{
+    if (!led) return;
+    lv_color_t color;
+    switch (level) {
+        case 0: color = lv_color_hex(0x00FF00); break; // DIM — 绿色
+        case 1: color = lv_color_hex(0xFFCC00); break; // INDOOR — 黄色
+        case 2: color = lv_color_hex(0xFF0000); break; // OUTDOOR — 红色
+        default: color = lv_color_hex(0x888888); break;
+    }
+    lv_obj_set_style_bg_color(led, color, LV_STATE_DEFAULT);
+}
+
 // ──────────────────────────────────────────────
 // 相机/镜头数据提取
 // ──────────────────────────────────────────────

@@ -106,6 +106,7 @@ void ui_calc_port_set_aperture_to_roller(lv_obj_t* roller, float aperture, LEN l
  * @param lux Lux值
  */
 void ui_calc_port_update_lux_label(lv_obj_t* label, int lux);
+void ui_calc_port_update_level_indicator(lv_obj_t* led, int level);
 
 // ──────────────────────────────────────────────
 // 相机/镜头数据提取

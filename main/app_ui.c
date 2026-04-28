@@ -72,6 +72,7 @@ lv_obj_t* main_roller_aperture;         // 光圈滚轮
 lv_obj_t* main_roller_iso;              // iso值
 lv_obj_t* main_roller_ev;               // ev值
 lv_obj_t* main_label_lux_value;         // 光照强度
+lv_obj_t* main_led_level;               // 量程级别指示点
 lv_obj_t* main_obj_mode_select;         // 模式选择容器
 
 lv_obj_t* cam_win_select;               // cam选择
@@ -4095,6 +4096,15 @@ static void ui_main_page_init(lv_obj_t* parent) {
 
     lv_obj_set_scrollbar_mode(main_obj_lux, LV_SCROLLBAR_MODE_OFF);
     lv_obj_clear_flag(main_obj_lux, LV_OBJ_FLAG_SCROLLABLE);
+
+    /* 量程级别指示点 */
+    main_led_level = lv_obj_create(main_obj_lux);
+    lv_obj_set_size(main_led_level, 12, 12);
+    lv_obj_set_style_radius(main_led_level, LV_RADIUS_CIRCLE, LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(main_led_level, lv_color_hex(0x00FF00), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(main_led_level, LV_OPA_COVER, LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(main_led_level, 0, LV_STATE_DEFAULT);
+    lv_obj_clear_flag(main_led_level, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t* main_label_lux = lv_label_create(main_obj_lux);
     lv_label_set_text(main_label_lux, "Lux");
