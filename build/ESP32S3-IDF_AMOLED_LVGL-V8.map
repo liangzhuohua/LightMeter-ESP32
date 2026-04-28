@@ -49345,7 +49345,7 @@ LOAD /home/ziyue/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-
  *fill*         0x4200f5a6        0x2 
  .text.ui_main_page_init
                 0x4200f5a8     0x1156 esp-idf/main/libmain.a(app_ui.c.obj)
-                               0x175e (size before relaxing)
+                               0x1762 (size before relaxing)
  *fill*         0x420106fe        0x2 
  .text.ui_exposure_init
                 0x42010700     0x14e2 esp-idf/main/libmain.a(app_ui.c.obj)

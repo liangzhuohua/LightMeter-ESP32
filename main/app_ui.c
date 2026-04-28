@@ -4088,7 +4088,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(main_obj_lux, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(main_obj_lux, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_set_style_pad_column(main_obj_lux, 30, 0);
+    lv_obj_set_style_pad_column(main_obj_lux, 10, 0);  /* 3元素: label+dot+value, 10+10+10=30px 对齐EV行 */
     lv_obj_set_style_pad_top(main_obj_lux, 0, 0);
     lv_obj_set_style_pad_bottom(main_obj_lux, 0, 0);
     lv_obj_set_style_pad_left(main_obj_lux, 10, 0);
@@ -4097,21 +4097,21 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_scrollbar_mode(main_obj_lux, LV_SCROLLBAR_MODE_OFF);
     lv_obj_clear_flag(main_obj_lux, LV_OBJ_FLAG_SCROLLABLE);
 
-    /* 量程级别指示点 */
-    main_led_level = lv_obj_create(main_obj_lux);
-    lv_obj_set_size(main_led_level, 12, 12);
-    lv_obj_set_style_radius(main_led_level, LV_RADIUS_CIRCLE, LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(main_led_level, lv_color_hex(0x00FF00), LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(main_led_level, LV_OPA_COVER, LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(main_led_level, 0, LV_STATE_DEFAULT);
-    lv_obj_clear_flag(main_led_level, LV_OBJ_FLAG_SCROLLABLE);
-
     lv_obj_t* main_label_lux = lv_label_create(main_obj_lux);
     lv_label_set_text(main_label_lux, "Lux");
     lv_obj_set_style_text_font(main_label_lux, &lv_font_montserrat_20, LV_STATE_DEFAULT);
     lv_obj_set_width(main_label_lux, LV_SIZE_CONTENT);
     lv_obj_set_style_text_align(main_label_lux, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_align(main_label_lux, LV_ALIGN_CENTER, 0);
+
+    /* 量程级别指示点（放在Lux标签与数值之间） */
+    main_led_level = lv_obj_create(main_obj_lux);
+    lv_obj_set_size(main_led_level, 10, 10);
+    lv_obj_set_style_radius(main_led_level, LV_RADIUS_CIRCLE, LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(main_led_level, lv_color_hex(0x00FF00), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(main_led_level, LV_OPA_COVER, LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(main_led_level, 0, LV_STATE_DEFAULT);
+    lv_obj_clear_flag(main_led_level, LV_OBJ_FLAG_SCROLLABLE);
 
     main_label_lux_value = lv_label_create(main_obj_lux);
     lv_obj_set_width(main_label_lux_value, lv_pct(55));
