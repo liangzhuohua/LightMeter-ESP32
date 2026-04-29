@@ -36,6 +36,12 @@ A professional incident-light exposure meter for film photography, built on ESP3
 - Real-time WiFi signal, battery, and lux indicators
 - OTA firmware update over HTTPS
 
+## Screenshots
+
+![Main Screen](docs/GUI1.png)
+
+![Settings Screen](docs/GUI2.png)
+
 ## Hardware
 
 | Component | Part |
