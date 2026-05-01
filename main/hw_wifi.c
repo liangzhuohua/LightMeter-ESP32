@@ -23,6 +23,7 @@ static uint8_t g_switch_pending = 0;
 static uint8_t g_manual_disconnect = 0;
 static uint8_t g_connect_request_active = 0;
 
+/* 通知上层WiFi状态变化（通过已注册的回调函数） */
 static void notify_wifi_state(hw_wifi_state_t state, const char *ssid, int reason) {
     if (g_wifi_state_callback == NULL) {
         return;
@@ -39,6 +40,7 @@ static void notify_wifi_state(hw_wifi_state_t state, const char *ssid, int reaso
     g_wifi_state_callback(&event);
 }
 
+/* 使用待连接配置（g_pending_ssid/password）发起WiFi连接 */
 static void start_connect_with_pending_config(void) {
     wifi_config_t wifi_config = {
         .sta = {}
@@ -54,6 +56,7 @@ static void start_connect_with_pending_config(void) {
 }
 
 
+/* 打印扫描结果的认证模式 */
 static void print_auth_mode(wifi_auth_mode_t authmode) {
     switch (authmode) {
         case WIFI_AUTH_OPEN: ESP_LOGI("SCAN", "Auth Mode \tOpen"); break;
@@ -65,6 +68,7 @@ static void print_auth_mode(wifi_auth_mode_t authmode) {
     }
 }
 
+/* 打印扫描结果的加密类型 */
 static void print_cipher_type(wifi_cipher_type_t pairwise, wifi_cipher_type_t group) {
     ESP_LOGI("SCAN", "Pairwise Cipher \t%s",
              (pairwise == WIFI_CIPHER_TYPE_NONE) ? "None" :
@@ -77,6 +81,7 @@ static void print_cipher_type(wifi_cipher_type_t pairwise, wifi_cipher_type_t gr
              (group == WIFI_CIPHER_TYPE_CCMP) ? "CCMP" : "Unknown");
 }
 
+/* WiFi扫描完成事件处理：获取扫描结果，构造结果结构体并回调上层 */
 static void wifi_scan_done_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     wifi_event_sta_scan_done_t* scan_data = (wifi_event_sta_scan_done_t*)event_data;
 
@@ -228,6 +233,9 @@ static void wifi_event_handler_STA(void *arg, esp_event_base_t event_base,int32_
     }
 }
 
+/**
+ * @brief 初始化WiFi STA模式（基本初始化，无扫描回调）
+ */
 void hw_wifi_init(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     esp_event_loop_create_default();
@@ -245,6 +253,9 @@ void hw_wifi_init(void) {
     esp_wifi_start();
 }
 
+/**
+ * @brief 初始化WiFi STA模式（带扫描完成回调注册）
+ */
 void hw_wifi_init_with_scan_cb(wifi_scan_done_cb_t callback) {
     g_scan_done_callback = callback;
 
@@ -266,15 +277,20 @@ void hw_wifi_init_with_scan_cb(wifi_scan_done_cb_t callback) {
     esp_wifi_start();
 }
 
+/* 注册WiFi状态变化回调 */
 void hw_wifi_register_state_cb(wifi_state_cb_t callback) {
     g_wifi_state_callback = callback;
 }
 
+/* 启动异步WiFi扫描（结果通过回调返回） */
 void hw_wifi_scan_async(void) {
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, false));
     ESP_LOGI("SCAN", "开始异步扫描...");
 }
 
+/**
+ * @brief 同步WiFi扫描并返回结果（阻塞直到扫描完成）
+ */
 wifi_scan_result_t hw_wifi_scan(void) {
     wifi_scan_result_t result = {0};
 
@@ -325,6 +341,7 @@ wifi_scan_result_t hw_wifi_scan(void) {
     return result;
 }
 
+/* 释放WiFi扫描结果中分配的AP列表内存 */
 void hw_wifi_scan_result_free(wifi_scan_result_t* result) {
     if (result && result->ap_list) {
         free(result->ap_list);
@@ -333,6 +350,9 @@ void hw_wifi_scan_result_free(wifi_scan_result_t* result) {
     }
 }
 
+/**
+ * @brief 反初始化WiFi：停止连接，销毁网络接口和事件循环
+ */
 void hw_wifi_deinit(void) {
     if (g_is_connected && g_current_ssid[0] != '\0') {
         notify_wifi_state(HW_WIFI_STATE_DISCONNECTED, g_current_ssid, 0);
@@ -357,6 +377,10 @@ void hw_wifi_deinit(void) {
 }
 
 
+/**
+ * @brief 连接到指定WiFi（SSID和密码）
+ * @note 如果已连接到不同的WiFi，会先断开再连接
+ */
 void hw_wifi_connect(char* SSID, char* PASSWORD) {
     if (SSID == NULL || SSID[0] == '\0') {
         return;
@@ -386,6 +410,7 @@ void hw_wifi_connect(char* SSID, char* PASSWORD) {
     start_connect_with_pending_config();
 }
 
+/* 手动断开当前WiFi连接 */
 void hw_wifi_disconnect(void) {
     g_switch_pending = 0;
     g_connect_request_active = 0;
@@ -395,16 +420,19 @@ void hw_wifi_disconnect(void) {
     ESP_ERROR_CHECK(esp_wifi_disconnect());
 }
 
+/* 启用WiFi自动重连（断线后自动重试） */
 void hw_wifi_auto_reconnect(void) {
     WIFI_AUTO_RECONNECT_ENABLED = 1;
     WIFI_AUTO_RECONNECT_RETRIES_NOW = 0;
     ESP_LOGI("WIFI", "自动重连已启用, 最大重试次数:%d", WIFI_AUTO_RECONNECT_MAX_RETRIES);
 }
 
+/* 获取当前已连接WiFi的SSID */
 const char* hw_wifi_get_current_ssid(void) {
     return g_current_ssid;
 }
 
+/* 获取当前/最后连接WiFi的密码 */
 const char* hw_wifi_get_current_password(void) {
     return g_pending_password;
 }

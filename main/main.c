@@ -11,6 +11,9 @@
 
 static const char* TAG = "main";
 
+/**
+ * @brief 应用主入口：初始化I2C、VEML7700光传感器、NVS、OLED/LVGL显示，然后启动控制器
+ */
 void app_main(void)
 {
     i2c_init();

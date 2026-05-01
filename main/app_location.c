@@ -11,6 +11,7 @@ static const char* TAG = "app_location";
 
 static location_result_callback_t g_location_callback = NULL;
 
+/* HTTP响应处理：解析Google Geolocation API返回的JSON，提取经纬度/精度/地址 */
 static void http_response_handler(const char* response, int len, void* user_data) {
     if (g_location_callback == NULL) {
         return;
@@ -66,6 +67,11 @@ static void http_response_handler(const char* response, int len, void* user_data
     }
 }
 
+/**
+ * @brief 发起基于WiFi AP扫描的Google Geolocation定位请求
+ * @param result WiFi扫描结果（包含AP的BSSID和RSSI）
+ * @param callback 定位完成后的回调函数
+ */
 void app_location_get_location(wifi_scan_result_t* result, location_result_callback_t callback) {
     if (result == NULL || result->count == 0 || result->ap_list == NULL) {
         ESP_LOGE(TAG, "WiFi扫描结果无效");

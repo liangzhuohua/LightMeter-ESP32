@@ -9,6 +9,7 @@ static const char *TAG = "hw_max17055";
 
 static i2c_dev_t max17055_device;
 
+/* 初始化MAX17055的ALRT引脚为输入模式 */
 static void alrt_gpio_init(void)
 {
     rtc_gpio_deinit(HW_MAX17055_ALRT_GPIO);
@@ -23,6 +24,9 @@ static void alrt_gpio_init(void)
     gpio_config(&io_conf);
 }
 
+/**
+ * @brief 初始化MAX17055电量计：配置电池参数，读取初始SOC/电压/温度
+ */
 void hw_max17055_init(void)
 {
     memset(&max17055_device, 0, sizeof(i2c_dev_t));
@@ -69,66 +73,79 @@ void hw_max17055_init(void)
     ESP_LOGI(TAG, "initial read: Vcell=%.2fmV, SOC=%.1f%%, Temp=%.1fC", vcell, soc, temp);
 }
 
+/* 获取电池电压(mV) */
 void hw_max17055_get_vcell(float *voltage_mv)
 {
     max17055_get_vcell(&max17055_device, voltage_mv);
 }
 
+/* 获取平均电池电压(mV) */
 void hw_max17055_get_avg_vcell(float *voltage_mv)
 {
     max17055_get_avg_vcell(&max17055_device, voltage_mv);
 }
 
+/* 获取瞬时电流(mA) */
 void hw_max17055_get_current(float *current_ma)
 {
     max17055_get_current(&max17055_device, current_ma);
 }
 
+/* 获取平均电流(mA) */
 void hw_max17055_get_avg_current(float *current_ma)
 {
     max17055_get_avg_current(&max17055_device, current_ma);
 }
 
+/* 获取电量百分比(SOC, %) */
 void hw_max17055_get_soc(float *soc_pct)
 {
     max17055_get_soc(&max17055_device, soc_pct);
 }
 
+/* 获取报告容量(mAh) */
 void hw_max17055_get_rep_cap(float *cap_mah)
 {
     max17055_get_rep_cap(&max17055_device, cap_mah);
 }
 
+/* 获取电池温度(°C) */
 void hw_max17055_get_temperature(float *temp_c)
 {
     max17055_get_temperature(&max17055_device, temp_c);
 }
 
+/* 获取放空时间估算(TTE, 秒) */
 void hw_max17055_get_tte(float *tte_s)
 {
     max17055_get_tte(&max17055_device, tte_s);
 }
 
+/* 获取充满时间估算(TTF, 秒) */
 void hw_max17055_get_ttf(float *ttf_s)
 {
     max17055_get_ttf(&max17055_device, ttf_s);
 }
 
+/* 获取满充容量(mAh) */
 void hw_max17055_get_full_cap(float *cap_mah)
 {
     max17055_get_full_cap(&max17055_device, cap_mah);
 }
 
+/* 获取充放电循环次数 */
 void hw_max17055_get_cycles(uint16_t *cycles)
 {
     max17055_get_cycles(&max17055_device, cycles);
 }
 
+/* 获取电池老化百分比 */
 void hw_max17055_get_age(uint8_t *age_pct)
 {
     max17055_get_age(&max17055_device, age_pct);
 }
 
+/* 通过电流方向判断是否正在充电 */
 bool hw_max17055_is_charging(void)
 {
     float current = 0.0f;
@@ -137,11 +154,13 @@ bool hw_max17055_is_charging(void)
     return (current > 1.0f);
 }
 
+/* 获取MAX17055状态寄存器值 */
 void hw_max17055_get_status(uint16_t *status)
 {
     max17055_get_status(&max17055_device, status);
 }
 
+/* 将MAX17055置于休眠模式以节省功耗 */
 void hw_max17055_sleep(void)
 {
     ESP_LOGI(TAG, "Putting MAX17055 into hibernate mode");
@@ -151,6 +170,7 @@ void hw_max17055_sleep(void)
     i2c_dev_write_reg(&max17055_device, MAX17055_REG_HIBCFG, &hibcfg, 2);
 }
 
+/* 释放ALRT引脚（为深度睡眠做准备，防止漏电） */
 void hw_max17055_release_pins(void)
 {
     ESP_LOGI(TAG, "Releasing ALRT pin for deep sleep");
@@ -160,6 +180,9 @@ void hw_max17055_release_pins(void)
     rtc_gpio_pullup_dis(HW_MAX17055_ALRT_GPIO);
 }
 
+/**
+ * @brief 强制校准满充状态：将REPSOC设为100%，更新满充容量
+ */
 void hw_max17055_force_full(float full_capacity_mah)
 {
     ESP_LOGI(TAG, "Force full charge calibration");

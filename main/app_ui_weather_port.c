@@ -11,6 +11,7 @@ LV_FONT_DECLARE(SourceHanSansCN_Regular);
 
 static int g_current_indicator_offset = 0;
 
+/* 时间线指示器滑动动画回调 */
 static void indicator_anim_cb(void* var, int32_t v) {
     lv_obj_t* indicator = (lv_obj_t*)var;
     lv_obj_align(indicator, LV_ALIGN_LEFT_MID, (int)v, 0);
@@ -38,6 +39,7 @@ static const struct {
     {-1, 0}
 };
 
+/* 将QWeather图标代码映射为自定义字体Unicode码点 */
 static uint32_t get_icon_unicode(int icon_code) {
     for (int i = 0; icon_map[i].code != -1; i++) {
         if (icon_map[i].code == icon_code) {
@@ -70,6 +72,7 @@ static bool g_sunrise_sunset_valid = false;
 static bool g_moonrise_moonset_valid = false;
 static lv_timer_t* g_timeline_timer = NULL;
 
+/* 将Unicode码点编码为UTF-8并设置到标签 */
 static void set_label_icon(lv_obj_t* label, uint32_t unicode) {
     char buf[8];
     buf[0] = (char)(0xF0 | ((unicode >> 18) & 0x07));
@@ -80,6 +83,7 @@ static void set_label_icon(lv_obj_t* label, uint32_t unicode) {
     lv_label_set_text(label, buf);
 }
 
+/* 根据白天/夜晚切换时间线显示（日出日落 或 月出月落） */
 static void update_timeline_display(bool is_daytime) {
     if (is_daytime) {
         lv_label_set_text(timeline_title, "日出 & 日落");
@@ -99,6 +103,7 @@ static void update_timeline_display(bool is_daytime) {
     }
 }
 
+/* 时间线定时器回调：每分钟更新一次日出/日落/月出/月落时间线上的当前位置 */
 static void timeline_timer_cb(lv_timer_t* timer) {
     static bool last_is_daytime = false;
     static bool first_run = true;
@@ -180,6 +185,7 @@ static void timeline_timer_cb(lv_timer_t* timer) {
     }
 }
 
+/* 更新当前温度显示（如 "25°C"） */
 void app_ui_weather_set_temp(int temp) {
     if (weather_temp_label == NULL) return;
 
@@ -188,6 +194,7 @@ void app_ui_weather_set_temp(int temp) {
     lv_label_set_text(weather_temp_label, buf);
 }
 
+/* 更新温度范围显示（如 "15°~25°"） */
 void app_ui_weather_set_temp_range(int temp_min, int temp_max) {
     if (weather_temp_range_label == NULL) return;
 
@@ -196,6 +203,7 @@ void app_ui_weather_set_temp_range(int temp_min, int temp_max) {
     lv_label_set_text(weather_temp_range_label, buf);
 }
 
+/* 更新湿度显示（如 "💧 65%"） */
 void app_ui_weather_set_humidity(int humidity) {
     if (humidity_label == NULL) return;
 
@@ -204,6 +212,7 @@ void app_ui_weather_set_humidity(int humidity) {
     lv_label_set_text(humidity_label, buf);
 }
 
+/* 更新风速显示（如 "🔄 12.5km/h"） */
 void app_ui_weather_set_wind(float wind_speed) {
     if (wind_label == NULL) return;
 
@@ -212,6 +221,7 @@ void app_ui_weather_set_wind(float wind_speed) {
     lv_label_set_text(wind_label, buf);
 }
 
+/* 设置日出时间标签 */
 void app_ui_sunrise_set_time(int hour, int minute) {
     if (sunrise_label == NULL) return;
 
@@ -220,6 +230,7 @@ void app_ui_sunrise_set_time(int hour, int minute) {
     lv_label_set_text(sunrise_label, buf);
 }
 
+/* 设置日落时间标签 */
 void app_ui_sunset_set_time(int hour, int minute) {
     if (sunset_label == NULL) return;
 
@@ -232,6 +243,7 @@ void app_ui_sunrise_sunset_set_now(const char* now_str) {
     return;
 }
 
+/* 设置时间线上的当前位置指示器 */
 void app_ui_sunrise_sunset_set_indicator(int position_percent) {
     if (timeline_indicator == NULL || timeline_bar == NULL) return;
 
@@ -256,6 +268,7 @@ void app_ui_sunrise_sunset_set_indicator(int position_percent) {
     g_current_indicator_offset = indicator_offset;
 }
 
+/* 根据QWeather图标代码设置天气图标 */
 void app_ui_weather_set_icon(const char* icon_code) {
     if (weather_icon == NULL || icon_code == NULL) return;
 
@@ -273,6 +286,9 @@ void app_ui_weather_set_icon(const char* icon_code) {
     lv_obj_set_style_text_font(weather_icon, &qweather_icons, 0);
 }
 
+/**
+ * @brief 一次性更新所有天气UI元素（温度/湿度/风速/图标/日出日落/月出月落/月相）
+ */
 void app_ui_weather_update_all(const weather_data_t* data) {
     if (data == NULL) return;
 
@@ -331,6 +347,7 @@ extern lv_obj_t* weather_status_dot;
 
 static lv_anim_t weather_blink_anim;
 
+/* 天气同步状态点的闪烁动画回调 */
 static void weather_dot_anim_cb(void* var, int32_t v) {
     lv_obj_t* dot = (lv_obj_t*)var;
     if (v) {
@@ -340,6 +357,7 @@ static void weather_dot_anim_cb(void* var, int32_t v) {
     }
 }
 
+/* 设置天气同步状态为加载中（黄色点） */
 void app_ui_weather_set_loading(void) {
     if (weather_status_dot == NULL) return;
 
@@ -349,6 +367,7 @@ void app_ui_weather_set_loading(void) {
     lv_obj_set_style_bg_color(weather_status_dot, lv_color_hex(0xffd700), 0);
 }
 
+/* 设置天气同步状态为成功（绿色点，1.5秒后淡出） */
 void app_ui_weather_set_success(void) {
     if (weather_status_dot == NULL) return;
 
@@ -371,6 +390,7 @@ bool app_ui_weather_request_refresh(void) {
     return app_controller_request_weather();
 }
 
+/* 设置天气同步状态为失败（红色点） */
 void app_ui_weather_set_fail(void) {
     if (weather_status_dot == NULL) return;
 

@@ -66,6 +66,7 @@ typedef enum {
 
 static refresh_mode_t g_refresh_mode = REFRESH_MODE_FULL_CHAIN;
 
+/* 打印当前内存使用情况，用于调试内存泄漏 */
 static void log_memory(const char* stage) {
     ESP_LOGI(TAG, "[MEM-%s] Free: %lu, Largest: %lu",
              stage,
@@ -73,6 +74,7 @@ static void log_memory(const char* stage) {
              (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_DEFAULT));
 }
 
+/* 重置请求状态跟踪结构体（每次开始新的串行请求链时调用） */
 static void reset_request_status(void) {
     memset(&g_req_status, 0, sizeof(request_status_t));
 }
@@ -99,6 +101,7 @@ static bool g_periodic_sync_mode = false;
 
 static void weather_result_callback(const weather_data_t* data);
 
+/* WiFi状态变化回调：连接中/已连接/断开/连接失败，并驱动UI更新和自动重连逻辑 */
 static void wifi_state_callback(const hw_wifi_state_event_t *event) {
     if (event == NULL) {
         return;
@@ -167,6 +170,7 @@ static void wifi_state_callback(const hw_wifi_state_event_t *event) {
     }
 }
 
+/* WiFi扫描完成回调：保存扫描结果，处理自动连接逻辑，更新UI WiFi列表 */
 static void wifi_scan_done_callback(wifi_scan_result_t* result) {
     if (result == NULL || result->count == 0 || result->ap_list == NULL) {
         ESP_LOGW(TAG, "WiFi扫描结果为空");
@@ -228,6 +232,7 @@ static void wifi_scan_done_callback(wifi_scan_result_t* result) {
     hw_wifi_scan_result_free(result);
 }
 
+/* 周期性读取VEML7700环境光传感器，将lux值发送到队列供曝光计算使用 */
 static void task_get_lux_value(void* pvParameters) {
     uint32_t als = 0;
     uint32_t white = 0;
@@ -245,6 +250,7 @@ static void task_get_lux_value(void* pvParameters) {
     }
 }
 
+/* 曝光计算任务：等待lux数据，获取ISO/EV/模式/相机/镜头参数，执行曝光计算并更新UI滚轮 */
 static void task_calc_exposure(void* pvParameters) {
     uint32_t lux = 0;
     int iso = 0;
@@ -323,6 +329,7 @@ static void task_calc_exposure(void* pvParameters) {
     }
 }
 
+/* WiFi操作任务：从队列收取操作指令（启用/禁用/扫描/连接/断开），执行对应WiFi操作 */
 static void task_wifi_operation(void* pvParameters) {
     WifiOperationMsg msg;
 
@@ -359,6 +366,7 @@ static void task_wifi_operation(void* pvParameters) {
     }
 }
 
+/* 定位结果回调：解析定位结果（经纬度、地址），更新UI城市显示，触发时间同步 */
 static void location_result_callback(const location_result_t* result) {
     log_memory("定位后");
 
@@ -486,6 +494,7 @@ static void location_result_callback(const location_result_t* result) {
     xSemaphoreGive(time_sync_Sem);
 }
 
+/* 天气结果回调：解析天气数据，更新UI天气面板，保存到NVS缓存 */
 static void weather_result_callback(const weather_data_t* data) {
     if (data == NULL) {
         ESP_LOGE(TAG, "获取天气失败");
@@ -535,6 +544,7 @@ static void weather_result_callback(const weather_data_t* data) {
     g_periodic_sync_mode = false;
 }
 
+/* 定位任务：等待定位信号量，检查WiFi/扫描状态后调用Google Geolocation API获取位置 */
 static void task_get_location(void* pvParameters) {
     while (1) {
         if (xSemaphoreTake(location_Sem, portMAX_DELAY) == pdTRUE) {
@@ -599,6 +609,7 @@ static void task_get_location(void* pvParameters) {
     }
 }
 
+/* 时间同步与更新任务：等待时间同步信号量，执行SNTP同步，更新UI时钟/日期显示，触发后续天气请求 */
 static void task_time_sync_and_update(void* pvParameters) {
     app_time_t current_time;
 
@@ -678,6 +689,7 @@ static void task_time_sync_and_update(void* pvParameters) {
     }
 }
 
+/* 定时同步计时器回调：每30分钟检查一次，若时间/天气超过阈值则触发同步 */
 static void periodic_sync_timer_cb(lv_timer_t* timer) {
     if (!g_wifi_connected) {
         ESP_LOGD(TAG, "WiFi未连接，跳过定时同步");
@@ -708,6 +720,7 @@ static void periodic_sync_timer_cb(lv_timer_t* timer) {
     }
 }
 
+/* 启动时检查同步时间戳：判断是否需要立即同步时间/天气 */
 static void check_sync_on_startup(void) {
     sync_timestamp_t ts;
     if (app_nvs_load_sync_timestamps(&ts) != 0) {
@@ -731,6 +744,7 @@ static void check_sync_on_startup(void) {
     }
 }
 
+/* 周期性时间更新任务：每秒检查一次，分钟变化时更新UI时间显示 */
 static void task_time_update_periodic(void* pvParameters) {
     app_time_t current_time;
     int last_minute = -1;
@@ -753,6 +767,7 @@ static void task_time_update_periodic(void* pvParameters) {
     }
 }
 
+/* 电池更新任务：每3秒读取电量、电压、充电状态，更新UI状态栏 */
 static void task_battery_update(void* pvParameters) {
     float soc = 0.0f;
     float voltage = 0.0f;
@@ -783,6 +798,7 @@ static void task_battery_update(void* pvParameters) {
     }
 }
 
+/* 天气更新任务：等待天气信号量，检查WiFi/定位状态，调用QWeather API获取7天预报 */
 static void task_weather_update(void* pvParameters) {
     while (1) {
         if (xSemaphoreTake(weather_Sem, portMAX_DELAY) == pdTRUE) {
@@ -827,6 +843,7 @@ static void task_weather_update(void* pvParameters) {
 
 static SemaphoreHandle_t sleep_sem = NULL;
 
+/* 电源管理任务：等待睡眠信号量，收到后进入深度睡眠流程 */
 static void task_power_manage(void* arg) {
     while (1) {
         if (xSemaphoreTake(sleep_sem, portMAX_DELAY) == pdTRUE) {
@@ -836,6 +853,7 @@ static void task_power_manage(void* arg) {
     }
 }
 
+/* 唤醒键ISR回调：长按触发深度睡眠 */
 static void wakeup_key_callback(wakeup_key_event_t event) {
     if (event == WAKEUP_KEY_EVENT_LONG_PRESS) {
         if (sleep_sem != NULL) {
@@ -848,6 +866,9 @@ static void wakeup_key_callback(wakeup_key_event_t event) {
     }
 }
 
+/**
+ * @brief 初始化唤醒键：创建电源管理任务和信号量，注册回调
+ */
 void app_controller_wakeup_key_init(void) {
     if (sleep_sem == NULL) {
         sleep_sem = xSemaphoreCreateBinary();
@@ -862,6 +883,9 @@ void app_controller_wakeup_key_init(void) {
     hw_wakeup_key_set_callback(wakeup_key_callback);
 }
 
+/**
+ * @brief 进入深度睡眠：保存时间到RTC，关闭所有外设（OLED/触摸/VEML7700/电池/WiFi），配置唤醒源
+ */
 void app_controller_enter_deep_sleep(void) {
     ESP_LOGI(TAG, "Preparing to enter deep sleep...");
 
@@ -905,6 +929,10 @@ void app_controller_enter_deep_sleep(void) {
     esp_deep_sleep_start();
 }
 
+/**
+ * @brief 控制器初始化入口：创建队列/信号量，加载NVS数据，恢复RTC时间，显示缓存数据，
+ *        自动连接WiFi，创建定时同步定时器和所有FreeRTOS任务
+ */
 void app_controller_init(void)
 {
     lux_value_queue = xQueueCreate(1, sizeof(uint32_t));
@@ -1024,22 +1052,27 @@ void app_controller_init(void)
     xTaskCreate(task_battery_update, "task_battery", 3072, NULL, 5, &g_task_battery_update_handle);
 }
 
+/* 获取当前WiFi连接的SSID */
 const char* app_controller_get_current_ssid(void) {
     return hw_wifi_get_current_ssid();
 }
 
+/* 获取当前纬度 */
 double app_controller_get_latitude(void) {
     return g_latitude;
 }
 
+/* 获取当前经度 */
 double app_controller_get_longitude(void) {
     return g_longitude;
 }
 
+/* 判断定位数据是否有效 */
 bool app_controller_get_location_valid(void) {
     return g_location_ready;
 }
 
+/* 手动请求刷新定位（仅刷新定位，不触发后续时间和天气） */
 bool app_controller_request_location(void) {
     if (!g_wifi_connected) {
         ESP_LOGW(TAG, "WiFi未连接，无法刷新定位");
@@ -1052,6 +1085,7 @@ bool app_controller_request_location(void) {
     return true;
 }
 
+/* 手动请求同步时间（仅同步时间，不触发后续天气） */
 bool app_controller_request_time_sync(void) {
     if (!g_wifi_connected) {
         ESP_LOGW(TAG, "WiFi未连接，无法同步时间");
@@ -1065,6 +1099,7 @@ bool app_controller_request_time_sync(void) {
     return true;
 }
 
+/* 手动请求刷新天气 */
 bool app_controller_request_weather(void) {
     if (!g_wifi_connected) {
         ESP_LOGW(TAG, "WiFi未连接，无法获取天气");
@@ -1077,6 +1112,7 @@ bool app_controller_request_weather(void) {
     return true;
 }
 
+/* OTA进度回调：将OTA状态和进度转发到UI层显示 */
 static void ota_progress_callback(hw_ota_state_t state, int progress) {
     ESP_LOGI(TAG, "OTA state: %d, progress: %d%%", state, progress);
     if (example_lvgl_lock(-1)) {
@@ -1085,6 +1121,7 @@ static void ota_progress_callback(hw_ota_state_t state, int progress) {
     }
 }
 
+/* OTA启动任务：在新任务中调用hw_ota_start，避免阻塞调用者 */
 static void ota_start_task(void* arg) {
     esp_err_t err = hw_ota_start();
     if (err != ESP_OK) {
@@ -1097,6 +1134,7 @@ static void ota_start_task(void* arg) {
     vTaskDelete(NULL);
 }
 
+/* 请求启动OTA升级模式（启动AP热点 + HTTP服务器） */
 bool app_controller_request_ota(void) {
     if (hw_ota_get_state() != HW_OTA_IDLE) {
         ESP_LOGW(TAG, "OTA already in progress");
@@ -1108,6 +1146,7 @@ bool app_controller_request_ota(void) {
     return true;
 }
 
+/* OTA停止任务：在新任务中停止OTA，恢复STA模式 */
 static void ota_stop_task(void* arg) {
     hw_ota_stop();
     if (example_lvgl_lock(-1)) {
@@ -1117,6 +1156,7 @@ static void ota_stop_task(void* arg) {
     vTaskDelete(NULL);
 }
 
+/* 取消OTA升级模式 */
 void app_controller_cancel_ota(void) {
     ESP_LOGI(TAG, "取消OTA升级");
     xTaskCreate(ota_stop_task, "ota_stop", 4096, NULL, 5, NULL);

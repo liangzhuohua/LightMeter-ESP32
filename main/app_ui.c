@@ -137,6 +137,7 @@ static const lv_btnmatrix_ctrl_t t9_num_kb_ctrl[] = {
     1, 1, 1,
 };
 
+/* T9键盘：确认当前字符输入，重置多击状态 */
 static void t9_confirm_char(void)
 {
     t9_current_key = LV_BTNMATRIX_BTN_NONE;
@@ -147,6 +148,7 @@ static void t9_confirm_char(void)
     }
 }
 
+/* T9键盘：多击确认超时回调，超时后重置多击状态 */
 static void t9_timer_cb(lv_timer_t* timer)
 {
     t9_timer = NULL;
@@ -154,12 +156,14 @@ static void t9_timer_cb(lv_timer_t* timer)
     t9_char_index = 0;
 }
 
+/* T9键盘：向关联文本框中插入一个字符 */
 static void t9_insert_char(char c)
 {
     if (t9_textarea == NULL) return;
     lv_textarea_add_char(t9_textarea, c);
 }
 
+/* T9键盘：处理文字键的多击输入逻辑（同一个键快速连按循环切换字符） */
 static void t9_handle_text_key(uint16_t btn_id)
 {
     if (t9_textarea == NULL) return;
@@ -204,6 +208,7 @@ static void t9_handle_text_key(uint16_t btn_id)
     }
 }
 
+/* T9键盘：按钮矩阵事件回调，分发文字键/功能键/数字模式切换 */
 static void t9_kb_event_cb(lv_event_t* e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -289,6 +294,7 @@ static void t9_kb_event_cb(lv_event_t* e)
     }
 }
 
+/* T9键盘：关联文本框，切换时重置按键状态 */
 static void t9_kb_set_textarea(lv_obj_t* ta)
 {
     t9_confirm_char();
@@ -301,6 +307,7 @@ static void t9_kb_set_textarea(lv_obj_t* ta)
     }
 }
 
+/* T9键盘：获取当前关联的文本框 */
 static lv_obj_t* t9_kb_get_textarea(void)
 {
     return t9_textarea;
@@ -430,6 +437,7 @@ lv_obj_t* ota_ssid_label = NULL;
 lv_obj_t* ota_cancel_btn = NULL;
 lv_obj_t* ota_percent_label = NULL;
 
+/* 更新顶部状态栏：WiFi图标 + 电池图标 + 电量百分比 */
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
         return;
@@ -794,6 +802,7 @@ static void roller_manual_mode_event_cb(lv_event_t * e) {
     }
 }
 
+/* ISO/EV滚轮变更事件回调：保存当前设置到NVS */
 static void roller_iso_ev_event_cb(lv_event_t * e) {
     lv_event_code_t code = lv_event_get_code(e);
 
@@ -1497,6 +1506,7 @@ static void update_main_ui_from_cam_card(void)
     }
 }
 
+/* 解析闪光同步速度字符串（支持"1/250"格式），默认1/250秒 */
 static float parse_flash_sync_value(const char* str)
 {
     if (!str || strlen(str) == 0) {
@@ -2661,6 +2671,9 @@ static void btn_add_cam_event_cb(lv_event_t * e)
 // UI 初始化主函数
 // ──────────────────────────────────────────────
 static void create_ota_window(lv_obj_t* parent);
+/**
+ * @brief UI主入口：初始化所有页面（主界面 + 设置页 + OTA窗口）
+ */
 void ui_exposure_init(void) {
 
     /* 根据屏幕宽度设置字体 */
@@ -2840,6 +2853,7 @@ void app_ui_set_len_selected_index(int idx) {
     ESP_LOGI("app_ui", "Lens %d selected", idx);
 }
 
+/* 获取滚轮当前选中的索引 */
 uint16_t app_ui_get_roller_selected(lv_obj_t* roller) {
     if (roller == NULL) return 0;
     return lv_roller_get_selected(roller);
@@ -2850,6 +2864,7 @@ uint16_t app_ui_get_roller_selected(lv_obj_t* roller) {
 // ──────────────────────────────────────────────
 
 // 关闭wifi win
+/* 关闭WiFi配置窗口按钮回调 */
 static void wifi_close_win_cb(lv_event_t* e)
 {
     lv_event_code_t code = lv_event_get_code(e);                    /* 获取事件类型 */
@@ -2863,7 +2878,7 @@ static void wifi_close_win_cb(lv_event_t* e)
     }
 }
 
-// 长按弹出wifi win
+/* 设置页面WiFi区域长按回调：弹出WiFi配置窗口 */
 static void wifi_long_press_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -4269,6 +4284,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(len_btn_win_add, btn_add_len_event_cb, LV_EVENT_CLICKED, NULL);
 }
 
+/* 天气卡片长按回调：触发天气刷新 */
 static void weather_card_long_press_cb(lv_event_t* e) {
     if (app_ui_weather_request_refresh()) {
         app_ui_weather_set_loading();
@@ -4277,6 +4293,7 @@ static void weather_card_long_press_cb(lv_event_t* e) {
     }
 }
 
+/* 时间卡片长按回调：触发时间同步 */
 static void time_card_long_press_cb(lv_event_t* e) {
     if (app_ui_time_request_sync()) {
         app_ui_time_set_loading();
@@ -4285,6 +4302,7 @@ static void time_card_long_press_cb(lv_event_t* e) {
     }
 }
 
+/* 定位卡片长按回调：触发定位刷新 */
 static void location_card_long_press_cb(lv_event_t* e) {
     if (app_ui_location_request_refresh()) {
         app_ui_location_set_loading();
@@ -4293,6 +4311,7 @@ static void location_card_long_press_cb(lv_event_t* e) {
     }
 }
 
+/* OTA取消按钮回调：重置状态并停止OTA模式 */
 static void ota_cancel_btn_cb(lv_event_t* e) {
     app_ui_ota_set_state(0, 0);
     if (ota_percent_label) {
@@ -4311,6 +4330,7 @@ static void ota_cancel_btn_cb(lv_event_t* e) {
     app_ui_ota_request_cancel();
 }
 
+/* About卡片长按回调：触发OTA升级 */
 static void about_card_long_press_cb(lv_event_t* e) {
     if (ota_win == NULL) return;
     if (app_ui_ota_request_start()) {
@@ -4318,6 +4338,7 @@ static void about_card_long_press_cb(lv_event_t* e) {
     }
 }
 
+/* 创建OTA升级窗口UI（标题栏/信息卡/进度条/状态标签/取消按钮） */
 static void create_ota_window(lv_obj_t* parent) {
     ota_mask = lv_obj_create(parent);
     lv_obj_remove_style_all(ota_mask);
@@ -4445,6 +4466,9 @@ static void create_ota_window(lv_obj_t* parent) {
     lv_obj_center(cancel_label);
 }
 
+/**
+ * @brief 设置页面初始化：创建天气/时间/定位/About卡片以及WiFi配置窗口
+ */
 static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_bg_color(parent, lv_color_black(), 0);
     lv_obj_set_style_pad_all(parent, 10, 0);

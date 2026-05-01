@@ -38,7 +38,7 @@ static const struct {
  */
 #define L0_LUX_CEILING   200.0f
 #define L1_LUX_FLOOR     80.0f
-#define L1_LUX_CEILING   1200.0f  /* 传感器欠读，实际约对应照度计~2500+ lx */
+#define L1_LUX_CEILING   1200.0f  /* 照度计约1200 lx时切到LEVEL_2更准 */
 #define L2_LUX_FLOOR     800.0f   /* 滞回间隙 800~1200 */
 
 /* raw 饱和安全网: 任何档位超过此值立即升档 */
@@ -49,21 +49,24 @@ static int switch_cooldown = 0;  /* 换挡冷却计数，防震荡 */
 
 /* 逐级校准系数: calibrated = a * raw_lux^b */
 static veml7700_calib_t calibration[VEML7700_LEVEL_COUNT] = {
-    [VEML7700_LEVEL_0] = {1.0f, 1.0f},  /* GAIN_2,   800ms — 弱光 */
-    [VEML7700_LEVEL_1] = {1.0f, 1.0f},  /* GAIN_1,   100ms — 常规 */
-    [VEML7700_LEVEL_2] = {1.0f, 1.0f},  /* GAIN_DIV_8, 25ms — 强光 */
+    [VEML7700_LEVEL_0] = {0.8122f, 1.0534f},  /* R²=0.9996 */
+    [VEML7700_LEVEL_1] = {0.5082f, 1.1443f},  /* R²=0.9893 */
+    [VEML7700_LEVEL_2] = {0.1437f, 1.2420f},  /* R²=0.9812 */
 };
 
+/* 获取当前自适应量程级别 */
 veml7700_level_t hw_veml7700_get_level(void)
 {
     return current_level;
 }
 
+/* 获取当前量程级别对应的积分时间(ms) */
 uint16_t hw_veml7700_get_it_ms(void)
 {
     return level_config[current_level].it_ms;
 }
 
+/* 设置指定量程级别的校准系数（幂律模型：calibrated = a * raw^b） */
 void hw_veml7700_set_calibration(veml7700_level_t level, float a, float b)
 {
     if (level < VEML7700_LEVEL_COUNT) {
@@ -73,6 +76,7 @@ void hw_veml7700_set_calibration(veml7700_level_t level, float a, float b)
     }
 }
 
+/* 应用指定量程级别的增益和积分时间配置到传感器 */
 static void apply_level_config(veml7700_level_t level)
 {
     veml7700_configuration.gain = level_config[level].gain;
@@ -82,6 +86,7 @@ static void apply_level_config(veml7700_level_t level)
 
 /* ── 初始化 / 关断 ──────────────────────────────── */
 
+/* 比较两组VEML7700配置是否一致（用于验证写入是否成功） */
 static bool compare_configuration(veml7700_config_t* config_a, veml7700_config_t* config_b)
 {
     bool match = true;
@@ -118,6 +123,9 @@ static bool compare_configuration(veml7700_config_t* config_a, veml7700_config_t
     return match;
 }
 
+/**
+ * @brief 初始化VEML7700环境光传感器（从强光档Level 2开始避免饱和）
+ */
 void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_saving_mode) {
 
     memset(&veml7700_device, 0, sizeof(i2c_dev_t));
@@ -157,6 +165,10 @@ void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_s
     }
 }
 
+/**
+ * @brief 读取环境光lux值（带自适应量程切换和幂律校准）
+ * @note 自动在三级量程(WEAK/NORMAL/STRONG)之间切换，内置冷却期防震荡
+ */
 void hw_veml7700_get_ambient_light(uint32_t* als) {
     uint16_t raw;
     float lux;
@@ -219,17 +231,18 @@ void hw_veml7700_get_ambient_light(uint32_t* als) {
     }
 
     /* 6. 应用本级别幂律校准: cal = a * lux^b */
-    // TODO: 暂时注释掉校准，显示原始lux值用于重新采集数据
-    // veml7700_calib_t *cal = &calibration[current_level];
-    // float cal_lux = cal->a * powf((float)(*als), cal->b);
-    // if (cal_lux < 0.0f) cal_lux = 0.0f;
-    // *als = (uint32_t)(cal_lux + 0.5f);
+    veml7700_calib_t *cal = &calibration[current_level];
+    float cal_lux = cal->a * powf((float)(*als), cal->b);
+    if (cal_lux < 0.0f) cal_lux = 0.0f;
+    *als = (uint32_t)(cal_lux + 0.5f);
 }
 
+/* 读取VEML7700白通道原始值 */
 void hw_veml7700_get_white_channel(uint32_t* white) {
     veml7700_get_white_channel(&veml7700_device, &veml7700_configuration, white);
 }
 
+/* 关闭VEML7700传感器（设置shutdown位） */
 void hw_veml7700_shutdown(void) {
     ESP_LOGI(TAG, "Shutting down VEML7700");
     veml7700_configuration.shutdown = 1;

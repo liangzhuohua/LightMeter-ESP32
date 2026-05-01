@@ -345,6 +345,9 @@ void ui_calc_port_update_lux_label(lv_obj_t* label, int lux)
     lv_label_set_text_fmt(label, "%d", lux);
 }
 
+/**
+ * @brief 更新量程级别指示点颜色（绿=弱光/黄=室内/红=强光）
+ */
 void ui_calc_port_update_level_indicator(lv_obj_t* led, int level)
 {
     if (!led) return;

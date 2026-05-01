@@ -13,6 +13,7 @@ static wakeup_key_callback_t s_callback = NULL;
 static volatile int64_t s_press_start_time = 0;
 static volatile bool s_is_long_press_triggered = false;
 
+/* GPIO中断服务：按下时记录时间，释放时判断短按/长按并调用回调 */
 static void gpio_isr_handler(void* arg) {
     int level = gpio_get_level(WAKEUP_KEY_GPIO);
     int64_t now = esp_timer_get_time();
@@ -37,6 +38,9 @@ static void gpio_isr_handler(void* arg) {
     }
 }
 
+/**
+ * @brief 初始化唤醒键：配置GPIO，安装ISR，检测唤醒原因
+ */
 esp_err_t hw_wakeup_key_init(void) {
     esp_err_t ret;
 
@@ -76,15 +80,18 @@ esp_err_t hw_wakeup_key_init(void) {
     return ESP_OK;
 }
 
+/* 设置按键事件回调函数 */
 esp_err_t hw_wakeup_key_set_callback(wakeup_key_callback_t callback) {
     s_callback = callback;
     return ESP_OK;
 }
 
+/* 查询按键当前是否被按住 */
 bool hw_wakeup_key_is_pressed(void) {
     return gpio_get_level(WAKEUP_KEY_GPIO) == 0;
 }
 
+/* 检查是否由唤醒键触发的深度睡眠唤醒 */
 bool hw_wakeup_key_check_wakeup(void) {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
 
@@ -107,6 +114,9 @@ bool hw_wakeup_key_check_wakeup(void) {
     return false;
 }
 
+/**
+ * @brief 配置唤醒键为深度睡眠唤醒源（ext0，低电平触发）
+ */
 esp_err_t hw_wakeup_key_enable_sleep_wakeup(void) {
     esp_err_t ret;
 
@@ -135,6 +145,7 @@ esp_err_t hw_wakeup_key_enable_sleep_wakeup(void) {
     return ESP_OK;
 }
 
+/* 获取当前按键持续按下的时间(微秒) */
 int64_t hw_wakeup_key_get_press_duration(void) {
     if (s_press_start_time == 0) {
         return 0;
@@ -142,6 +153,7 @@ int64_t hw_wakeup_key_get_press_duration(void) {
     return esp_timer_get_time() - s_press_start_time;
 }
 
+/* 重置按键时间状态 */
 void hw_wakeup_key_reset_press(void) {
     s_press_start_time = 0;
     s_is_long_press_triggered = false;

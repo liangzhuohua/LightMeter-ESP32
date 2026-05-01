@@ -235,6 +235,7 @@ static esp_err_t upload_post_handler(httpd_req_t* req) {
 }
 
 /* HTTP GET / 处理函数：返回上传网页 */
+/* HTTP GET / 处理：返回固件上传网页 */
 static esp_err_t index_get_handler(httpd_req_t* req) {
     httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, HTML_UPLOAD_PAGE, strlen(HTML_UPLOAD_PAGE));
@@ -242,6 +243,7 @@ static esp_err_t index_get_handler(httpd_req_t* req) {
 }
 
 /* 启动 HTTP 服务器，注册首页和上传两个 URI */
+/* 启动HTTP服务器，注册首页和上传URI */
 static httpd_handle_t start_webserver(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.max_uri_handlers = 2;
@@ -259,6 +261,7 @@ static httpd_handle_t start_webserver(void) {
     return NULL;
 }
 
+/* 停止HTTP服务器 */
 static void stop_webserver(void) {
     if (g_server) {
         httpd_stop(g_server);
@@ -345,6 +348,7 @@ void hw_ota_stop(void) {
     g_ota_total_size = 0;
 }
 
+/* 获取当前OTA状态 */
 hw_ota_state_t hw_ota_get_state(void) {
     return g_ota_state;
 }

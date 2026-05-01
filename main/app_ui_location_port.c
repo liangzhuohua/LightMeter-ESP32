@@ -8,6 +8,7 @@ extern lv_obj_t *location_status_dot;
 
 static lv_anim_t location_blink_anim;
 
+/* 定位状态点的闪烁动画回调 */
 static void location_dot_anim_cb(void* var, int32_t v) {
     lv_obj_t* dot = (lv_obj_t*)var;
     if (v) {
@@ -17,6 +18,7 @@ static void location_dot_anim_cb(void* var, int32_t v) {
     }
 }
 
+/* 设置定位状态为加载中（黄色点） */
 void app_ui_location_set_loading(void) {
     if (location_status_dot == NULL) return;
 
@@ -26,6 +28,7 @@ void app_ui_location_set_loading(void) {
     lv_obj_set_style_bg_color(location_status_dot, lv_color_hex(0xffd700), 0);
 }
 
+/* 设置定位状态为成功（绿色点，1.5秒后淡出） */
 void app_ui_location_set_success(void) {
     if (location_status_dot == NULL) return;
 
@@ -44,6 +47,7 @@ void app_ui_location_set_success(void) {
     lv_anim_start(&fade);
 }
 
+/* 设置定位状态为失败（红色点） */
 void app_ui_location_set_fail(void) {
     if (location_status_dot == NULL) return;
 
@@ -53,6 +57,7 @@ void app_ui_location_set_fail(void) {
     lv_obj_set_style_bg_color(location_status_dot, lv_color_hex(0xff6b6b), 0);
 }
 
+/* 设置定位城市名称显示 */
 void app_ui_location_set_city(const char* city) {
     if (location_city_label == NULL || city == NULL) return;
 
@@ -60,12 +65,14 @@ void app_ui_location_set_city(const char* city) {
     lv_obj_set_style_text_color(location_city_label, lv_color_white(), 0);
 }
 
+/* 设置定位详情（街道/区）显示 */
 void app_ui_location_set_detail(const char* detail) {
     if (location_detail_label == NULL || detail == NULL) return;
 
     lv_label_set_text(location_detail_label, detail);
 }
 
+/* 设置定位状态为未知（灰色"未知"文字） */
 void app_ui_location_set_unknown(void) {
     if (location_city_label == NULL) return;
 
@@ -77,6 +84,7 @@ void app_ui_location_set_unknown(void) {
     }
 }
 
+/* 请求手动刷新定位 */
 bool app_ui_location_request_refresh(void) {
     return app_controller_request_location();
 }

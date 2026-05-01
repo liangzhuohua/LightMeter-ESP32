@@ -10,6 +10,7 @@ static esp_lcd_panel_io_handle_t io_handle = NULL;
 static esp_lcd_panel_io_handle_t tp_io_handle = NULL;
 static TaskHandle_t g_lvgl_task_handle = NULL;
 
+/* LVGL刷新完成通知回调：通知LVGL显示驱动刷新已完成 */
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
     lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
@@ -17,6 +18,7 @@ static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, 
     return false;
 }
 
+/* LVGL刷新回调：将LVGL绘制缓冲区的内容发送到AMOLED面板 */
 static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
     esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
@@ -44,6 +46,7 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 }
 
+/* LVGL区域取整回调：将刷新区域对齐到2像素边界（QSPI接口要求） */
 void example_lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area)
 {
     uint16_t x1 = area->x1;
@@ -63,16 +66,19 @@ void example_lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area)
 
 static bool g_touch_cb_disabled = false;
 
+/* 禁用触摸回调（深度睡眠前调用，避免I2C错误） */
 void oled_disable_touch_cb(void) {
     g_touch_cb_disabled = true;
 }
 
+/* 挂起LVGL任务（深度睡眠前调用，防止SPI总线冲突） */
 void oled_lvgl_suspend(void) {
     if (g_lvgl_task_handle != NULL) {
         vTaskSuspend(g_lvgl_task_handle);
     }
 }
 
+/* LVGL触摸输入回调：读取触摸坐标并传递给LVGL */
 static void example_lvgl_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
 {
     if (g_touch_cb_disabled) {
@@ -101,12 +107,18 @@ static void example_lvgl_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
 }
 
 
+/* LVGL心跳定时器回调：每2ms递增LVGL内部时间计数器 */
 static void example_increase_lvgl_tick(void *arg)
 {
     /* Tell LVGL how many milliseconds has elapsed */
     lv_tick_inc(EXAMPLE_LVGL_TICK_PERIOD_MS);
 }
 
+/**
+ * @brief 获取LVGL互斥锁（所有非LVGL任务访问LVGL API前必须调用）
+ * @param timeout_ms 超时时间(ms)，-1表示无限等待
+ * @return true=获取成功，false=超时
+ */
 bool example_lvgl_lock(int timeout_ms)
 {
     assert(lvgl_mux && "bsp_display_start must be called first");
@@ -115,12 +127,14 @@ bool example_lvgl_lock(int timeout_ms)
     return xSemaphoreTake(lvgl_mux, timeout_ticks) == pdTRUE;
 }
 
+/* 释放LVGL互斥锁 */
 void example_lvgl_unlock(void)
 {
     assert(lvgl_mux && "bsp_display_start must be called first");
     xSemaphoreGive(lvgl_mux);
 }
 
+/* LVGL主循环任务：周期性调用lv_timer_handler处理LVGL内部定时任务 */
 static void example_lvgl_port_task(void *arg)
 {
     ESP_LOGI(TAG, "Starting LVGL task");
@@ -145,6 +159,7 @@ static void example_lvgl_port_task(void *arg)
     }
 }
 
+/* I2C总线扫描：探测并列出所有已连接的I2C设备地址 */
 static void i2c_scan(void)
 {
     ESP_LOGI(TAG, "Scanning I2C bus...");
@@ -159,6 +174,9 @@ static void i2c_scan(void)
     ESP_LOGI(TAG, "I2C scan completed.");
 }
 
+/**
+ * @brief 初始化OLED显示和LVGL图形库：配置QSPI、触摸、LVGL显示驱动和输入设备
+ */
 void oled_lvgl_init(void) {
     static lv_disp_draw_buf_t disp_buf;
     static lv_disp_drv_t disp_drv;
@@ -301,10 +319,12 @@ void oled_lvgl_init(void) {
     xTaskCreatePinnedToCore(example_lvgl_port_task, "LVGL", EXAMPLE_LVGL_TASK_STACK_SIZE, NULL, EXAMPLE_LVGL_TASK_PRIORITY, &g_lvgl_task_handle, 1);
 }
 
+/* 设置AMOLED显示屏亮度 (0-255) */
 void oled_set_brightness(uint8_t brightness) {
     ESP_ERROR_CHECK(panel_qspi_amoled_set_brightness(panel_handle, brightness));
 }
 
+/* AMOLED进入睡眠模式（关闭显示和背光） */
 void oled_enter_sleep(void) {
     ESP_LOGI(TAG, "AMOLED entering sleep mode");
     esp_lcd_panel_disp_on_off(panel_handle, false);
@@ -315,6 +335,7 @@ void oled_enter_sleep(void) {
     vTaskDelay(pdMS_TO_TICKS(120));
 }
 
+/* 释放QSPI引脚（为深度睡眠做准备，防止漏电） */
 void oled_release_pins(void) {
     ESP_LOGI(TAG, "Releasing QSPI pins for deep sleep");
     spi_bus_free(LCD_HOST);
@@ -340,6 +361,7 @@ void oled_release_pins(void) {
     }
 }
 
+/* 触摸IC进入睡眠模式 */
 void touch_enter_sleep(void) {
     ESP_LOGI(TAG, "Touch IC entering sleep mode");
     uint8_t sleep_cmd = 0x03;
@@ -347,6 +369,7 @@ void touch_enter_sleep(void) {
     vTaskDelay(pdMS_TO_TICKS(50));
 }
 
+/* 释放触摸IC引脚（为深度睡眠做准备，防止漏电） */
 void touch_release_pins(void) {
     ESP_LOGI(TAG, "Releasing touch pins for deep sleep");
     gpio_num_t touch_pins[] = {

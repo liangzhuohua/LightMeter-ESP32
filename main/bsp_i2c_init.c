@@ -7,6 +7,9 @@ static const char* TAG = "I2C_INIT";
 static i2c_master_bus_handle_t s_bus_handle = NULL;
 static i2c_dev_t s_temp_dev = {0};
 
+/**
+ * @brief 初始化I2C总线，扫描总线上所有设备
+ */
 esp_err_t i2c_init(void) {
     ESP_LOGI(TAG, "Initialize I2C bus");
 
@@ -51,6 +54,9 @@ esp_err_t i2c_init(void) {
     return ESP_OK;
 }
 
+/**
+ * @brief 获取I2C总线句柄，供其他模块使用
+ */
 i2c_master_bus_handle_t i2c_get_bus_handle(void) {
     if (s_bus_handle == NULL) {
         s_bus_handle = i2cdev_get_bus_handle(I2C_HOST);
@@ -58,6 +64,9 @@ i2c_master_bus_handle_t i2c_get_bus_handle(void) {
     return s_bus_handle;
 }
 
+/**
+ * @brief 释放I2C引脚（为深度睡眠做准备，防止漏电）
+ */
 void i2c_release_pins(void) {
     ESP_LOGI(TAG, "Releasing I2C pins for deep sleep");
     gpio_num_t i2c_pins[] = { I2C_SDA, I2C_SCL };

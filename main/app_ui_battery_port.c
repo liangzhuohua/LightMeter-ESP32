@@ -7,6 +7,7 @@ extern float g_battery_soc;
 extern int g_wifi_state;
 extern battery_status_t g_battery_status;
 
+/* 根据WiFi状态返回对应的LVGL图标符号 */
 static const char *get_wifi_icon(void)
 {
     if (g_wifi_state == 2)
@@ -17,6 +18,7 @@ static const char *get_wifi_icon(void)
         return LV_SYMBOL_CLOSE;
 }
 
+/* 更新状态栏显示（WiFi图标 + 电量百分比 + 电池图标） */
 static void update_status_bar(void)
 {
     if (main_table_status == NULL) return;
@@ -46,6 +48,9 @@ static void update_status_bar(void)
         lv_label_set_text_fmt(main_table_status, "%s %d%% %s", wifi_icon, soc_int, batt_icon);
 }
 
+/**
+ * @brief 电池UI更新接口：接收电池数据并刷新状态栏显示
+ */
 void app_ui_battery_update(float soc_pct, float voltage_mv, battery_status_t status)
 {
     g_battery_soc = soc_pct;

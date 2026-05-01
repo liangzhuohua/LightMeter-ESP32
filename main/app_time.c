@@ -22,6 +22,7 @@ typedef struct {
 
 static RTC_DATA_ATTR rtc_time_backup_t s_rtc_time_backup = {0};
 
+/* 根据当前时区偏移量设置系统TZ环境变量 */
 static void apply_timezone(void)
 {
     char tz[32];
@@ -35,11 +36,15 @@ static void apply_timezone(void)
     ESP_LOGI(TAG, "时区设置为 UTC%+d (TZ=%s)", s_timezone_offset, tz);
 }
 
+/* SNTP时间同步成功通知回调 */
 static void time_sync_notification_cb(struct timeval *tv) {
     s_time_synced = true;
     ESP_LOGI(TAG, "时间同步完成");
 }
 
+/**
+ * @brief 初始化SNTP时间同步服务（配置NTP服务器和时区）
+ */
 esp_err_t app_time_sntp_init(void) {
     if (s_sntp_initialized) {
         ESP_LOGW(TAG, "SNTP已经初始化");
@@ -64,6 +69,9 @@ esp_err_t app_time_sntp_init(void) {
     return ESP_OK;
 }
 
+/**
+ * @brief 重启SNTP并开始新一轮时间同步
+ */
 esp_err_t app_time_sntp_sync(void) {
     if (!esp_sntp_enabled()) {
         ESP_LOGW(TAG, "SNTP未初始化");
@@ -77,10 +85,14 @@ esp_err_t app_time_sntp_sync(void) {
     return ESP_OK;
 }
 
+/* 查询SNTP是否已完成时间同步 */
 bool app_time_is_synced(void) {
     return s_time_synced;
 }
 
+/**
+ * @brief 获取当前系统时间（带校验：年份必须 >= 2020）
+ */
 esp_err_t app_time_get_now(app_time_t* time) {
     if (time == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -112,6 +124,9 @@ esp_err_t app_time_get_now(app_time_t* time) {
     return ESP_OK;
 }
 
+/**
+ * @brief 阻塞等待SNTP同步完成（直到成功或超时）
+ */
 void app_time_wait_sync(uint32_t timeout_ms) {
     uint32_t elapsed = 0;
     uint32_t check_interval = 100;
@@ -128,11 +143,17 @@ void app_time_wait_sync(uint32_t timeout_ms) {
     }
 }
 
+/**
+ * @brief 保存当前时间到RTC（深度睡眠后由底层RTC自动维护）
+ */
 esp_err_t app_time_save_to_rtc(void) {
     ESP_LOGI(TAG, "系统时间将由底层 RTC 自动维护");
     return ESP_OK;
 }
 
+/**
+ * @brief 从RTC恢复时区设置，读取当前RTC时间
+ */
 esp_err_t app_time_restore_from_rtc(void) {
     apply_timezone();
 
@@ -145,10 +166,14 @@ esp_err_t app_time_restore_from_rtc(void) {
     return ESP_OK;
 }
 
+/* 检查RTC内存中是否有有效的时间备份 */
 bool app_time_has_rtc_backup(void) {
     return s_rtc_time_backup.valid;
 }
 
+/**
+ * @brief 根据经度计算并设置时区（每15度经度对应1小时偏移）
+ */
 void app_time_set_timezone(double longitude)
 {
     int offset = (int)round(longitude / 15.0);

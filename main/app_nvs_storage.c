@@ -44,11 +44,15 @@ typedef struct {
     int current_step_type;
 } len_card_params_t;
 
+/**
+ * @brief 初始化NVS存储模块
+ */
 int app_nvs_storage_init(void) {
     ESP_LOGI(TAG, "NVS storage module initialized");
     return 0;
 }
 
+/* 保存所有相机卡片配置到NVS */
 int app_nvs_save_cameras(void) {
     ESP_LOGI(TAG, "Saving cameras to NVS...");
 
@@ -114,6 +118,7 @@ int app_nvs_save_cameras(void) {
     return 0;
 }
 
+/* 从NVS加载所有相机卡片配置并恢复UI */
 int app_nvs_load_cameras(void) {
     ESP_LOGI(TAG, "Loading cameras from NVS...");
 
@@ -172,6 +177,7 @@ int app_nvs_load_cameras(void) {
     return 0;
 }
 
+/* 保存所有镜头卡片配置到NVS */
 int app_nvs_save_lens(void) {
     ESP_LOGI(TAG, "Saving lens to NVS...");
 
@@ -248,6 +254,7 @@ int app_nvs_save_lens(void) {
     return 0;
 }
 
+/* 从NVS加载所有镜头卡片配置并恢复UI */
 int app_nvs_load_lens(void) {
     ESP_LOGI(TAG, "Loading lens from NVS...");
 
@@ -311,6 +318,7 @@ int app_nvs_load_lens(void) {
     return 0;
 }
 
+/* 保存UI状态到NVS（ISO/EV/模式/快门/光圈滚轮索引和选中卡片索引） */
 int app_nvs_save_ui_state(void) {
     ESP_LOGI(TAG, "Saving UI state to NVS...");
 
@@ -331,6 +339,7 @@ int app_nvs_save_ui_state(void) {
     return 0;
 }
 
+/* 从NVS恢复UI状态（滚轮位置和选中模式） */
 int app_nvs_load_ui_state(void) {
     ESP_LOGI(TAG, "Loading UI state from NVS...");
 
@@ -376,6 +385,7 @@ int app_nvs_load_ui_state(void) {
     return 0;
 }
 
+/* 保存WiFi配置到NVS（SSID/密码/启用状态） */
 int app_nvs_save_wifi(void) {
     ESP_LOGI(TAG, "Saving WiFi config to NVS...");
 
@@ -390,6 +400,7 @@ int app_nvs_save_wifi(void) {
     return 0;
 }
 
+/* 从NVS加载WiFi SSID */
 int app_nvs_load_wifi(void) {
     ESP_LOGI(TAG, "Loading WiFi config from NVS...");
 
@@ -404,6 +415,7 @@ int app_nvs_load_wifi(void) {
     return -1;
 }
 
+/* 获取完整WiFi配置（SSID/密码/启停状态） */
 int app_nvs_get_wifi_config(wifi_data_t* wifi) {
     if (wifi == NULL) return -1;
 
@@ -433,12 +445,14 @@ int app_nvs_get_wifi_config(wifi_data_t* wifi) {
     return 0;
 }
 
+/* 设置WiFi启用/禁用状态并保存到NVS */
 void app_nvs_set_wifi_enabled(bool enabled) {
     g_cached_wifi.enabled = enabled;
     hw_nvs_set_bool(NS_WIFI, "enabled", enabled);
     ESP_LOGI(TAG, "WiFi enabled state set to: %d", enabled);
 }
 
+/* 保存当前位置信息到NVS（经纬度/有效性/城市/详情） */
 int app_nvs_save_location(void) {
     ESP_LOGI(TAG, "Saving location to NVS...");
 
@@ -467,6 +481,7 @@ int app_nvs_save_location(void) {
     return 0;
 }
 
+/* 从NVS加载位置信息到缓存 */
 int app_nvs_load_location(void) {
     ESP_LOGI(TAG, "Loading location from NVS...");
 
@@ -503,18 +518,21 @@ int app_nvs_load_location(void) {
     return 0;
 }
 
+/* 获取缓存的位置数据 */
 int app_nvs_get_location_data(location_data_t* location) {
     if (location == NULL) return -1;
     *location = g_cached_location;
     return 0;
 }
 
+/* 将位置数据写入缓存（不立即写入NVS） */
 void app_nvs_set_location(double latitude, double longitude, bool valid) {
     g_cached_location.latitude = latitude;
     g_cached_location.longitude = longitude;
     g_cached_location.valid = valid;
 }
 
+/* 将城市名称和详情文本写入位置缓存 */
 void app_nvs_set_location_text(const char* city, const char* detail) {
     if (city) {
         strncpy(g_cached_location.city, city, sizeof(g_cached_location.city) - 1);
@@ -526,6 +544,7 @@ void app_nvs_set_location_text(const char* city, const char* detail) {
     }
 }
 
+/* 保存天气数据到NVS（温度/描述/图标/湿度/风速/日出日落/月出月落/月相） */
 int app_nvs_save_weather(void) {
     ESP_LOGI(TAG, "Saving weather to NVS...");
 
@@ -555,6 +574,7 @@ int app_nvs_save_weather(void) {
     return 0;
 }
 
+/* 从NVS加载天气数据到缓存 */
 int app_nvs_load_weather(void) {
     ESP_LOGI(TAG, "Loading weather from NVS...");
 
@@ -616,18 +636,21 @@ int app_nvs_load_weather(void) {
     return 0;
 }
 
+/* 获取缓存的天气数据（仅当已加载过时返回成功） */
 int app_nvs_get_weather_data(weather_data_t* weather) {
     if (weather == NULL || !g_weather_cached) return -1;
     *weather = g_cached_weather;
     return 0;
 }
 
+/* 将天气数据写入缓存（不立即写入NVS） */
 void app_nvs_set_weather(const weather_data_t* weather) {
     if (weather == NULL) return;
     g_cached_weather = *weather;
     g_weather_cached = true;
 }
 
+/* 保存所有数据到NVS（相机/镜头/UI状态/WiFi/位置/天气） */
 int app_nvs_save_all(void) {
     ESP_LOGI(TAG, "Saving all data to NVS...");
 
@@ -669,6 +692,7 @@ int app_nvs_save_all(void) {
     return ret;
 }
 
+/* 从NVS加载所有数据（WiFi/位置/天气/相机/镜头/UI状态） */
 int app_nvs_load_all(void) {
     ESP_LOGI(TAG, "Loading all data from NVS...");
 
@@ -702,6 +726,7 @@ int app_nvs_load_all(void) {
     return ret;
 }
 
+/* 保存同步时间戳到NVS */
 int app_nvs_save_sync_timestamps(const sync_timestamp_t* ts) {
     if (ts == NULL) return -1;
 
@@ -716,6 +741,7 @@ int app_nvs_save_sync_timestamps(const sync_timestamp_t* ts) {
     return ret;
 }
 
+/* 从NVS加载同步时间戳 */
 int app_nvs_load_sync_timestamps(sync_timestamp_t* ts) {
     if (ts == NULL) return -1;
 
@@ -729,6 +755,7 @@ int app_nvs_load_sync_timestamps(sync_timestamp_t* ts) {
     return ret;
 }
 
+/* 更新时间为当前时间戳并保存到NVS */
 void app_nvs_update_time_sync_timestamp(void) {
     sync_timestamp_t ts;
     app_nvs_load_sync_timestamps(&ts);
@@ -737,6 +764,7 @@ void app_nvs_update_time_sync_timestamp(void) {
     ESP_LOGI(TAG, "Time sync timestamp updated");
 }
 
+/* 更新天气同步时间为当前时间戳并保存到NVS */
 void app_nvs_update_weather_sync_timestamp(void) {
     sync_timestamp_t ts;
     app_nvs_load_sync_timestamps(&ts);
@@ -745,6 +773,7 @@ void app_nvs_update_weather_sync_timestamp(void) {
     ESP_LOGI(TAG, "Weather sync timestamp updated");
 }
 
+/* 更新位置同步时间为当前时间戳并保存到NVS */
 void app_nvs_update_location_sync_timestamp(void) {
     sync_timestamp_t ts;
     app_nvs_load_sync_timestamps(&ts);

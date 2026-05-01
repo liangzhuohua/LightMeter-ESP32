@@ -5,6 +5,9 @@
 
 static const char *TAG = "hw_tp4056";
 
+/**
+ * @brief 初始化TP4056充电检测芯片（配置CHRG和STDBY引脚为输入）
+ */
 void hw_tp4056_init(void)
 {
     gpio_config_t io_conf = {
@@ -20,6 +23,9 @@ void hw_tp4056_init(void)
              HW_TP4056_CHRG_GPIO, HW_TP4056_STDBY_GPIO);
 }
 
+/**
+ * @brief 读取TP4056充电状态（CHRG低=充电中，STDBY低=充满，都高=未充电）
+ */
 tp4056_charge_status_t hw_tp4056_get_charge_status(void)
 {
     int chrg_level = gpio_get_level(HW_TP4056_CHRG_GPIO);
@@ -34,6 +40,7 @@ tp4056_charge_status_t hw_tp4056_get_charge_status(void)
     }
 }
 
+/* 释放CHRG/STDBY引脚（为深度睡眠做准备，防止漏电） */
 void hw_tp4056_release_pins(void)
 {
     ESP_LOGI(TAG, "Releasing CHRG/STDBY pins for deep sleep");

@@ -23,6 +23,9 @@ static int open_nvs_handle(const char *namespace, nvs_open_mode_t mode, nvs_hand
     return 0;
 }
 
+/**
+ * @brief 初始化NVS Flash存储
+ */
 int hw_nvs_init(void)
 {
     esp_err_t ret = nvs_flash_init();
@@ -35,6 +38,7 @@ int hw_nvs_init(void)
     return 0;
 }
 
+/* NVS写入bool值 */
 int hw_nvs_set_bool(const char *namespace, const char *key, bool value)
 {
     nvs_handle_t handle;
@@ -60,6 +64,7 @@ int hw_nvs_set_bool(const char *namespace, const char *key, bool value)
     return 0;
 }
 
+/* NVS读取bool值 */
 int hw_nvs_get_bool(const char *namespace, const char *key, bool *value)
 {
     nvs_handle_t handle;
@@ -85,6 +90,7 @@ int hw_nvs_get_bool(const char *namespace, const char *key, bool *value)
     return 0;
 }
 
+/* NVS写入int32值 */
 int hw_nvs_set_int(const char *namespace, const char *key, int32_t value)
 {
     nvs_handle_t handle;
@@ -110,6 +116,7 @@ int hw_nvs_set_int(const char *namespace, const char *key, int32_t value)
     return 0;
 }
 
+/* NVS读取int32值 */
 int hw_nvs_get_int(const char *namespace, const char *key, int32_t *value)
 {
     nvs_handle_t handle;
@@ -135,6 +142,7 @@ int hw_nvs_get_int(const char *namespace, const char *key, int32_t *value)
     return 0;
 }
 
+/* NVS写入int64值 */
 int hw_nvs_set_i64(const char *namespace, const char *key, int64_t value)
 {
     nvs_handle_t handle;
@@ -160,6 +168,7 @@ int hw_nvs_set_i64(const char *namespace, const char *key, int64_t value)
     return 0;
 }
 
+/* NVS读取int64值 */
 int hw_nvs_get_i64(const char *namespace, const char *key, int64_t *value)
 {
     nvs_handle_t handle;
@@ -185,6 +194,7 @@ int hw_nvs_get_i64(const char *namespace, const char *key, int64_t *value)
     return 0;
 }
 
+/* NVS写入字符串 */
 int hw_nvs_set_string(const char *namespace, const char *key, const char *value)
 {
     nvs_handle_t handle;
@@ -210,6 +220,7 @@ int hw_nvs_set_string(const char *namespace, const char *key, const char *value)
     return 0;
 }
 
+/* NVS读取字符串 */
 int hw_nvs_get_string(const char *namespace, const char *key, char *value, size_t *len)
 {
     nvs_handle_t handle;
@@ -250,6 +261,7 @@ int hw_nvs_get_string(const char *namespace, const char *key, char *value, size_
     return 0;
 }
 
+/* NVS写入二进制数据(blob) */
 int hw_nvs_set_blob(const char *namespace, const char *key, const void *value, size_t len)
 {
     nvs_handle_t handle;
@@ -275,6 +287,7 @@ int hw_nvs_set_blob(const char *namespace, const char *key, const void *value, s
     return 0;
 }
 
+/* NVS读取二进制数据(blob) */
 int hw_nvs_get_blob(const char *namespace, const char *key, void *value, size_t *len)
 {
     nvs_handle_t handle;
@@ -315,6 +328,7 @@ int hw_nvs_get_blob(const char *namespace, const char *key, void *value, size_t 
     return 0;
 }
 
+/* NVS删除指定键 */
 int hw_nvs_erase_key(const char *namespace, const char *key)
 {
     nvs_handle_t handle;
@@ -340,6 +354,7 @@ int hw_nvs_erase_key(const char *namespace, const char *key)
     return 0;
 }
 
+/* NVS清空整个命名空间 */
 int hw_nvs_erase_namespace(const char *namespace)
 {
     nvs_handle_t handle;
@@ -365,6 +380,7 @@ int hw_nvs_erase_namespace(const char *namespace)
     return 0;
 }
 
+/* NVS检查键是否存在（尝试多种类型读取） */
 bool hw_nvs_key_exists(const char *namespace, const char *key)
 {
     nvs_handle_t handle;

@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ESP32-S3 AMOLED smart device with LVGL UI — a photography exposure calculator with weather display, WiFi connectivity, OTA updates, and deep sleep support.
 
+## Version Management
+
+After every code change, increment the patch version in `CMakeLists.txt` line 8:
+```
+project(ESP32S3-IDF_AMOLED_LVGL-V8 VERSION X.Y.Z)
+```
+Increment Z for bug fixes and small changes, Y for new features, X for major reworks.
+
 ## Build Commands
 
 Uses ESP-IDF 5.2.0. Target: `esp32s3` with Octal PSRAM.
@@ -61,18 +69,18 @@ main/
 ├── app_ui.c/h              # LVGL UI implementation (large file — main UI)
 ├── app_ui_*_port.c/h       # UI port layers (bridge LVGL callbacks to business logic)
 ├── app_exposure_calc.c/h   # Photography exposure calculation engine
-├── app_location.c/h        # Location via Google Geolocation API (WiFi AP scan)
-├── app_weather.c/h         # Weather via QWeather API
+├── app_location.c/h        # Location via cellocation API (WiFi AP BSSID scan)
+├── app_weather.c/h         # Weather via QWeather API v7 (now + 3d forecast + moon phase)
 ├── app_time.c/h            # SNTP time sync + RTC persistence
-├── app_http_requests.c/h   # HTTP client helpers
-├── app_nvs_storage.c/h     # NVS persistence (WiFi, location, weather, sync timestamps)
+├── app_http_requests.c/h   # HTTP client helpers (async + sync, Gzip auto-decompress)
+├── app_nvs_storage.c/h     # NVS persistence (WiFi, location, weather, sync timestamps, camera/lens cards, UI state)
 ├── app_battery.c/h         # Unified battery API (orchestrates MAX17055 + TP4056)
 ├── hw_oled.c/h             # QSPI AMOLED display driver (460x460)
 ├── hw_wifi.c/h             # WiFi init, scan, connect, state machine
-├── hw_veml7700.c/h         # VEML7700 ambient light sensor
+├── hw_veml7700.c/h         # VEML7700 ambient light sensor (3-level adaptive range + power-law calibration)
 ├── hw_max17055.c/h         # MAX17055 battery fuel gauge (SOC, voltage)
 ├── hw_tp4056.c/h           # TP4056 charge detector (CHRG/STDBY pins)
-├── hw_ota.c/h              # OTA firmware update over HTTPS
+├── hw_ota.c/h              # OTA firmware update (AP hotspot + web upload page)
 ├── hw_wakeup_key.c/h       # GPIO9 wake-up key (long press = 3s deep sleep)
 ├── hw_nvs.c/h              # Low-level NVS helpers (WiFi config CRUD)
 ├── bsp_i2c_init.c/h        # I2C bus initialization
@@ -100,11 +108,11 @@ WiFi connection triggers a serial chain (location → time → weather) via sema
 ```
 WiFi Connected
   → give(location_Sem)
-    → task_get_location: Google Geolocation API (WiFi AP scan)
+    → task_get_location: cellocation API (WiFi AP BSSID scan)
     → On result: init SNTP, give(time_sync_Sem)
       → task_time_sync_and_update: SNTP sync, update RTC
       → On success: give(weather_Sem)
-        → task_weather_update: QWeather API (7-day forecast + moon phase)
+        → task_weather_update: QWeather API (now + 3d forecast + moon phase)
 ```
 
 Each step retries up to 3 times on failure. Cached data is displayed immediately on boot so the UI is never blank.
@@ -116,7 +124,7 @@ Each step retries up to 3 times on failure. Cached data is displayed immediately
 | task_get_lux_value | 4KB | any | Read VEML7700 ALS every 1s, push to queue |
 | task_calc_exposure | 4KB | any | Consume lux, run exposure calc, update UI rollers |
 | task_wifi_operation | 4KB | 0 | Process WiFi command queue (scan/connect/disconnect) |
-| task_get_location | 8KB | 0 | Wait on location_Sem, call Google Geolocation API |
+| task_get_location | 8KB | 0 | Wait on location_Sem, call cellocation API |
 | task_time_sync | 6KB | 0 | Wait on time_sync_Sem, SNTP sync, update RTC |
 | task_time_update | 2KB | any | Update UI clock display every minute |
 | task_weather | 16KB | 0 | Wait on weather_Sem, call QWeather API |
@@ -185,7 +193,27 @@ When TP4056 detects charge complete, it recalibrates MAX17055 SOC to 100% to res
 
 ### OTA Updates
 
-`hw_ota.c` handles HTTPS firmware download. `app_controller_request_ota()` registers a progress callback and starts the OTA task. Progress is forwarded to `app_ui_ota_port.c` for UI display. `app_controller_cancel_ota()` aborts an in-progress update.
+`hw_ota.c` implements web-based OTA: the ESP32 creates a WiFi AP hotspot (`ESP32S3_OTA`), starts an HTTP server at `192.168.4.1`, and serves an HTML upload page. The browser uploads a `.bin` firmware file via POST to `/upload`. `app_controller_request_ota()` registers a progress callback and starts the OTA task. Progress is forwarded to `app_ui_ota_port.c` for UI display. `app_controller_cancel_ota()` stops the AP and restores STA mode.
+
+### VEML7700 Adaptive Range
+
+`hw_veml7700.c` implements a 3-level auto-switching strategy to cover a wide lux range:
+
+| Level | Gain | Integration | Resolution | Range |
+|-------|------|-------------|------------|-------|
+| WEAK (L0) | GAIN_2 | 800ms | 0.0036 lx/bit | ~0–200 lx |
+| NORMAL (L1) | GAIN_1 | 100ms | 0.0576 lx/bit | ~80–1200 lx |
+| STRONG (L2) | GAIN_DIV_8 | 25ms | 1.8432 lx/bit | ~800–120k lx |
+
+Hysteresis gaps prevent oscillation (L0↔L1: 80~200, L1↔L2: 800~1200). A raw saturation safety net (55000 counts) forces immediate upshift. Each level has independent power-law calibration coefficients (calibrated = a × raw^b) applied after the driver's internal lux conversion.
+
+### T9 Keyboard
+
+`app_ui.c` contains a full T9 (multi-tap) predictive text keyboard for camera/lens name input:
+- 12-key layout with Chinese/English character support
+- Multi-tap cycling with 800ms confirmation timeout
+- Toggle between text mode, numeric/symbol mode, and uppercase
+- Associated textarea tracking via `t9_kb_set_textarea()` / `t9_kb_get_textarea()`
 
 ## Partition Table (partitions.csv)
 
@@ -199,7 +227,7 @@ When TP4056 detects charge complete, it recalibrates MAX17055 SOC to 100% to res
 
 ## Calibration
 
-`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration against reference values (`docs/lux对照值.csv`).
+`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration against reference values (`docs/lux对照值-新.csv`).
 
 ## Commit Style
 

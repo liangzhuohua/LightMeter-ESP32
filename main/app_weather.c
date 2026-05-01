@@ -17,6 +17,7 @@ static bool g_weather_initialized = false;
 
 typedef void (*weather_callback_t)(const weather_data_t* data);
 
+/* 解析QWeather实时天气JSON响应（温度、描述、图标、湿度、风速） */
 static esp_err_t parse_weather_now_response(const char* json_str, weather_data_t* data) {
     if (json_str == NULL || data == NULL) {
         return ESP_FAIL;
@@ -73,6 +74,7 @@ static esp_err_t parse_weather_now_response(const char* json_str, weather_data_t
     return ESP_OK;
 }
 
+/* 解析QWeather 3日天气预报JSON响应（最高/最低温度、日出日落、月出月落、月相） */
 static esp_err_t parse_weather_3d_response(const char* json_str, weather_data_t* data) {
     if (json_str == NULL || data == NULL) {
         return ESP_FAIL;
@@ -166,6 +168,9 @@ static esp_err_t parse_weather_3d_response(const char* json_str, weather_data_t*
     return ESP_OK;
 }
 
+/**
+ * @brief 初始化天气模块（幂等操作，可多次调用）
+ */
 void app_weather_init(void) {
     if (g_weather_initialized) {
         ESP_LOGI(TAG, "Weather module already initialized");
@@ -176,6 +181,11 @@ void app_weather_init(void) {
     g_weather_initialized = true;
 }
 
+/**
+ * @brief 获取指定位置的天气数据（实时 + 3日预报），通过回调返回结果
+ * @param location_id 位置字符串（格式："经度,纬度"，如 "113.26,23.12"）
+ * @param callback 结果回调函数（数据有效时传入weather_data指针，失败时传入NULL）
+ */
 void app_weather_get(const char* location_id, void (*callback)(const weather_data_t* data)) {
     if (location_id == NULL) {
         ESP_LOGE(TAG, "Location ID is NULL");

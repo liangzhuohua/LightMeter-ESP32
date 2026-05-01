@@ -127,6 +127,7 @@ static char* decompress_gzip(const uint8_t* compressed, size_t compressed_len, s
     return decomp_buf;
 }
 
+/* HTTP事件处理回调：根据事件类型（连接/数据/完成/断开/错误）处理HTTP响应 */
 static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     http_response_t *response = (http_response_t *)evt->user_data;
 
@@ -184,6 +185,9 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
+/**
+ * @brief 异步HTTP GET请求（通过回调返回结果）
+ */
 esp_err_t app_http_get(const char* url, const char* params, http_response_callback_t callback, void* user_data) {
     ESP_LOGI(TAG, "HTTP GET 请求: %s?%s", url, params);
 
@@ -258,6 +262,7 @@ typedef struct {
     size_t size;
 } http_sync_internal_t;
 
+/* 同步HTTP事件处理回调：收集响应数据，自动检测并解压Gzip */
 static esp_err_t http_sync_event_handler(esp_http_client_event_t *evt) {
     http_sync_internal_t *resp = (http_sync_internal_t *)evt->user_data;
 
@@ -296,6 +301,9 @@ static esp_err_t http_sync_event_handler(esp_http_client_event_t *evt) {
     return ESP_OK;
 }
 
+/**
+ * @brief 释放HTTP同步响应结构中分配的内存
+ */
 void app_http_free_response(http_sync_response_t* response) {
     if (response != NULL && response->data != NULL) {
         free(response->data);
@@ -304,6 +312,9 @@ void app_http_free_response(http_sync_response_t* response) {
     }
 }
 
+/**
+ * @brief 带自定义请求头的同步HTTP GET请求（支持自动重试，内置Gzip解压）
+ */
 esp_err_t app_http_get_with_headers(const char* url, const char* params, const http_header_t* headers, int header_count, http_sync_response_t* response) {
     ESP_LOGI(TAG, "HTTP GET with headers: %s?%s", url, params);
 

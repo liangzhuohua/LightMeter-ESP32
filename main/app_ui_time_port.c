@@ -10,6 +10,7 @@ extern lv_obj_t *time_status_dot;
 
 static lv_anim_t time_blink_anim;
 
+/* 时间同步状态点的闪烁动画回调 */
 static void time_dot_anim_cb(void* var, int32_t v) {
     lv_obj_t* dot = (lv_obj_t*)var;
     if (v) {
@@ -19,6 +20,7 @@ static void time_dot_anim_cb(void* var, int32_t v) {
     }
 }
 
+/* 设置时间同步状态为加载中（黄色点） */
 void app_ui_time_set_loading(void) {
     if (time_status_dot == NULL) return;
 
@@ -28,6 +30,7 @@ void app_ui_time_set_loading(void) {
     lv_obj_set_style_bg_color(time_status_dot, lv_color_hex(0xffd700), 0);
 }
 
+/* 设置时间同步状态为成功（绿色点，1.5秒后淡出） */
 void app_ui_time_set_success(void) {
     if (time_status_dot == NULL) return;
 
@@ -46,6 +49,7 @@ void app_ui_time_set_success(void) {
     lv_anim_start(&fade);
 }
 
+/* 设置时间同步状态为失败（红色点） */
 void app_ui_time_set_fail(void) {
     if (time_status_dot == NULL) return;
 
@@ -55,6 +59,7 @@ void app_ui_time_set_fail(void) {
     lv_obj_set_style_bg_color(time_status_dot, lv_color_hex(0xff6b6b), 0);
 }
 
+/* 更新UI时间显示（HH:MM格式） */
 void app_ui_time_set_time(int hour, int minute) {
     if (time_time_label == NULL) return;
 
@@ -63,6 +68,7 @@ void app_ui_time_set_time(int hour, int minute) {
     lv_label_set_text(time_time_label, buf);
 }
 
+/* 更新UI日期显示（YYYY-MM-DD格式） */
 void app_ui_time_set_date(int year, int month, int day) {
     if (time_date_label == NULL) return;
 
@@ -71,6 +77,7 @@ void app_ui_time_set_date(int year, int month, int day) {
     lv_label_set_text(time_date_label, buf);
 }
 
+/* 更新主表盘时间显示（AM/PM 12小时制） */
 void app_ui_time_set_main_table_time(int hour, int minute) {
     if (main_table_time == NULL) return;
 
@@ -82,6 +89,7 @@ void app_ui_time_set_main_table_time(int hour, int minute) {
     lv_label_set_text(main_table_time, buf);
 }
 
+/* 请求手动同步时间 */
 bool app_ui_time_request_sync(void) {
     return app_controller_request_time_sync();
 }

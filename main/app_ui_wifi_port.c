@@ -4,21 +4,25 @@
 #include "hw_oled.h"
 #include <string.h>
 
+/* 启用WiFi（初始化WiFi驱动） */
 void ui_wifi_port_wifi_enable(void) {
     WifiOperationMsg msg = { .op = WIFI_OP_ENABLE };
     xQueueSend(wifi_operation_queue, &msg, pdMS_TO_TICKS(1000));
 }
 
+/* 禁用WiFi（反初始化WiFi驱动） */
 void ui_wifi_port_wifi_disable(void) {
     WifiOperationMsg msg = { .op = WIFI_OP_DISABLE };
     xQueueSend(wifi_operation_queue, &msg, pdMS_TO_TICKS(1000));
 }
 
+/* 触发WiFi扫描 */
 void ui_wifi_port_wifi_scan(void) {
     WifiOperationMsg msg = { .op = WIFI_OP_SCAN };
     xQueueSend(wifi_operation_queue, &msg, pdMS_TO_TICKS(1000));
 }
 
+/* 连接指定WiFi（SSID + 密码） */
 void ui_wifi_port_wifi_connect(const char *ssid, const char *password) {
     WifiOperationMsg msg = { .op = WIFI_OP_CONNECT };
     if (ssid) {
@@ -36,11 +40,13 @@ void ui_wifi_port_wifi_connect(const char *ssid, const char *password) {
     xQueueSend(wifi_operation_queue, &msg, pdMS_TO_TICKS(1000));
 }
 
+/* 断开当前WiFi连接 */
 void ui_wifi_port_wifi_disconnect(void) {
     WifiOperationMsg msg = { .op = WIFI_OP_DISCONNECT };
     xQueueSend(wifi_operation_queue, &msg, pdMS_TO_TICKS(1000));
 }
 
+/* 向WiFi列表中添加一张WiFi卡片（过滤无效信号） */
 void ui_wifi_port_add_wifi_card(const char *wifi_name, int signal_strength) {
     if (wifi_name == NULL || strlen(wifi_name) == 0) {
         return;
@@ -56,6 +62,7 @@ void ui_wifi_port_add_wifi_card(const char *wifi_name, int signal_strength) {
     // }
 }
 
+/* 设置WiFi UI为已连接状态（绿色图标，显示SSID） */
 void ui_wifi_port_set_connected(const char *ssid) {
     extern lv_obj_t *wifi_icon_label;
     extern lv_obj_t *wifi_ssid_label;
@@ -76,6 +83,7 @@ void ui_wifi_port_set_connected(const char *ssid) {
     }
 }
 
+/* 设置WiFi UI为已断开状态（灰色图标） */
 void ui_wifi_port_set_disconnected(void) {
     extern lv_obj_t *wifi_icon_label;
     extern lv_obj_t *wifi_ssid_label;
