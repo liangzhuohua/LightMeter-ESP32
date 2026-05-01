@@ -802,6 +802,16 @@ static void roller_manual_mode_event_cb(lv_event_t * e) {
     }
 }
 
+/* 滚轮滑动保护：用户正在滑动时阻止计算任务覆盖滚轮值 */
+static void roller_scroll_guard_cb(lv_event_t * e) {
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_PRESSED) {
+        ui_calc_port_set_user_scrolling(true);
+    } else if (code == LV_EVENT_RELEASED) {
+        ui_calc_port_set_user_scrolling(false);
+    }
+}
+
 /* ISO/EV滚轮变更事件回调：保存当前设置到NVS */
 static void roller_iso_ev_event_cb(lv_event_t * e) {
     lv_event_code_t code = lv_event_get_code(e);
@@ -3966,6 +3976,8 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_width(main_roller_shutter, lv_pct(95));
     lv_obj_set_style_text_align(main_roller_shutter, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_add_event_cb(main_roller_shutter, roller_manual_mode_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_obj_add_event_cb(main_roller_shutter, roller_scroll_guard_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(main_roller_shutter, roller_scroll_guard_cb, LV_EVENT_RELEASED, NULL);
 
     /* 镜头光圈 */
     lv_obj_t* main_obj_aperture = lv_obj_create(main_grid_layout);
@@ -3992,6 +4004,8 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_width(main_roller_aperture, lv_pct(95));
     lv_obj_set_style_text_align(main_roller_aperture, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_add_event_cb(main_roller_aperture, roller_manual_mode_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_obj_add_event_cb(main_roller_aperture, roller_scroll_guard_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(main_roller_aperture, roller_scroll_guard_cb, LV_EVENT_RELEASED, NULL);
 
     /* ISO选择 */
     lv_obj_t* main_obj_iso = lv_obj_create(main_grid_layout);

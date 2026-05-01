@@ -4,6 +4,8 @@
 #include <string.h>
 #include <math.h>
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char* TAG = "app_ui_calc_port";
 
@@ -873,9 +875,35 @@ uint8_t ui_calc_port_get_exposure_mode(void) {
 }
 
 // ──────────────────────────────────────────────
-// 手动模式滚轮标志位实现
+// 用户正在滑动滚轮标志（防止计算任务覆盖用户操作）
 // ──────────────────────────────────────────────
-// 手动模式滚轮标志位
+static volatile bool user_is_scrolling = false;
+static volatile uint32_t scroll_release_tick = 0;
+#define SCROLL_DEBOUNCE_MS  500  // 松手后500ms内仍视为"滑动中"
+
+bool ui_calc_port_is_user_scrolling(void)
+{
+    if (user_is_scrolling) return true;
+    // 松手后 debounce 时间内仍视为滑动中
+    if (scroll_release_tick > 0 &&
+        (xTaskGetTickCount() - scroll_release_tick) < pdMS_TO_TICKS(SCROLL_DEBOUNCE_MS)) {
+        return true;
+    }
+    return false;
+}
+
+void ui_calc_port_set_user_scrolling(bool scrolling)
+{
+    user_is_scrolling = scrolling;
+    if (!scrolling) {
+        scroll_release_tick = xTaskGetTickCount();
+    } else {
+        scroll_release_tick = 0;
+    }
+}
+
+// ──────────────────────────────────────────────
+// 手动模式滚轮标志位实现
 // ──────────────────────────────────────────────
 static ManualWheelType manual_wheel_type = MANUAL_WHEEL_NONE;
 

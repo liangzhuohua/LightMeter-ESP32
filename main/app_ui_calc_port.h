@@ -193,6 +193,19 @@ void ui_calc_port_set_manual_wheel_type(ManualWheelType type);
  */
 void ui_calc_port_reset_manual_wheel_type(void);
 
+/**
+ * @brief 查询用户是否正在滑动滚轮（含松手后500ms防抖）
+ * @return true=用户正在滑动或刚松手，计算任务不应覆盖滚轮值
+ */
+bool ui_calc_port_is_user_scrolling(void);
+
+/**
+ * @brief 设置用户滑动状态
+ * @param scrolling true=用户开始滑动，false=用户松手
+ * @note 松手时自动记录tick用于防抖
+ */
+void ui_calc_port_set_user_scrolling(bool scrolling);
+
 // ──────────────────────────────────────────────
 // 警告颜色显示
 // ──────────────────────────────────────────────
