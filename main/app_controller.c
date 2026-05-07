@@ -949,6 +949,7 @@ void app_controller_init(void)
     ESP_LOGI(TAG, "从NVS加载数据...");
     app_nvs_load_all();
 
+    // 初始化 Wakeup按键
     app_controller_wakeup_key_init();
 
     if (app_time_restore_from_rtc() == ESP_OK) {

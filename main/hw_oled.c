@@ -292,6 +292,7 @@ void oled_lvgl_init(void) {
     // 设置旋转角度
     // disp_drv.rotated = LV_DISP_ROT_90; // 旋转90度
 
+    // 将显示器注册到LVGL内核，告诉LVGL有一个屏幕可以用
     lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
 
     ESP_LOGI(TAG, "Install LVGL tick timer");

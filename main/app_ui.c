@@ -438,6 +438,7 @@ lv_obj_t* ota_cancel_btn = NULL;
 lv_obj_t* ota_percent_label = NULL;
 
 /* 更新顶部状态栏：WiFi图标 + 电池图标 + 电量百分比 */
+/* 更新状态栏 WiFi 图标和电池图标显示 */
 static void update_status_bar_wifi_icon(void) {
     if (main_table_status == NULL) {
         return;
@@ -482,6 +483,7 @@ static void update_status_bar_wifi_icon(void) {
 // ──────────────────────────────────────────────
 // 辅助函数：快门显示格式化 (修复重复Bug)
 // ──────────────────────────────────────────────
+/* 格式化快门速度为显示字符串（如 "1/125", "1.5\"", "30\""） */
 static void format_shutter_string(char* buf, size_t size, float shutter) {
     if (shutter <= 0) {
         snprintf(buf, size, "---");
@@ -513,6 +515,7 @@ static void format_shutter_string(char* buf, size_t size, float shutter) {
 // ──────────────────────────────────────────────
 // 辅助函数：生成快门选项字符串
 // ──────────────────────────────────────────────
+/* 生成快门选项字符串（用于滚轮控件） */
 static char* generate_shutter_options(const float* shutter_array, int count) {
     static char options[1024];
     int pos = 0;
@@ -534,6 +537,7 @@ static char* generate_shutter_options(const float* shutter_array, int count) {
 
 // 辅助函数：按步长生成快门选项字符串（用于1档快门）
 // ──────────────────────────────────────────────
+/* 按步长生成快门选项字符串（用于1档快门） */
 char* app_ui_generate_shutter_options(const float* shutter_array, int count, int stride) {
     static char options[1024];
     int pos = 0;
@@ -556,6 +560,7 @@ char* app_ui_generate_shutter_options(const float* shutter_array, int count, int
 // ──────────────────────────────────────────────
 // 辅助函数：光圈显示格式化
 // ──────────────────────────────────────────────
+/* 格式化光圈值为显示字符串（如 "2.8", "11.0"） */
 static void format_aperture_string(char* buf, size_t size, float aperture) {
     if (aperture <= 0) {
         snprintf(buf, size, "---");
@@ -567,6 +572,7 @@ static void format_aperture_string(char* buf, size_t size, float aperture) {
 // ──────────────────────────────────────────────
 // 辅助函数：生成光圈选项字符串
 // ──────────────────────────────────────────────
+/* 生成光圈选项字符串（用于滚轮控件） */
 static char* generate_aperture_options(const float* aperture_array, int count) {
     static char options[1024];
     int pos = 0;
@@ -588,6 +594,7 @@ static char* generate_aperture_options(const float* aperture_array, int count) {
 
 // 辅助函数：按步长生成光圈选项字符串（用于1档光圈）
 // ──────────────────────────────────────────────
+/* 按步长生成光圈选项字符串（用于1档光圈） */
 char* app_ui_generate_aperture_options(const float* aperture_array, int count, int stride) {
     static char options[1024];
     int pos = 0;
@@ -612,6 +619,7 @@ char* app_ui_generate_aperture_options(const float* aperture_array, int count, i
 // 输入格式："1.4,2,2.8,4" 或 "1.4, 2, 2.8, 4"
 // 返回：动态分配的光圈数组，调用者需要负责释放
 // ──────────────────────────────────────────────
+/* 解析自定义光圈字符串（如 "1.4,2,2.8,4"），返回动态分配的数组 */
 static float* parse_custom_aperture_string(const char* str, int* out_count) {
     if (!str || !out_count) {
         if (out_count) *out_count = 0;
@@ -662,6 +670,7 @@ static float* parse_custom_aperture_string(const char* str, int* out_count) {
 // ──────────────────────────────────────────────
 // 滚轮样式清理函数
 // ──────────────────────────────────────────────
+/* 清理滚轮控件样式：透明背景、去边框、可选下划线选中指示 */
 void style_roller_clean_style(lv_obj_t* roller, bool select_line)
 {
     lv_obj_set_style_text_font(roller, &lv_font_montserrat_20, LV_STATE_DEFAULT);
@@ -692,6 +701,7 @@ void style_roller_clean_style(lv_obj_t* roller, bool select_line)
 // ──────────────────────────────────────────────
 // 图片根据父对象自适应大小
 // ──────────────────────────────────────────────
+/* 根据父对象大小自适应缩放图片，保持宽高比居中显示 */
 void style_img_set_size_accordance_obj(lv_obj_t* parent, lv_obj_t* img_obj, const lv_img_dsc_t img)
 {
     lv_img_header_t header;
@@ -732,6 +742,7 @@ void style_img_set_size_accordance_obj(lv_obj_t* parent, lv_obj_t* img_obj, cons
 // ──────────────────────────────────────────────
 // 模式选择按钮事件回调
 // ──────────────────────────────────────────────
+/* 模式选择按钮点击事件回调：切换选中状态和高亮样式 */
 static void imgbtn_event_cb(lv_event_t * e) {
     lv_obj_t * imgbtn = lv_event_get_target(e);
     uint32_t idx = (uint32_t)(uintptr_t)lv_event_get_user_data(e);
@@ -760,6 +771,7 @@ static void imgbtn_event_cb(lv_event_t * e) {
 // ──────────────────────────────────────────────
 #define UI_IDX_MANUAL_MODE 2  // mode_icons数组中手动模式的索引
 
+/* Tv/Av滚轮事件回调：滑动时自动切换到手动模式 */
 static void roller_manual_mode_event_cb(lv_event_t * e) {
     lv_obj_t * roller = lv_event_get_target(e);
     lv_event_code_t code = lv_event_get_code(e);
@@ -825,6 +837,7 @@ static void roller_iso_ev_event_cb(lv_event_t * e) {
 // ──────────────────────────────────────────────
 // 创建模式选择组件
 // ──────────────────────────────────────────────
+/* 创建4按钮拍摄模式选择器（手动、光圈优先、快门优先、程序） */
 static void create_mode_selector(lv_obj_t * parent) {
     lv_obj_set_flex_flow(parent, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(parent, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
@@ -921,6 +934,7 @@ static void create_mode_selector(lv_obj_t * parent) {
 // ──────────────────────────────────────────────
 // 相机关闭窗口按钮事件回调
 // ──────────────────────────────────────────────
+/* 相机选择窗口关闭按钮回调：隐藏键盘和窗口，保存配置到NVS */
 static void cam_close_win_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);                    /* 获取事件类型 */
@@ -940,6 +954,7 @@ static void cam_close_win_cb(lv_event_t * e)
 // ──────────────────────────────────────────────
 // 相机卡片长按事件回调（显示删除确认对话框）
 // ──────────────────────────────────────────────
+/* 相机容器长按事件回调：显示相机选择窗口 */
 static void cam_long_press_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -1005,6 +1020,7 @@ static void cam_restore_scroll_timer_cb(lv_timer_t * timer)
  * @brief 定时器回调函数，用于延迟恢复镜头页面滚动位置
  * 在 LVGL 完成所有布局更新和显示刷新后执行
  */
+/* 定时器回调：延迟恢复镜头页面滚动位置 */
 static void len_restore_scroll_timer_cb(lv_timer_t * timer)
 {
     lv_obj_t *scroll_parent = len_scroll_parent;
@@ -1048,6 +1064,7 @@ static void len_restore_scroll_timer_cb(lv_timer_t * timer)
     lv_timer_del(timer);
 }
 
+/* 相机删除确认对话框按钮事件回调：确认或取消删除相机卡片 */
 static void cam_delete_confirm_event_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -1179,6 +1196,7 @@ static void cam_delete_confirm_event_cb(lv_event_t * e)
     }
 }
 
+/* 显示相机删除确认对话框 */
 static void cam_show_delete_confirm_dialog(void)
 {
     lv_obj_t *mbox = lv_obj_create(lv_layer_top());
@@ -2417,6 +2435,7 @@ static void update_main_ui_from_len_card(void)
     }
 }
 
+/* 解析焦距字符串为浮点值（如 "50" → 50.0f） */
 static float parse_focal_length_value(const char* str)
 {
     if (!str || strlen(str) == 0) {
@@ -2743,6 +2762,7 @@ uint8_t app_ui_get_selected_mode(void) {
     return selected_idx;
 }
 
+/* 设置拍摄模式（0=手动, 1=自动, 2=风光, 3=人像）并更新UI高亮 */
 void app_ui_set_selected_mode(uint8_t mode_idx) {
     if (mode_idx >= 4) return;
     if (selected_idx == mode_idx) return;
@@ -2773,24 +2793,29 @@ void app_ui_set_selected_mode(uint8_t mode_idx) {
     ESP_LOGI("app_ui", "Mode set to: %d", mode_idx);
 }
 
+/* 获取相机卡片容器对象 */
 lv_obj_t* app_ui_get_cam_container(void) {
     return cam_card_win_container;
 }
 
+/* 获取镜头卡片容器对象 */
 lv_obj_t* app_ui_get_len_container(void) {
     return len_card_win_container;
 }
 
+/* 获取相机卡片数量 */
 uint16_t app_ui_get_cam_count(void) {
     if (cam_card_win_container == NULL) return 0;
     return lv_obj_get_child_cnt(cam_card_win_container);
 }
 
+/* 获取镜头卡片数量 */
 uint16_t app_ui_get_len_count(void) {
     if (len_card_win_container == NULL) return 0;
     return lv_obj_get_child_cnt(len_card_win_container);
 }
 
+/* 获取当前选中的相机卡片索引，无选中返回-1 */
 int app_ui_get_cam_selected_index(void) {
     if (cam_selected_card == NULL || cam_card_win_container == NULL) return -1;
     uint32_t count = lv_obj_get_child_cnt(cam_card_win_container);
@@ -2802,6 +2827,7 @@ int app_ui_get_cam_selected_index(void) {
     return -1;
 }
 
+/* 获取当前选中的镜头卡片索引，无选中返回-1 */
 int app_ui_get_len_selected_index(void) {
     if (len_selected_card == NULL || len_card_win_container == NULL) return -1;
     uint32_t count = lv_obj_get_child_cnt(len_card_win_container);
@@ -2813,6 +2839,7 @@ int app_ui_get_len_selected_index(void) {
     return -1;
 }
 
+/* 设置选中的相机卡片（按索引）并更新主界面 */
 void app_ui_set_cam_selected_index(int idx) {
     if (cam_card_win_container == NULL || idx < 0) return;
     uint32_t count = lv_obj_get_child_cnt(cam_card_win_container);
@@ -2838,6 +2865,7 @@ void app_ui_set_cam_selected_index(int idx) {
     ESP_LOGI("app_ui", "Camera %d selected", idx);
 }
 
+/* 设置选中的镜头卡片（按索引）并更新主界面 */
 void app_ui_set_len_selected_index(int idx) {
     if (len_card_win_container == NULL || idx < 0) return;
     uint32_t count = lv_obj_get_child_cnt(len_card_win_container);
@@ -2916,6 +2944,7 @@ static void wifi_long_press_cb(lv_event_t * e)
 }
 
 // 开启/关闭wifi
+/* WiFi开关切换回调：启用/禁用WiFi并更新扫描按钮状态 */
 static void wifi_switch_change_cb(lv_event_t * e) {
 
     lv_obj_t *wifi_switch = lv_event_get_target(e);
@@ -4178,7 +4207,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_color(cam_btn_win_close, lv_color_hex(0xffffff), LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(cam_btn_win_close, lv_color_hex(0xffffff), LV_STATE_PRESSED);
     lv_obj_add_event_cb(cam_btn_win_close, cam_close_win_cb, LV_EVENT_CLICKED, NULL);
-    lv_obj_add_flag(cam_win_select, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(cam_win_select, LV_OBJ_FLAG_HIDDEN);        // 隐藏该窗口，只有长按main_obj_cam才弹出来
 
     lv_obj_t *cam_cont_win = lv_win_get_content(cam_win_select);
     lv_obj_set_flex_flow(cam_cont_win, LV_FLEX_FLOW_COLUMN);
@@ -4483,10 +4512,12 @@ static void create_ota_window(lv_obj_t* parent) {
 /**
  * @brief 设置页面初始化：创建天气/时间/定位/About卡片以及WiFi配置窗口
  */
+/* 设置页面初始化：创建所有卡片和弹窗 */
 static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_bg_color(parent, lv_color_black(), 0);
     lv_obj_set_style_pad_all(parent, 10, 0);
 
+    /* 设置页面主容器（垂直 Flex 布局） */
     lv_obj_t* setting_container = lv_obj_create(parent);
     lv_obj_remove_style_all(setting_container);
     lv_obj_set_size(setting_container, lv_pct(100), lv_pct(100));
@@ -4495,6 +4526,9 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_pad_row(setting_container, 8, 0);
     lv_obj_set_style_pad_top(setting_container, 10, 0);
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 卡片1：天气卡片（温度、温度范围、湿度、风速）
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* weather_card = lv_obj_create(setting_container);
     lv_obj_set_size(weather_card, lv_pct(95), 120);
     lv_obj_set_style_bg_color(weather_card, lv_color_hex(0x2a2a3e), 0);
@@ -4555,6 +4589,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(wind_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(wind_label, lv_color_hex(0x90ee90), 0);
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 卡片2：日出日落卡片（时间线进度条 + 月相图标）
+     * 显示日出/日落时间和当前时间位置
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* sunrise_sunset_card = lv_obj_create(setting_container);
     lv_obj_set_size(sunrise_sunset_card, lv_pct(95), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(sunrise_sunset_card, lv_color_hex(0x2a2a3e), 0);
@@ -4627,6 +4665,9 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(sunset_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(sunset_label, lv_color_hex(0xff6b6b), 0);
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 第一行卡片容器（WiFi + Time 并排）
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* cards_row = lv_obj_create(setting_container);
     lv_obj_remove_style_all(cards_row);
     lv_obj_set_size(cards_row, lv_pct(95), LV_SIZE_CONTENT);
@@ -4634,8 +4675,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_align(cards_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(cards_row, 8, 0);
 
-//-----------------------------------------------------------------------------------------------
-    // wifi card
+    /* ═══════════════════════════════════════════════════════════════
+     * 卡片3：WiFi 卡片（图标、SSID、连接状态）
+     * 长按弹出 WiFi 设置窗口
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* wifi_card = lv_obj_create(cards_row);
     lv_obj_set_size(wifi_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(wifi_card, lv_color_hex(0x2a2a3e), 0);
@@ -4646,11 +4689,11 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_flow(wifi_card, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(wifi_card, 6, 0);
 
-    // 长按弹出窗口
+    /* WiFi 卡片：长按弹出设置窗口 */
     lv_obj_add_flag(wifi_card, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK);
     lv_obj_add_event_cb(wifi_card, wifi_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
 
-    // 第一行：图标 + 标题
+    /* WiFi 卡片 - 第一行：图标 + 标题 */
     lv_obj_t* wifi_header = lv_obj_create(wifi_card);
     lv_obj_remove_style_all(wifi_header);
     lv_obj_set_size(wifi_header, LV_PCT(100), LV_SIZE_CONTENT);
@@ -4668,19 +4711,23 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(wifi_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(wifi_title, lv_color_white(), 0);
 
-    // 第二行：WiFi名称
+    /* WiFi 卡片 - 第二行：WiFi 名称 */
     wifi_ssid_label = lv_label_create(wifi_card);
     lv_label_set_text(wifi_ssid_label, "未连接");
     lv_obj_set_style_text_font(wifi_ssid_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_ssid_label, lv_color_hex(0x888888), 0);
 
-    // 第三行：状态
+    /* WiFi 卡片 - 第三行：连接状态 */
     wifi_status_label = lv_label_create(wifi_card);
     lv_label_set_text(wifi_status_label, "未连接");
     lv_obj_set_style_text_font(wifi_status_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(wifi_status_label, lv_color_hex(0xff6b6b), 0);
 
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 弹窗：WiFi 设置窗口（开关、扫描、WiFi 列表）
+     * 由 WiFi 卡片长按触发显示
+     * ═══════════════════════════════════════════════════════════════ */
     wifi_config_win = lv_win_create(lv_scr_act(), scr_act_height()/10);
     lv_obj_set_size(wifi_config_win, 35 * scr_act_width() / 40, 35 * scr_act_height() / 40);
     lv_obj_center(wifi_config_win);
@@ -4716,7 +4763,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_pad_all(wifi_cont_win, 8, 0);
     lv_obj_set_style_bg_opa(wifi_cont_win, LV_OPA_50, 0);
 
-    // wifi开关和scan按钮
+    /* WiFi 设置窗口 - 控制行：WiFi 开关 + 扫描按钮 */
     lv_obj_t *wifi_control_row = lv_obj_create(wifi_cont_win);
     lv_obj_remove_style_all(wifi_control_row);
     lv_obj_set_size(wifi_control_row, LV_PCT(100), LV_SIZE_CONTENT);
@@ -4756,7 +4803,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(wifi_switch_obj, wifi_switch_change_cb, LV_EVENT_VALUE_CHANGED, wifi_switch_obj);
     lv_obj_add_event_cb(wifi_scan_btn, wifi_scan_press_cb, LV_EVENT_CLICKED, NULL);
 
-    // wifi信息卡片显示区
+    /* WiFi 设置窗口 - WiFi 列表显示区（扫描到的 WiFi 卡片容器） */
     wifi_card_win_container = lv_obj_create(wifi_cont_win);
     lv_obj_set_size(wifi_card_win_container, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_set_flex_grow(wifi_card_win_container, 1);
@@ -4768,7 +4815,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_scrollbar_mode(wifi_card_win_container, LV_SCROLLBAR_MODE_AUTO);
     lv_obj_set_scroll_dir(wifi_card_win_container, LV_DIR_VER);
 
-    // Initialize wifi connect window
+    /* ═══════════════════════════════════════════════════════════════
+     * 弹窗：WiFi 连接窗口（输入密码连接指定 WiFi）
+     * 由 WiFi 列表中的卡片点击触发显示
+     * ═══════════════════════════════════════════════════════════════ */
     wifi_connect_win = lv_win_create(lv_scr_act(), scr_act_height()/12);
     lv_obj_set_size(wifi_connect_win, 28 * scr_act_width() / 40, 22 * scr_act_height() / 40);
     lv_obj_center(wifi_connect_win);
@@ -4842,8 +4892,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     wifi_refresh_connect_window(NULL);
 
 
-//------------------------------------------------------------------------------------------
-
+    /* ═══════════════════════════════════════════════════════════════
+     * 卡片4：时间卡片（时钟图标、时间、日期）
+     * 长按触发时间同步
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* time_card = lv_obj_create(cards_row);
     lv_obj_set_size(time_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(time_card, lv_color_hex(0x2a2a3e), 0);
@@ -4857,7 +4909,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(time_card, time_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
     lv_obj_set_style_bg_color(time_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
-    // 第一行：图标 + 标题
+    /* 时间卡片 - 第一行：图标 + 标题 */
     lv_obj_t* time_header = lv_obj_create(time_card);
     lv_obj_remove_style_all(time_header);
     lv_obj_set_size(time_header, LV_PCT(100), LV_SIZE_CONTENT);
@@ -4883,18 +4935,21 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_width(time_status_dot, 0, 0);
     lv_obj_add_flag(time_status_dot, LV_OBJ_FLAG_HIDDEN);
 
-    // 第二行：时间
+    /* 时间卡片 - 第二行：时间显示 */
     time_time_label = lv_label_create(time_card);
     lv_label_set_text(time_time_label, "--:--");
     lv_obj_set_style_text_font(time_time_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(time_time_label, lv_color_white(), 0);
 
-    // 第三行：日期
+    /* 时间卡片 - 第三行：日期显示 */
     time_date_label = lv_label_create(time_card);
     lv_label_set_text(time_date_label, "----/--/--");
     lv_obj_set_style_text_font(time_date_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(time_date_label, lv_color_hex(0x888888), 0);
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 第二行卡片容器（Location + About 并排）
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* cards_row2 = lv_obj_create(setting_container);
     lv_obj_remove_style_all(cards_row2);
     lv_obj_set_size(cards_row2, lv_pct(95), LV_SIZE_CONTENT);
@@ -4902,6 +4957,10 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_flex_align(cards_row2, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(cards_row2, 8, 0);
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 卡片5：定位卡片（GPS 图标、城市、详细地址）
+     * 长按触发重新定位
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* location_card = lv_obj_create(cards_row2);
     lv_obj_set_size(location_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(location_card, lv_color_hex(0x2a2a3e), 0);
@@ -4915,7 +4974,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(location_card, location_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
     lv_obj_set_style_bg_color(location_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
-    // 第一行：图标 + 标题
+    /* 定位卡片 - 第一行：图标 + 标题 */
     lv_obj_t* location_header = lv_obj_create(location_card);
     lv_obj_remove_style_all(location_header);
     lv_obj_set_size(location_header, LV_PCT(100), LV_SIZE_CONTENT);
@@ -4941,18 +5000,22 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_border_width(location_status_dot, 0, 0);
     lv_obj_add_flag(location_status_dot, LV_OBJ_FLAG_HIDDEN);
 
-    // 第二行：城市
+    /* 定位卡片 - 第二行：城市名称 */
     location_city_label = lv_label_create(location_card);
     lv_label_set_text(location_city_label, "未知");
     lv_obj_set_style_text_font(location_city_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(location_city_label, lv_color_hex(0x888888), 0);
 
-    // 第三行：详细地址
+    /* 定位卡片 - 第三行：详细地址 */
     location_detail_label = lv_label_create(location_card);
     lv_label_set_text(location_detail_label, "未定位");
     lv_obj_set_style_text_font(location_detail_label, &SourceHanSansCN_Regular, 0);
     lv_obj_set_style_text_color(location_detail_label, lv_color_hex(0x888888), 0);
 
+    /* ═══════════════════════════════════════════════════════════════
+     * 卡片6：关于卡片（版本信息）
+     * 长按可进入 OTA 更新
+     * ═══════════════════════════════════════════════════════════════ */
     lv_obj_t* about_card = lv_obj_create(cards_row2);
     lv_obj_set_size(about_card, lv_pct(49), LV_SIZE_CONTENT);
     lv_obj_set_style_bg_color(about_card, lv_color_hex(0x2a2a3e), 0);
@@ -4966,7 +5029,7 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_add_event_cb(about_card, about_card_long_press_cb, LV_EVENT_LONG_PRESSED, NULL);
     lv_obj_set_style_bg_color(about_card, lv_color_hex(0x2a2a3e), LV_STATE_PRESSED);
 
-    // 第一行：图标 + 标题
+    /* 关于卡片 - 第一行：图标 + 标题 */
     lv_obj_t* about_header = lv_obj_create(about_card);
     lv_obj_remove_style_all(about_header);
     lv_obj_set_size(about_header, LV_PCT(100), LV_SIZE_CONTENT);
@@ -4984,13 +5047,13 @@ static void ui_setting_page_init(lv_obj_t* parent) {
     lv_obj_set_style_text_font(about_title, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(about_title, lv_color_white(), 0);
 
-    // 第二行：版本标签
+    /* 关于卡片 - 第二行：版本标签 */
     lv_obj_t* about_version_label = lv_label_create(about_card);
     lv_label_set_text(about_version_label, "Version");
     lv_obj_set_style_text_font(about_version_label, &lv_font_montserrat_12, 0);
     lv_obj_set_style_text_color(about_version_label, lv_color_hex(0x888888), 0);
 
-    // 第三行：版本号
+    /* 关于卡片 - 第三行：版本号 */
     lv_obj_t* about_version_value = lv_label_create(about_card);
     const esp_app_desc_t* app_desc = esp_app_get_description();
     char ver_buf[64];

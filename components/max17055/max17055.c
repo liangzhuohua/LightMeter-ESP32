@@ -26,6 +26,7 @@ static const char *TAG = "max17055";
 
 static float s_rsense_ohm = 0.01f;
 
+/* 读取单个16位寄存器 */
 static esp_err_t read_reg(i2c_dev_t *dev, uint8_t reg, uint16_t *data)
 {
     CHECK_ARG(dev && data);
@@ -33,6 +34,7 @@ static esp_err_t read_reg(i2c_dev_t *dev, uint8_t reg, uint16_t *data)
     return ESP_OK;
 }
 
+/* 写入单个16位寄存器 */
 static esp_err_t write_reg(i2c_dev_t *dev, uint8_t reg, uint16_t data)
 {
     CHECK_ARG(dev);
@@ -40,6 +42,7 @@ static esp_err_t write_reg(i2c_dev_t *dev, uint8_t reg, uint16_t data)
     return ESP_OK;
 }
 
+/* 写入寄存器后回读验证，失败最多重试8次 */
 static esp_err_t write_and_verify_reg(i2c_dev_t *dev, uint8_t reg, uint16_t data)
 {
     CHECK_ARG(dev);
@@ -59,11 +62,13 @@ static esp_err_t write_and_verify_reg(i2c_dev_t *dev, uint8_t reg, uint16_t data
     return ESP_ERR_INVALID_RESPONSE;
 }
 
+/* 将无符号16位值转换为有符号值 */
 static int16_t to_signed(uint16_t val)
 {
     return (int16_t)val;
 }
 
+/* 轮询等待寄存器指定位清零，超时返回错误 */
 static esp_err_t poll_flag_clear(i2c_dev_t *dev, uint8_t reg, uint16_t mask, int timeout_ms)
 {
     uint16_t data;
@@ -81,6 +86,7 @@ static esp_err_t poll_flag_clear(i2c_dev_t *dev, uint8_t reg, uint16_t mask, int
     return ESP_ERR_TIMEOUT;
 }
 
+/* 强制退出休眠模式，保存原始HibCfg配置用于后续恢复 */
 static esp_err_t forced_exit_hiber_mode(i2c_dev_t *dev, uint16_t *hibcfg_value)
 {
     CHECK(read_reg(dev, MAX17055_REG_HIBCFG, hibcfg_value));
@@ -90,6 +96,7 @@ static esp_err_t forced_exit_hiber_mode(i2c_dev_t *dev, uint16_t *hibcfg_value)
     return ESP_OK;
 }
 
+/* EZ配置初始化：写入设计容量、终止电流、空载电压等参数，根据充电电压选择模型 */
 static esp_err_t ez_config_init(i2c_dev_t *dev, const max17055_config_t *cfg)
 {
     const float charger_th = 4.275f;
@@ -120,6 +127,7 @@ static esp_err_t ez_config_init(i2c_dev_t *dev, const max17055_config_t *cfg)
     return ESP_OK;
 }
 
+/* 初始化I2C设备描述符，配置地址和引脚，创建互斥锁 */
 esp_err_t max17055_init_desc(i2c_dev_t *dev, i2c_port_t port, gpio_num_t sda_gpio, gpio_num_t scl_gpio)
 {
     CHECK_ARG(dev);
@@ -135,12 +143,14 @@ esp_err_t max17055_init_desc(i2c_dev_t *dev, i2c_port_t port, gpio_num_t sda_gpi
     return i2c_dev_create_mutex(dev);
 }
 
+/* 释放I2C设备描述符，删除互斥锁 */
 esp_err_t max17055_free_desc(i2c_dev_t *dev)
 {
     CHECK_ARG(dev);
     return i2c_dev_delete_mutex(dev);
 }
 
+/* 探测MAX17055是否存在于I2C总线上 */
 esp_err_t max17055_probe(i2c_dev_t *dev)
 {
     CHECK_ARG(dev);
@@ -151,6 +161,7 @@ esp_err_t max17055_probe(i2c_dev_t *dev)
     return err;
 }
 
+/* MAX17055完整初始化：POR后执行EZ配置，非POR时仅更新关键参数 */
 esp_err_t max17055_init(i2c_dev_t *dev, const max17055_config_t *cfg)
 {
     CHECK_ARG(dev && cfg);
@@ -192,6 +203,7 @@ esp_err_t max17055_init(i2c_dev_t *dev, const max17055_config_t *cfg)
     return ESP_OK;
 }
 
+/* 获取瞬时电池电压(mV) */
 esp_err_t max17055_get_vcell(i2c_dev_t *dev, float *voltage_mv)
 {
     CHECK_ARG(dev && voltage_mv);
@@ -205,6 +217,7 @@ esp_err_t max17055_get_vcell(i2c_dev_t *dev, float *voltage_mv)
     return ESP_OK;
 }
 
+/* 获取平均电池电压(mV) */
 esp_err_t max17055_get_avg_vcell(i2c_dev_t *dev, float *voltage_mv)
 {
     CHECK_ARG(dev && voltage_mv);
@@ -218,6 +231,7 @@ esp_err_t max17055_get_avg_vcell(i2c_dev_t *dev, float *voltage_mv)
     return ESP_OK;
 }
 
+/* 获取瞬时电流(mA)，正值放电，负值充电 */
 esp_err_t max17055_get_current(i2c_dev_t *dev, float *current_ma)
 {
     CHECK_ARG(dev && current_ma);
@@ -233,6 +247,7 @@ esp_err_t max17055_get_current(i2c_dev_t *dev, float *current_ma)
     return ESP_OK;
 }
 
+/* 获取平均电流(mA) */
 esp_err_t max17055_get_avg_current(i2c_dev_t *dev, float *current_ma)
 {
     CHECK_ARG(dev && current_ma);
@@ -248,6 +263,7 @@ esp_err_t max17055_get_avg_current(i2c_dev_t *dev, float *current_ma)
     return ESP_OK;
 }
 
+/* 获取电池电量百分比(0~100%) */
 esp_err_t max17055_get_soc(i2c_dev_t *dev, float *soc_pct)
 {
     CHECK_ARG(dev && soc_pct);
@@ -261,6 +277,7 @@ esp_err_t max17055_get_soc(i2c_dev_t *dev, float *soc_pct)
     return ESP_OK;
 }
 
+/* 获取报告容量(mAh)，即当前剩余容量 */
 esp_err_t max17055_get_rep_cap(i2c_dev_t *dev, float *cap_mah)
 {
     CHECK_ARG(dev && cap_mah);
@@ -275,6 +292,7 @@ esp_err_t max17055_get_rep_cap(i2c_dev_t *dev, float *cap_mah)
     return ESP_OK;
 }
 
+/* 获取芯片温度(°C)，默认为内部结温，可配置为外部热敏电阻 */
 esp_err_t max17055_get_temperature(i2c_dev_t *dev, float *temp_c)
 {
     CHECK_ARG(dev && temp_c);
@@ -289,6 +307,7 @@ esp_err_t max17055_get_temperature(i2c_dev_t *dev, float *temp_c)
     return ESP_OK;
 }
 
+/* 获取空电剩余时间(Time-To-Empty, 秒)，0xFFFF表示未就绪 */
 esp_err_t max17055_get_tte(i2c_dev_t *dev, float *tte_s)
 {
     CHECK_ARG(dev && tte_s);
@@ -306,6 +325,7 @@ esp_err_t max17055_get_tte(i2c_dev_t *dev, float *tte_s)
     return ESP_OK;
 }
 
+/* 获取充满剩余时间(Time-To-Full, 秒)，0xFFFF表示未充电 */
 esp_err_t max17055_get_ttf(i2c_dev_t *dev, float *ttf_s)
 {
     CHECK_ARG(dev && ttf_s);
@@ -323,6 +343,7 @@ esp_err_t max17055_get_ttf(i2c_dev_t *dev, float *ttf_s)
     return ESP_OK;
 }
 
+/* 获取电池充放电循环次数 */
 esp_err_t max17055_get_cycles(i2c_dev_t *dev, uint16_t *cycles)
 {
     CHECK_ARG(dev && cycles);
@@ -334,6 +355,7 @@ esp_err_t max17055_get_cycles(i2c_dev_t *dev, uint16_t *cycles)
     return ESP_OK;
 }
 
+/* 获取电池老化百分比(0~100%)，值越小表示老化越严重 */
 esp_err_t max17055_get_age(i2c_dev_t *dev, uint8_t *age_pct)
 {
     CHECK_ARG(dev && age_pct);
@@ -347,6 +369,7 @@ esp_err_t max17055_get_age(i2c_dev_t *dev, uint8_t *age_pct)
     return ESP_OK;
 }
 
+/* 获取满充容量(mAh)，即电池当前最大可用容量 */
 esp_err_t max17055_get_full_cap(i2c_dev_t *dev, float *cap_mah)
 {
     CHECK_ARG(dev && cap_mah);
@@ -361,6 +384,7 @@ esp_err_t max17055_get_full_cap(i2c_dev_t *dev, float *cap_mah)
     return ESP_OK;
 }
 
+/* 获取状态寄存器值，包含POR、电压报警、SOC报警等标志位 */
 esp_err_t max17055_get_status(i2c_dev_t *dev, uint16_t *status)
 {
     CHECK_ARG(dev && status);
@@ -372,6 +396,7 @@ esp_err_t max17055_get_status(i2c_dev_t *dev, uint16_t *status)
     return ESP_OK;
 }
 
+/* 设置电压报警阈值(mV)，超出范围触发ALRT中断，分辨率20mV */
 esp_err_t max17055_set_valrt(i2c_dev_t *dev, float v_min_mv, float v_max_mv)
 {
     CHECK_ARG(dev);
@@ -387,6 +412,7 @@ esp_err_t max17055_set_valrt(i2c_dev_t *dev, float v_min_mv, float v_max_mv)
     return ESP_OK;
 }
 
+/* 设置SOC报警阈值(%)，超出范围触发ALRT中断，上限0xFF表示不监控 */
 esp_err_t max17055_set_salrt(i2c_dev_t *dev, uint8_t soc_min, uint8_t soc_max)
 {
     CHECK_ARG(dev);
@@ -400,6 +426,7 @@ esp_err_t max17055_set_salrt(i2c_dev_t *dev, uint8_t soc_min, uint8_t soc_max)
     return ESP_OK;
 }
 
+/* 设置电流报警阈值(mA)，超出范围触发ALRT中断 */
 esp_err_t max17055_set_ialrt(i2c_dev_t *dev, float i_min_ma, float i_max_ma)
 {
     CHECK_ARG(dev);

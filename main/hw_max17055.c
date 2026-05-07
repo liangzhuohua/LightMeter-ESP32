@@ -25,7 +25,7 @@ static void alrt_gpio_init(void)
 }
 
 /**
- * @brief 初始化MAX17055电量计：配置电池参数，读取初始SOC/电压/温度
+ * @brief 初始化MAX17055电量计：配置电池参数，读取初始SOC/电压
  */
 void hw_max17055_init(void)
 {

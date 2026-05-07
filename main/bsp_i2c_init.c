@@ -29,23 +29,27 @@ esp_err_t i2c_init(void) {
     s_temp_dev.cfg.sda_pullup_en = 1;
     s_temp_dev.cfg.scl_pullup_en = 1;
 
+    // 为设备描述符创建互斥锁并注册设备
     ret = i2c_dev_create_mutex(&s_temp_dev);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "i2c_dev_create_mutex FAIL: %s", esp_err_to_name(ret));
         return ret;
     }
 
+    // 检查设备是否存在于 I2C 总线上（新版驱动）
     ret = i2c_dev_check_present(&s_temp_dev);
     if (ret != ESP_OK && ret != ESP_ERR_NOT_FOUND) {
         ESP_LOGW(TAG, "I2C bus probe returned: %s", esp_err_to_name(ret));
     }
 
+    // 获取指定端口的 I2C 主机总线句柄
     s_bus_handle = i2cdev_get_bus_handle(I2C_HOST);
     ESP_LOGI(TAG, "I2C init OK, bus handle: %p", s_bus_handle);
 
-// 在 i2c_init() 之后添加
+// 在 i2c_init() 之后添加 检测I2C总线上的所有设备
     for (uint8_t addr = 1; addr < 127; addr++) {
         s_temp_dev.addr = addr << 1;
+        // 检查设备是否存在于 I2C 总线上
         if (i2c_dev_check_present(&s_temp_dev) == ESP_OK) {
             ESP_LOGI(TAG, "Found I2C device at address: 0x%02X", addr);
         }

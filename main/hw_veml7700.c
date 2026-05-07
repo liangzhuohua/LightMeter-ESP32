@@ -139,15 +139,15 @@ void hw_veml7700_init(uint16_t gain, uint16_t integration_time, uint16_t power_s
 
     /* 用 Level 2 (最低灵敏度) 作为初始配置，避免上电饱和 */
     current_level = VEML7700_LEVEL_2;
-    veml7700_configuration.gain = level_config[current_level].gain;
-    veml7700_configuration.integration_time = level_config[current_level].integration_time;
+    veml7700_configuration.gain = level_config[current_level].gain;                    // 设置增益（GAIN_DIV_8 = 1/8x）
+    veml7700_configuration.integration_time = level_config[current_level].integration_time; // 设置积分时间（25ms）
 
-    veml7700_configuration.persistence_protect = VEML7700_PERSISTENCE_PROTECTION_4;
-    veml7700_configuration.interrupt_enable = 1;
-    veml7700_configuration.shutdown = 0;
+    veml7700_configuration.persistence_protect = VEML7700_PERSISTENCE_PROTECTION_4;   // 连续4次超限才触发中断，防抖动
+    veml7700_configuration.interrupt_enable = 1;                                       // 启用中断功能
+    veml7700_configuration.shutdown = 0;                                               // 0 = 正常工作模式（非关断）
 
-    veml7700_configuration.power_saving_mode = power_saving_mode;
-    veml7700_configuration.power_saving_enable = 1;
+    veml7700_configuration.power_saving_mode = power_saving_mode;                      // 省电模式（由外部传入）
+    veml7700_configuration.power_saving_enable = 1;                                    // 启用省电模式
 
     ESP_ERROR_CHECK(veml7700_set_config(&veml7700_device, &veml7700_configuration));
 
