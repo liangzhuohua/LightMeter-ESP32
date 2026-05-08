@@ -34,6 +34,25 @@ static const lv_btnmatrix_ctrl_t custom_aperture_kb_ctrl[] = {
 };
 
 // ──────────────────────────────────────────────
+// 自定义闪光同步键盘映射（数字 + "/" + "."）
+// ──────────────────────────────────────────────
+static const char* flash_sync_kb_map[] = {
+    "1", "2", "3", LV_SYMBOL_BACKSPACE, "\n",
+    "4", "5", "6", "/", "\n",
+    "7", "8", "9", ".", "\n",
+    "0", LV_SYMBOL_OK, LV_SYMBOL_CLOSE, "", "\n",
+    NULL
+};
+
+static const lv_btnmatrix_ctrl_t flash_sync_kb_ctrl[] = {
+    2, 2, 2, 4,
+    2, 2, 2, 2,
+    2, 2, 2, 2,
+    2, 4, 2, 2,
+    LV_BTNMATRIX_CTRL_HIDDEN
+};
+
+// ──────────────────────────────────────────────
 // 屏幕尺寸宏定义
 // ──────────────────────────────────────────────
 #define scr_act_width()     lv_obj_get_width(lv_scr_act())              // 宽
@@ -55,7 +74,7 @@ static const char* roller_aperture_options = "1.4\n2.0\n2.8\n4.0\n5.6\n8.0\n11.0
 static const char* cam_name = "Minolta SR1-S";
 static const char* len_name  = "Minolta MD 50mm f/1.4";
 static const char* roller_iso_options = "50\n100\n125\n160\n200\n400\n800\n1600\n3200";
-static const char* roller_ev_options = "-2\n-1\n-2/3\n-1/3\n0\n+1/3\n+2/3\n+1\n+2";
+static const char* roller_ev_options = "-5\n-14/3\n-13/3\n-4\n-11/3\n-10/3\n-3\n-8/3\n-7/3\n-2\n-5/3\n-4/3\n-1\n-2/3\n-1/3\n0\n+1/3\n+2/3\n+1\n+4/3\n+5/3\n+2\n+7/3\n+8/3\n+3\n+10/3\n+11/3\n+4\n+13/3\n+14/3\n+5";
 
 // 注意：原来是 const int*，但使用时当作值，改为普通 int
 static int current_lux_value = 1000;
@@ -78,7 +97,8 @@ lv_obj_t* main_obj_mode_select;         // 模式选择容器
 lv_obj_t* cam_win_select;               // cam选择
 lv_obj_t* wifi_config_win;              // wifi配置
 static lv_obj_t* cam_keyboard;        // T9九键键盘
-static lv_obj_t* num_keyboard;        // 数字键盘（用于焦距、闪光同步、自定义光圈）
+static lv_obj_t* num_keyboard;        // 数字键盘（用于焦距、自定义光圈）
+static lv_obj_t* std_keyboard;        // 闪光同步专用键盘（数字 + "/" + "."）
 
 static void update_main_ui_from_cam_card(void);
 static void update_main_ui_from_len_card(void);
@@ -1657,6 +1677,24 @@ static void num_ta_event_cb(lv_event_t * e)
 }
 
 // ──────────────────────────────────────────────
+// 闪光同步输入框事件回调（弹出数字+"/"+"."键盘）
+// ──────────────────────────────────────────────
+static void flash_sync_ta_event_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * ta = lv_event_get_target(e);
+
+    if(code == LV_EVENT_CLICKED) {
+        if(std_keyboard != NULL) {
+            lv_keyboard_set_textarea(std_keyboard, ta);
+            lv_obj_clear_flag(std_keyboard, LV_OBJ_FLAG_HIDDEN);
+            lv_obj_move_foreground(std_keyboard);
+            lv_indev_wait_release(lv_indev_get_act());
+        }
+    }
+}
+
+// ──────────────────────────────────────────────
 // 自定义光圈输入框事件回调（使用带逗号的自定义键盘）
 // ──────────────────────────────────────────────
 static void custom_aperture_ta_event_cb(lv_event_t * e)
@@ -2653,8 +2691,8 @@ static void btn_add_cam_event_cb(lv_event_t * e)
     lv_obj_set_style_border_width(textarea_flash_sync, 1, 0);
     lv_obj_set_style_radius(textarea_flash_sync, 4, 0);
 
-    // 添加事件回调，点击时弹出数字键盘
-    lv_obj_add_event_cb(textarea_flash_sync, num_ta_event_cb, LV_EVENT_CLICKED, NULL);
+    // 点击时弹出T9键盘
+    lv_obj_add_event_cb(textarea_flash_sync, flash_sync_ta_event_cb, LV_EVENT_CLICKED, NULL);
 
     // 创建参数数据结构并绑定事件
     cam_card_params_t *params = (cam_card_params_t *)malloc(sizeof(cam_card_params_t));
@@ -3373,7 +3411,7 @@ void app_ui_create_cam_card(const char* name, int step_type, int min_idx, int ma
     lv_obj_set_style_border_color(textarea_flash_sync_obj, lv_color_hex(0x4a90e2), 0);
     lv_obj_set_style_border_width(textarea_flash_sync_obj, 1, 0);
     lv_obj_set_style_radius(textarea_flash_sync_obj, 4, 0);
-    lv_obj_add_event_cb(textarea_flash_sync_obj, num_ta_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(textarea_flash_sync_obj, flash_sync_ta_event_cb, LV_EVENT_CLICKED, NULL);
 
     if (flash_sync && strlen(flash_sync) > 0) {
         lv_textarea_set_text(textarea_flash_sync_obj, flash_sync);
@@ -4074,7 +4112,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_roller_set_selected(main_roller_iso, 1, 0);
     lv_obj_add_event_cb(main_roller_iso, roller_iso_ev_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
-    /* EV */
+    /* EV补偿 */
     lv_obj_t* main_obj_ev = lv_obj_create(main_grid_layout);
     lv_obj_set_grid_cell(main_obj_ev, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 2, 1);
     lv_obj_set_style_radius(main_obj_ev, 15, 0);
@@ -4109,7 +4147,7 @@ static void ui_main_page_init(lv_obj_t* parent) {
     lv_obj_set_width(main_roller_ev, lv_pct(55));
     lv_obj_set_height(main_roller_ev, lv_pct(100));
     lv_obj_set_style_text_align(main_roller_ev, LV_TEXT_ALIGN_CENTER, 0);
-    lv_roller_set_selected(main_roller_ev, 4, 0);
+    lv_roller_set_selected(main_roller_ev, 15, 0);
     lv_obj_add_event_cb(main_roller_ev, roller_iso_ev_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
 
     /* 模式选择 */
@@ -4260,6 +4298,20 @@ static void ui_main_page_init(lv_obj_t* parent) {
 
     lv_obj_add_event_cb(num_keyboard, keyboard_done_cancel_cb, LV_EVENT_READY, NULL);
     lv_obj_add_event_cb(num_keyboard, keyboard_done_cancel_cb, LV_EVENT_CANCEL, NULL);
+
+    /* 创建闪光同步专用键盘（数字 + "/" + "."） */
+    std_keyboard = lv_keyboard_create(lv_scr_act());
+    lv_obj_add_flag(std_keyboard, LV_OBJ_FLAG_HIDDEN);
+    lv_keyboard_set_map(std_keyboard, LV_KEYBOARD_MODE_NUMBER, flash_sync_kb_map, flash_sync_kb_ctrl);
+    lv_keyboard_set_mode(std_keyboard, LV_KEYBOARD_MODE_NUMBER);
+
+    lv_obj_set_style_width(std_keyboard, 70, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_height(std_keyboard, 55, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(std_keyboard, 10, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(std_keyboard, &lv_font_montserrat_22, LV_PART_ITEMS | LV_STATE_DEFAULT);
+
+    lv_obj_add_event_cb(std_keyboard, keyboard_done_cancel_cb, LV_EVENT_READY, NULL);
+    lv_obj_add_event_cb(std_keyboard, keyboard_done_cancel_cb, LV_EVENT_CANCEL, NULL);
 
     /* 初始化主界面 */
     update_main_ui_from_cam_card();
