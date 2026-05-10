@@ -355,9 +355,11 @@ void ui_calc_port_update_level_indicator(lv_obj_t* led, int level)
     if (!led) return;
     lv_color_t color;
     switch (level) {
-        case 0: color = lv_color_hex(0x00FF00); break; // DIM — 绿色
-        case 1: color = lv_color_hex(0xFFCC00); break; // INDOOR — 黄色
-        case 2: color = lv_color_hex(0xFF0000); break; // OUTDOOR — 红色
+        case 0: color = lv_color_hex(0x00FF00); break; // WEAK — 绿色
+        case 1: color = lv_color_hex(0x88CC00); break; // MODERATE — 黄绿色
+        case 2: color = lv_color_hex(0xFFCC00); break; // BRIGHT — 黄色
+        case 3: color = lv_color_hex(0xFF6600); break; // VBRIGHT — 橙色
+        case 4: color = lv_color_hex(0xFF0000); break; // EXTREME — 红色
         default: color = lv_color_hex(0x888888); break;
     }
     lv_obj_set_style_bg_color(led, color, LV_STATE_DEFAULT);
