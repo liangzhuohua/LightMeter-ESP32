@@ -9,7 +9,6 @@
 #include "hw_wakeup_key.h"
 
 extern QueueHandle_t wifi_operation_queue;
-extern QueueHandle_t location_queue;
 
 typedef enum {
     WIFI_OP_NONE = 0,

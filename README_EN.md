@@ -20,9 +20,9 @@ A professional incident-light exposure meter for film photography, built on ESP3
 
 **Connectivity**
 - WiFi with auto-reconnect and multi-SSID memory
-- Auto-location via WiFi AP scanning (Google Geolocation API)
+- Auto-location via WiFi AP scanning (cellocation API)
 - SNTP time sync with automatic timezone from longitude
-- 7-day weather forecast, moon phase, sunrise/sunset (QWeather API)
+- 3-day weather forecast, moon phase, sunrise/sunset (QWeather API)
 
 **Power Management**
 - MAX17055 fuel gauge for battery SOC and voltage
@@ -34,7 +34,7 @@ A professional incident-light exposure meter for film photography, built on ESP3
 - 460×460 AMOLED with capacitive touch
 - Roller-style selectors for ISO, aperture, shutter, EV compensation
 - Real-time WiFi signal, battery, and lux indicators
-- OTA firmware update over HTTPS
+- OTA firmware update (AP hotspot + HTTP upload)
 
 ## Screenshots
 
@@ -59,7 +59,7 @@ A professional incident-light exposure meter for film photography, built on ESP3
 
 ![Schematic](docs/schematic.png)
 
-Full schematic PDF and chip datasheets are available in the [`Datasheet/`](Datasheet/) directory.
+Full schematic PDF and chip datasheets are available in the [`Datasheet/`](Datasheet/) directory. PCB project files are in [`hardware/`](hardware/).
 
 ## Build
 
@@ -102,7 +102,7 @@ main/
 ├── hw_veml7700.c/h           # VEML7700 light sensor driver
 ├── hw_max17055.c/h           # MAX17055 fuel gauge driver
 ├── hw_tp4056.c/h             # TP4056 charge detector
-├── hw_ota.c/h                # OTA firmware update over HTTPS
+├── hw_ota.c/h                # OTA firmware update (HTTP)
 ├── hw_wakeup_key.c/h         # GPIO9 wake-up key
 ├── bsp_i2c_init.c/h          # I2C bus init
 ├── img_*.c                   # Embedded image assets
@@ -119,16 +119,16 @@ main/
 
 ```
 WiFi Connected
-  → Location (Google Geolocation API)
+  → Location (cellocation API)
     → Time sync (SNTP + timezone from longitude)
-      → Weather (QWeather 7-day forecast + moon phase)
+      → Weather (QWeather 3-day forecast + moon phase)
 ```
 
 Each step retries 3 times. Cached data is displayed on boot so the UI is never blank.
 
 **LVGL Thread Safety** — UI updates from non-LVGL tasks must wrap with `lvgl_lock(-1)` / `lvgl_unlock()`.
 
-See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
+See [docs/软件系统组成.md](docs/软件系统组成.md) and [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 
 ## Calibration
 

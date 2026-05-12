@@ -20,9 +20,9 @@
 
 **网络功能**
 - WiFi 自动连接与重连，支持多 SSID 记忆
-- WiFi AP 扫描自动定位（Google Geolocation API）
+- WiFi AP 扫描自动定位（cellocation API）
 - SNTP 时间同步，根据经度自动计算时区
-- 和风天气 API：7 天天气预报、月相、日出日落
+- 和风天气 API：3 天天气预报、月相、日出日落
 
 **电源管理**
 - MAX17055 电量计实时监测电池电量和电压
@@ -34,7 +34,7 @@
 - 460×460 AMOLED 电容触摸屏
 - 滚轮选择器（ISO、光圈、快门、EV 补偿）
 - 实时 WiFi 信号、电量、光照强度显示
-- OTA 固件升级
+- OTA 固件升级（AP 热点 + HTTP 上传）
 
 ## 界面截图
 
@@ -59,7 +59,7 @@
 
 ![原理图](docs/schematic.png)
 
-完整原理图 PDF 和各芯片数据手册见 [`Datasheet/`](Datasheet/) 目录。
+完整原理图 PDF 和各芯片数据手册见 [`Datasheet/`](Datasheet/) 目录。PCB 工程文件见 [`hardware/`](hardware/) 目录。
 
 ## 编译与烧录
 
@@ -102,7 +102,7 @@ main/
 ├── hw_veml7700.c/h           # VEML7700 光照传感器驱动
 ├── hw_max17055.c/h           # MAX17055 电量计驱动
 ├── hw_tp4056.c/h             # TP4056 充电检测
-├── hw_ota.c/h                # OTA 固件升级（HTTPS）
+├── hw_ota.c/h                # OTA 固件升级（HTTP）
 ├── hw_wakeup_key.c/h         # GPIO9 唤醒按键
 ├── bsp_i2c_init.c/h          # I2C 总线初始化
 ├── img_*.c                   # 嵌入式图片资源
@@ -121,14 +121,14 @@ main/
 WiFi 已连接
   → 定位（Google Geolocation API）
     → 时间同步（SNTP + 根据经度自动时区）
-      → 天气更新（和风天气 7 天预报 + 月相）
+      → 天气更新（和风天气 3 天预报 + 月相）
 ```
 
 每步最多重试 3 次。启动时优先显示缓存数据，确保 UI 不会空白。
 
 **LVGL 线程安全** — 非 LVGL 任务更新 UI 必须使用 `lvgl_lock(-1)` / `lvgl_unlock()` 包裹。
 
-详细架构文档见 [CLAUDE.md](CLAUDE.md) 和 [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)。
+详细架构文档见 [docs/软件系统组成.md](docs/软件系统组成.md) 和 [CLAUDE.md](CLAUDE.md)。
 
 ## 校准
 

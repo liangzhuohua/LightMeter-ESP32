@@ -77,7 +77,7 @@ main/
 ├── app_battery.c/h         # Unified battery API (orchestrates MAX17055 + TP4056)
 ├── hw_oled.c/h             # QSPI AMOLED display driver (460x460)
 ├── hw_wifi.c/h             # WiFi init, scan, connect, state machine
-├── hw_veml7700.c/h         # VEML7700 ambient light sensor (3-level adaptive range + power-law calibration)
+├── hw_veml7700.c/h         # VEML7700 ambient light sensor (5-level adaptive range, AN 84323 polynomial correction)
 ├── hw_max17055.c/h         # MAX17055 battery fuel gauge (SOC, voltage)
 ├── hw_tp4056.c/h           # TP4056 charge detector (CHRG/STDBY pins)
 ├── hw_ota.c/h              # OTA firmware update (AP hotspot + web upload page)
@@ -164,6 +164,11 @@ On wake: `main.c` re-initializes everything. `app_controller_init` restores time
 - Battery: MAX17055 fuel gauge + TP4056 charge detector (pins CHRG/STDBY)
 - Wake-up Key: GPIO9 (long press = 3s to enter deep sleep)
 
+### Reference Files
+- `Datasheet/` — chip datasheets (PDF)
+- `hardware/` — PCB project file (.epro2)
+- `docs/schematic.png` — schematic diagram
+
 ### Battery Management Architecture
 
 Three-layer architecture:
@@ -197,15 +202,17 @@ When TP4056 detects charge complete, it recalibrates MAX17055 SOC to 100% to res
 
 ### VEML7700 Adaptive Range
 
-`hw_veml7700.c` implements a 3-level auto-switching strategy to cover a wide lux range:
+`hw_veml7700.c` implements a 5-level auto-switching strategy following Vishay AN 84323, starting from the lowest sensitivity (GAIN_1/8, IT=100ms):
 
 | Level | Gain | Integration | Resolution | Range |
 |-------|------|-------------|------------|-------|
-| WEAK (L0) | GAIN_2 | 800ms | 0.0036 lx/bit | ~0–200 lx |
-| NORMAL (L1) | GAIN_1 | 100ms | 0.0576 lx/bit | ~80–1200 lx |
-| STRONG (L2) | GAIN_DIV_8 | 25ms | 1.8432 lx/bit | ~800–120k lx |
+| WEAK (L0) | GAIN_2 | 800ms | 0.0042 lx/cnt | ~0–84 lx |
+| MODERATE (L1) | GAIN_1/4 | 100ms | 0.2688 lx/cnt | ~27–17k lx |
+| BRIGHT (L2) | GAIN_1/8 | 100ms | 0.5376 lx/cnt | ~54–35k lx (default start) |
+| VBRIGHT (L3) | GAIN_1/8 | 50ms | 1.0752 lx/cnt | ~108–70k lx |
+| EXTREME (L4) | GAIN_1/8 | 25ms | 2.1504 lx/cnt | ~215–141k lx |
 
-Hysteresis gaps prevent oscillation (L0↔L1: 80~200, L1↔L2: 800~1200). A raw saturation safety net (55000 counts) forces immediate upshift. Each level has independent power-law calibration coefficients (calibrated = a × raw^b) applied after the driver's internal lux conversion.
+Switching is based on raw counts (not lux), matching the AN flowchart: ≤100 counts → increase sensitivity, >10000 counts (at GAIN_1/8) → shorten integration time. A raw saturation safety net (55000 counts) forces immediate upshift. Non-linear correction uses the AN 4th-order polynomial (a·x⁴ + b·x³ + c·x² + d·x) for L1–L4; L0 is linear. A transmission factor compensates for cover glass attenuation.
 
 ### T9 Keyboard
 
@@ -227,7 +234,7 @@ Hysteresis gaps prevent oscillation (L0↔L1: 80~200, L1↔L2: 800~1200). A raw 
 
 ## Calibration
 
-`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration against reference values (`docs/lux对照值-新.csv`).
+`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration. Updated for AN 84323 polynomial correction approach.
 
 ## Commit Style
 
