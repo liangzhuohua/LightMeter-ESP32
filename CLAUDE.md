@@ -14,6 +14,10 @@ project(ESP32S3-IDF_AMOLED_LVGL-V8 VERSION X.Y.Z)
 ```
 Increment Z for bug fixes and small changes, Y for new features, X for major reworks.
 
+## Documentation
+
+After every code change, update `README.md` to reflect the new behavior or feature. If the change affects architecture, hardware behavior, or user-facing functionality, the README must stay in sync. This includes: feature additions/removals, behavior changes (like keypress duration), API or dependency changes, and hardware configuration changes.
+
 ## Build Commands
 
 Uses ESP-IDF 5.2.0. Target: `esp32s3` with Octal PSRAM.
@@ -81,7 +85,7 @@ main/
 ├── hw_max17055.c/h         # MAX17055 battery fuel gauge (SOC, voltage)
 ├── hw_tp4056.c/h           # TP4056 charge detector (CHRG/STDBY pins)
 ├── hw_ota.c/h              # OTA firmware update (AP hotspot + web upload page)
-├── hw_wakeup_key.c/h       # GPIO9 wake-up key (long press = 3s deep sleep)
+├── hw_wakeup_key.c/h       # GPIO9 wake-up key (short press to sleep/wake)
 ├── hw_nvs.c/h              # Low-level NVS helpers (WiFi config CRUD)
 ├── bsp_i2c_init.c/h        # I2C bus initialization
 ├── img_*.c                 # LVGL image assets (embedded C arrays)
@@ -129,7 +133,7 @@ Each step retries up to 3 times on failure. Cached data is displayed immediately
 | task_time_update | 2KB | any | Update UI clock display every minute |
 | task_weather | 16KB | 0 | Wait on weather_Sem, call QWeather API |
 | task_battery | 3KB | any | Read battery SOC/voltage/status every 3s |
-| task_power_manage | 4KB | any | Wait on sleep_sem, trigger deep sleep on long press |
+| task_power_manage | 4KB | any | Wait on sleep_sem, trigger deep sleep on key press |
 
 ### Deep Sleep Sequence (app_controller_enter_deep_sleep)
 
@@ -162,7 +166,7 @@ On wake: `main.c` re-initializes everything. `app_controller_init` restores time
 - Touch: CST820 I2C touch controller
 - Light Sensor: VEML7700 (ambient light for exposure calculation)
 - Battery: MAX17055 fuel gauge + TP4056 charge detector (pins CHRG/STDBY)
-- Wake-up Key: GPIO9 (long press = 3s to enter deep sleep)
+- Wake-up Key: GPIO9 (short press to enter/exit deep sleep)
 
 ### Reference Files
 - `Datasheet/` — chip datasheets (PDF)
