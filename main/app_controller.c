@@ -856,9 +856,9 @@ static void task_power_manage(void* arg) {
     }
 }
 
-/* 唤醒键ISR回调：长按触发深度睡眠 */
+/* 唤醒键ISR回调：按下即触发深度睡眠（与唤醒操作对称） */
 static void wakeup_key_callback(wakeup_key_event_t event) {
-    if (event == WAKEUP_KEY_EVENT_LONG_PRESS) {
+    if (event == WAKEUP_KEY_EVENT_SHORT_PRESS || event == WAKEUP_KEY_EVENT_LONG_PRESS) {
         if (sleep_sem != NULL) {
             BaseType_t xHigherPriorityTaskWoken = pdFALSE;
             xSemaphoreGiveFromISR(sleep_sem, &xHigherPriorityTaskWoken);
