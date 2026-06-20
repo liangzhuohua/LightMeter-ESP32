@@ -7,7 +7,7 @@ A professional incident-light exposure meter for film photography, built on ESP3
 ## Features
 
 **Exposure Meter**
-- Incident-light metering via VEML7700 ambient light sensor
+- Incident-light metering via VEML7700 ambient light sensor (built-in Vishay AN 84323 polynomial correction)
 - Four modes: Manual, Auto (aperture priority), Landscape (f/11 bias), Portrait (wide-open bias)
 - 1/3 EV and 1/2 EV step support
 - Standard aperture (f/0.5–f/128) and shutter (30s–1/8000s) tables
@@ -27,8 +27,8 @@ A professional incident-light exposure meter for film photography, built on ESP3
 **Power Management**
 - MAX17055 fuel gauge for battery SOC and voltage
 - TP4056 charge detection (charging / full / discharging)
-- Deep sleep with RTC time preservation
-- Long-press GPIO9 key (3s) to enter deep sleep
+- Deep sleep with RTC time preservation; short press GPIO9 key to enter, short press again to wake
+- TP4056 auto-recalibrates MAX17055 SOC to 100% when charge complete
 
 **UI**
 - 460×460 AMOLED with capacitive touch
@@ -91,7 +91,7 @@ main/
 ├── app_ui.c/h                # LVGL UI implementation
 ├── app_ui_*_port.c/h         # UI port layer (bridge LVGL callbacks → logic)
 ├── app_exposure_calc.c/h     # Exposure calculation engine
-├── app_location.c/h          # Google Geolocation API client
+├── app_location.c/h          # cellocation API client (WiFi AP BSSID scan)
 ├── app_weather.c/h           # QWeather API client
 ├── app_time.c/h              # SNTP time sync + RTC persistence
 ├── app_battery.c/h           # Unified battery API (MAX17055 + TP4056)
@@ -129,10 +129,6 @@ Each step retries 3 times. Cached data is displayed on boot so the UI is never b
 **LVGL Thread Safety** — UI updates from non-LVGL tasks must wrap with `lvgl_lock(-1)` / `lvgl_unlock()`.
 
 See [docs/软件系统组成.md](docs/软件系统组成.md) and [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
-
-## Calibration
-
-`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration against reference measurements.
 
 ## License
 

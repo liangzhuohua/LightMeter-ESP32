@@ -7,7 +7,7 @@
 ## 功能特性
 
 **核心测光**
-- VEML7700 环境光传感器入射式测光
+- VEML7700 环境光传感器入射式测光（内置 Vishay AN 84323 官方多项式校正）
 - 四种工作模式：手动、自动（光圈优先）、风光（f/11 偏置）、人像（大光圈偏置）
 - 支持 1/3 EV 和 1/2 EV 档位步进
 - 标准化光圈表（f/0.5–f/128）和快门表（30s–1/8000s）
@@ -91,7 +91,7 @@ main/
 ├── app_ui.c/h                # LVGL UI 实现
 ├── app_ui_*_port.c/h         # UI 端口层（桥接 LVGL 回调与业务逻辑）
 ├── app_exposure_calc.c/h     # 曝光计算引擎
-├── app_location.c/h          # Google 地理定位 API 客户端
+├── app_location.c/h          # cellocation API 客户端 (WiFi AP BSSID 扫描)
 ├── app_weather.c/h           # 和风天气 API 客户端
 ├── app_time.c/h              # SNTP 时间同步 + RTC 持久化
 ├── app_battery.c/h           # 统一电池 API（MAX17055 + TP4056）
@@ -119,7 +119,7 @@ main/
 
 ```
 WiFi 已连接
-  → 定位（Google Geolocation API）
+  → 定位（cellocation API — WiFi AP BSSID 扫描）
     → 时间同步（SNTP + 根据经度自动时区）
       → 天气更新（和风天气 3 天预报 + 月相）
 ```
@@ -129,10 +129,6 @@ WiFi 已连接
 **LVGL 线程安全** — 非 LVGL 任务更新 UI 必须使用 `lvgl_lock(-1)` / `lvgl_unlock()` 包裹。
 
 详细架构文档见 [docs/软件系统组成.md](docs/软件系统组成.md) 和 [CLAUDE.md](CLAUDE.md)。
-
-## 校准
-
-`docs/calibrate_veml7700.py` — VEML7700 光照传感器校准脚本，与参考照度值对比使用。
 
 ## 许可证
 

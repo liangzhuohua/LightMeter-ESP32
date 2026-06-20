@@ -236,9 +236,9 @@ Switching is based on raw counts (not lux), matching the AN flowchart: ≤100 co
 | ota_1 | app, ota_1 | 3MB |
 | ota_data | data, ota | 8KB |
 
-## Calibration
+## VEML7700 Calibration
 
-`docs/calibrate_veml7700.py` — Python script for VEML7700 lux calibration. Updated for AN 84323 polynomial correction approach.
+Calibration is built into `hw_veml7700.c` using the official Vishay AN 84323 4th-order polynomial correction. No manual calibration step is required. Transmission factor (cover glass attenuation compensation) is configured via `hw_veml7700_set_transmission()`.
 
 ## Commit Style
 
